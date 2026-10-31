@@ -5,7 +5,7 @@ import { PencilEdit02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { usePathname } from "next/navigation"
 
-import { Chat } from "@/components/aiellie/chat"
+import { Chat } from "@/components/chat"
 import { HistoryButtons } from "@/components/aiellie/history-buttons"
 import {
   NO_THREADS,
