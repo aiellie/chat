@@ -1,9 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { PencilEdit02Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { usePathname } from "next/navigation"
 
 import { Chat } from "@/components/aiellie/chat"
+import { HistoryButtons } from "@/components/aiellie/history-buttons"
 import {
   NO_THREADS,
   getThreads,
@@ -17,8 +20,10 @@ import { ChatSidebar } from "@/components/chat-sidebar"
 import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
 import type { User } from "@/components/nav-user"
-import { Panels } from "@/components/panels"
+import { Panels, usePanels } from "@/components/panels"
 import { SidebarProvider } from "@/components/ui/sidebar"
+import { TooltipIconButton } from "@/components/ui/tooltip-icon-button"
+import { useBrowserHistory } from "@/hooks/use-browser-history"
 
 const noop = () => () => {}
 
@@ -26,6 +31,35 @@ const noop = () => () => {}
 function titleOf(text: string) {
   const line = text.trim().split("\n")[0]
   return line.length > 80 ? `${line.slice(0, 80)}…` : line
+}
+
+// The main header's title, after a new chat button while the left panel, and
+// the one in its sidebar, is out of sight.
+function MainTitle({
+  title,
+  onNewChat,
+}: {
+  title: string
+  onNewChat: () => void
+}) {
+  const { isOpen } = usePanels()
+  return (
+    <>
+      {isOpen("left") ? null : (
+        <TooltipIconButton
+          tooltip="New chat"
+          shortcut="⌘N"
+          onClick={onNewChat}
+          className="size-7"
+        >
+          <HugeiconsIcon icon={PencilEdit02Icon} />
+        </TooltipIconButton>
+      )}
+      <span className="min-w-0 truncate px-1 text-xs font-medium text-muted-foreground">
+        {title}
+      </span>
+    </>
+  )
 }
 
 function ChatShell() {
@@ -60,6 +94,13 @@ function ChatShell() {
     setThreads((current) => current.filter((chat) => chat.id !== id))
     removeMessages(id)
     if (activeId === id) open(null)
+  }
+
+  const history = useBrowserHistory()
+
+  const newChat = () => {
+    setDraftId(crypto.randomUUID())
+    open(null)
   }
 
   const toggleActivity = () => setActivityOpen((open) => !open)
@@ -101,10 +142,7 @@ function ChatShell() {
             }}
             mode={mode}
             onModeChange={setMode}
-            onNewChat={() => {
-              setDraftId(crypto.randomUUID())
-              open(null)
-            }}
+            onNewChat={newChat}
             activityOpen={activityOpen}
             onActivity={toggleActivity}
             user={user}
@@ -117,8 +155,20 @@ function ChatShell() {
         right={<div />}
         bottom={<div />}
         headers={{
-          left: null,
-          main: active?.title ?? "New chat",
+          left: (
+            <HistoryButtons
+              canGoBack={history.canGoBack}
+              canGoForward={history.canGoForward}
+              onBack={history.back}
+              onForward={history.forward}
+            />
+          ),
+          main: (
+            <MainTitle
+              title={active?.title ?? "New chat"}
+              onNewChat={newChat}
+            />
+          ),
         }}
         headerBorder={{
           left: false,
