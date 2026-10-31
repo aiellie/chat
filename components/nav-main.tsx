@@ -110,14 +110,7 @@ function ChatNavMain({
             <span>Plugins</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
-        <SidebarMenuButton onClick={onScheduled}>
-          <HugeiconsIcon icon={TimeScheduleIcon} aria-hidden />
-          <span>Scheduled</span>
-        </SidebarMenuButton>
-        <SidebarMenuButton onClick={onAgents}>
-          <HugeiconsIcon icon={ChatBotIcon} aria-hidden />
-          <span>Agents</span>
-        </SidebarMenuButton>
+       
       </SidebarMenu>
     </SidebarGroup>
   )
