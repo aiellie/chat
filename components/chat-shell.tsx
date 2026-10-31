@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
-import { Chat } from "@/components/aiellie/chat"
+import { Chat, threadMessages } from "@/components/aiellie/chat"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
@@ -10,14 +11,24 @@ import type { User } from "@/components/nav-user"
 import { Panels } from "@/components/panels"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
+// The first line of the first message, cut to fit the sidebar.
+function titleOf(text: string) {
+  const line = text.trim().split("\n")[0]
+  return line.length > 80 ? `${line.slice(0, 80)}…` : line
+}
+
 function ChatShell() {
   const [chats, setChats] = React.useState<ChatNavChat[]>([])
-  const [activeId, setActiveId] = React.useState<string | null>(null)
+  // The open thread lives in the URL, as /<thread id>. "/" is a new chat.
+  const pathname = usePathname()
+  const activeId = decodeURIComponent(pathname.slice(1)) || null
+  const open = (id: string | null) =>
+    window.history.pushState(null, "", id ? `/${encodeURIComponent(id)}` : "/")
+  // The id a new chat gets once its first message is sent.
+  const [draftId, setDraftId] = React.useState(() => crypto.randomUUID())
   const [mode, setMode] = React.useState<ChatMode>("chat")
   const [activityOpen, setActivityOpen] = React.useState(false)
   const [user, setUser] = React.useState<User>()
-  // Bumped by "New chat", so the main panel starts an empty conversation.
-  const [draft, setDraft] = React.useState(0)
 
   const update = (id: string, change: Partial<ChatNavChat>) =>
     setChats((current) =>
@@ -25,7 +36,8 @@ function ChatShell() {
     )
   const remove = (id: string) => {
     setChats((current) => current.filter((chat) => chat.id !== id))
-    if (activeId === id) setActiveId(null)
+    threadMessages.delete(id)
+    if (activeId === id) open(null)
   }
 
   const toggleActivity = () => setActivityOpen((open) => !open)
@@ -42,7 +54,7 @@ function ChatShell() {
             chats={chats}
             activeId={activeId}
             onSelect={(id) => {
-              setActiveId(id)
+              open(id)
               update(id, { unread: false })
             }}
             onRename={(id, title) => update(id, { title })}
@@ -61,14 +73,15 @@ function ChatShell() {
                 id: crypto.randomUUID(),
                 title: `${chat.title} (fork)`,
               }
+              threadMessages.set(fork.id, threadMessages.get(id) ?? [])
               setChats((current) => [fork, ...current])
-              setActiveId(fork.id)
+              open(fork.id)
             }}
             mode={mode}
             onModeChange={setMode}
             onNewChat={() => {
-              setActiveId(null)
-              setDraft((n) => n + 1)
+              setDraftId(crypto.randomUUID())
+              open(null)
             }}
             activityOpen={activityOpen}
             onActivity={toggleActivity}
@@ -90,7 +103,17 @@ function ChatShell() {
           main: false,
         }}
       >
-        <Chat key={activeId ?? `draft-${draft}`} id={activeId ?? undefined} />
+        {/* Keyed by id, so a new chat keeps its component, and its stream,
+            when its first message turns it into a thread. */}
+        <Chat
+          key={activeId ?? draftId}
+          id={activeId ?? draftId}
+          onFirstMessage={(id, text) => {
+            if (chats.some((chat) => chat.id === id)) return
+            setChats((current) => [{ id, title: titleOf(text) }, ...current])
+            if (id === draftId) open(id)
+          }}
+        />
       </Panels>
     </SidebarProvider>
   )
