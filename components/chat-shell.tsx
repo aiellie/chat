@@ -3,13 +3,24 @@
 import * as React from "react"
 import { usePathname } from "next/navigation"
 
-import { Chat, threadMessages } from "@/components/aiellie/chat"
+import { Chat } from "@/components/aiellie/chat"
+import {
+  NO_THREADS,
+  getThreads,
+  loadMessages,
+  removeMessages,
+  saveMessages,
+  setThreads,
+  subscribeThreads,
+} from "@/components/aiellie/thread-store"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
 import type { User } from "@/components/nav-user"
 import { Panels } from "@/components/panels"
 import { SidebarProvider } from "@/components/ui/sidebar"
+
+const noop = () => () => {}
 
 // The first line of the first message, cut to fit the sidebar.
 function titleOf(text: string) {
@@ -18,7 +29,18 @@ function titleOf(text: string) {
 }
 
 function ChatShell() {
-  const [chats, setChats] = React.useState<ChatNavChat[]>([])
+  const chats = React.useSyncExternalStore(
+    subscribeThreads,
+    getThreads,
+    () => NO_THREADS
+  )
+  // Saved threads are only in the browser, so the chat waits for it rather
+  // than rendering an empty thread on the server first.
+  const hydrated = React.useSyncExternalStore(
+    noop,
+    () => true,
+    () => false
+  )
   // The open thread lives in the URL, as /<thread id>. "/" is a new chat.
   const pathname = usePathname()
   const activeId = decodeURIComponent(pathname.slice(1)) || null
@@ -31,12 +53,12 @@ function ChatShell() {
   const [user, setUser] = React.useState<User>()
 
   const update = (id: string, change: Partial<ChatNavChat>) =>
-    setChats((current) =>
+    setThreads((current) =>
       current.map((chat) => (chat.id === id ? { ...chat, ...change } : chat))
     )
   const remove = (id: string) => {
-    setChats((current) => current.filter((chat) => chat.id !== id))
-    threadMessages.delete(id)
+    setThreads((current) => current.filter((chat) => chat.id !== id))
+    removeMessages(id)
     if (activeId === id) open(null)
   }
 
@@ -73,8 +95,8 @@ function ChatShell() {
                 id: crypto.randomUUID(),
                 title: `${chat.title} (fork)`,
               }
-              threadMessages.set(fork.id, threadMessages.get(id) ?? [])
-              setChats((current) => [fork, ...current])
+              saveMessages(fork.id, loadMessages(id) ?? [])
+              setThreads((current) => [fork, ...current])
               open(fork.id)
             }}
             mode={mode}
@@ -105,15 +127,20 @@ function ChatShell() {
       >
         {/* Keyed by id, so a new chat keeps its component, and its stream,
             when its first message turns it into a thread. */}
-        <Chat
-          key={activeId ?? draftId}
-          id={activeId ?? draftId}
-          onFirstMessage={(id, text) => {
-            if (chats.some((chat) => chat.id === id)) return
-            setChats((current) => [{ id, title: titleOf(text) }, ...current])
-            if (id === draftId) open(id)
-          }}
-        />
+        {hydrated ? (
+          <Chat
+            key={activeId ?? draftId}
+            id={activeId ?? draftId}
+            onFirstMessage={(id, text) => {
+              if (chats.some((chat) => chat.id === id)) return
+              setThreads((current) => [
+                { id, title: titleOf(text) },
+                ...current,
+              ])
+              if (id === draftId) open(id)
+            }}
+          />
+        ) : null}
       </Panels>
     </SidebarProvider>
   )

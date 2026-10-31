@@ -2,14 +2,10 @@
 
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
-import type { UIMessage } from "ai"
 
 import { Composer } from "@/components/aiellie/composer"
 import { Thread } from "@/components/aiellie/thread"
-
-// Each thread's messages, kept for the session so switching threads doesn't
-// lose them. Nothing is saved across a reload yet.
-const threadMessages = new Map<string, UIMessage[]>()
+import { loadMessages, saveMessages } from "@/components/aiellie/thread-store"
 
 function Chat({
   id,
@@ -21,12 +17,15 @@ function Chat({
 }) {
   const { messages, sendMessage, status, stop, error, regenerate } = useChat({
     id,
-    messages: threadMessages.get(id),
+    messages: loadMessages(id),
   })
 
+  // Saved once a reply settles, not on every streamed token. A thread that
+  // hasn't been sent to yet isn't saved at all.
   React.useEffect(() => {
-    threadMessages.set(id, messages)
-  }, [id, messages])
+    if (status === "streaming" || messages.length === 0) return
+    saveMessages(id, messages)
+  }, [id, messages, status])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -43,4 +42,4 @@ function Chat({
   )
 }
 
-export { Chat, threadMessages }
+export { Chat }
