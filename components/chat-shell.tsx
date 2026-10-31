@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { ChatSidebar, ChatSidebarHeader } from "@/components/chat-sidebar"
+import { ChatSidebar } from "@/components/chat-sidebar"
 import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
 import type { User } from "@/components/nav-user"
@@ -66,7 +66,6 @@ function ChatShell() {
             onNewChat={() => setActiveId(null)}
             activityOpen={activityOpen}
             onActivity={toggleActivity}
-            header={false}
             user={user}
             userMenu={{
               onSignIn: ({ email }) => setUser({ name: email.split("@")[0] }),
@@ -77,17 +76,13 @@ function ChatShell() {
         right={<div />}
         bottom={<div />}
         headers={{
-          left: (
-            <ChatSidebarHeader
-              mode={mode}
-              onModeChange={setMode}
-              activityOpen={activityOpen}
-              onActivity={toggleActivity}
-            />
-          ),
+          left: null,
           main: active?.title ?? "New chat",
         }}
-        headerBorder={{ left: false }}
+        headerBorder={{
+          left: false,
+          main: false,
+        }}
       >
         {null}
       </Panels>
