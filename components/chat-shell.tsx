@@ -9,17 +9,8 @@ import type { User } from "@/components/nav-user"
 import { Panels } from "@/components/panels"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
-// Placeholder chats until there's a backend to load them from.
-const SAMPLE_CHATS: ChatNavChat[] = [
-  { id: "launch", title: "Launch plan", pinned: true },
-  { id: "landing", title: "Landing page copy", status: "running" },
-  { id: "onboarding", title: "Onboarding flow", unread: true },
-  { id: "pricing", title: "Pricing questions", status: "failed" },
-  { id: "notes", title: "Meeting notes" },
-]
-
 function ChatShell() {
-  const [chats, setChats] = React.useState(SAMPLE_CHATS)
+  const [chats, setChats] = React.useState<ChatNavChat[]>([])
   const [activeId, setActiveId] = React.useState<string | null>(null)
   const [mode, setMode] = React.useState<ChatMode>("chat")
   const [activityOpen, setActivityOpen] = React.useState(false)
