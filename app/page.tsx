@@ -1,12 +1,15 @@
-import { Panels } from "@/components/panels"
+import { ChatHome } from "@/components/home/chat-home"
+import { Landing } from "@/components/home/landing"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { getSession } from "@/lib/session"
 
-export default function Page() {
+export default async function Page() {
+  const session = await getSession()
+  if (!session) return <Landing />
+
   return (
     <TooltipProvider>
-      <Panels left={<div />} right={<div />} bottom={<div />}>
-        {null}
-      </Panels>
+      <ChatHome name={session.name} />
     </TooltipProvider>
   )
 }
