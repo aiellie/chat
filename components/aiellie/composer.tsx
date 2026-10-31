@@ -40,8 +40,8 @@ function Composer({
     >
       <InputGroup>
         <InputGroupTextarea
-          aria-label="Message"
-          placeholder="Message"
+          aria-label="Ask anything"
+          placeholder="Ask anything"
           rows={1}
           value={input}
           onChange={(event) => setInput(event.currentTarget.value)}
