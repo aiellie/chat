@@ -126,6 +126,7 @@ function ChatSidebar({
   activityOpen,
   onActivity,
   userMenu,
+  header = true,
   ...chats
 }: ChatNavProps & {
   /** Who is signed in. Without one, the footer offers to sign in. */
@@ -142,18 +143,22 @@ function ChatSidebar({
   onSearch?: () => void
   activityOpen: boolean
   onActivity: () => void
+  /** Off when the panel around it shows `ChatSidebarHeader` in its own header. */
+  header?: boolean
 }) {
   const { ref: listRef, style: fadeStyle } = useScrollFade()
 
   return (
     <Sidebar collapsible="none" className="w-full bg-background">
-      <ChatSidebarHeader
-        mode={mode}
-        onModeChange={onModeChange}
-        onSearch={onSearch}
-        activityOpen={activityOpen}
-        onActivity={onActivity}
-      />
+      {header ? (
+        <ChatSidebarHeader
+          mode={mode}
+          onModeChange={onModeChange}
+          onSearch={onSearch}
+          activityOpen={activityOpen}
+          onActivity={onActivity}
+        />
+      ) : null}
       <ChatNavMain
         newChatOpen={chats.activeId === null}
         onNewChat={onNewChat}
@@ -183,4 +188,4 @@ function ChatSidebar({
   )
 }
 
-export { ChatSidebar }
+export { ChatSidebar, ChatSidebarHeader }

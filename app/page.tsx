@@ -1,12 +1,10 @@
-import { Panels } from "@/components/panels"
+import { ChatShell } from "@/components/chat-shell"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 export default function Page() {
   return (
     <TooltipProvider>
-      <Panels left={<div />} right={<div />} bottom={<div />}>
-        {null}
-      </Panels>
+      <ChatShell />
     </TooltipProvider>
   )
 }
