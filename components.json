@@ -21,5 +21,7 @@
   },
   "menuColor": "default-translucent",
   "menuAccent": "subtle",
-  "registries": {}
-}
+    "registries": {
+      "@aiellie": "https://elements.aiellie.dev/r/{name}.json"
+    }
+  }
