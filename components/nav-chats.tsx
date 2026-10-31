@@ -249,7 +249,7 @@ function ChatNavGroup({
               onClick={() => setOpen((current) => !current)}
             />
           }
-          className="group/section w-full gap-1 pe-8 text-muted-foreground/50 hover:text-muted-foreground"
+          className="group/section w-full gap-1 pe-8 text-muted-foreground hover:text-muted-foreground"
         >
           {label}
           <HugeiconsIcon
