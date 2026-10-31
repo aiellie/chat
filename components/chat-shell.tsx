@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { Chat } from "@/components/chat"
+import { Chat } from "@/components/aiellie/chat"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
