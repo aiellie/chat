@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { Chat } from "@/components/chat"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
@@ -15,6 +16,8 @@ function ChatShell() {
   const [mode, setMode] = React.useState<ChatMode>("chat")
   const [activityOpen, setActivityOpen] = React.useState(false)
   const [user, setUser] = React.useState<User>()
+  // Bumped by "New chat", so the main panel starts an empty conversation.
+  const [draft, setDraft] = React.useState(0)
 
   const update = (id: string, change: Partial<ChatNavChat>) =>
     setChats((current) =>
@@ -63,7 +66,10 @@ function ChatShell() {
             }}
             mode={mode}
             onModeChange={setMode}
-            onNewChat={() => setActiveId(null)}
+            onNewChat={() => {
+              setActiveId(null)
+              setDraft((n) => n + 1)
+            }}
             activityOpen={activityOpen}
             onActivity={toggleActivity}
             user={user}
@@ -84,7 +90,7 @@ function ChatShell() {
           main: false,
         }}
       >
-        {null}
+        <Chat key={activeId ?? `draft-${draft}`} id={activeId ?? undefined} />
       </Panels>
     </SidebarProvider>
   )
