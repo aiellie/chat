@@ -1,4 +1,3 @@
-import { anthropic } from "@ai-sdk/anthropic"
 import {
   convertToModelMessages,
   createUIMessageStreamResponse,
@@ -7,8 +6,9 @@ import {
   type UIMessage,
 } from "ai"
 
-// Reads ANTHROPIC_API_KEY from the environment.
-const model = anthropic("claude-opus-5-5")
+// A plain model id goes through the Vercel AI Gateway, which reads
+// AI_GATEWAY_API_KEY from the environment.
+const model = "anthropic/claude-opus-5.5"
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json()

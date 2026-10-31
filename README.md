@@ -22,9 +22,10 @@ import { Button } from "@/components/ui/button";
 
 ## Chat
 
-The chat in the main panel streams from Claude through the AI SDK
-(`app/api/chat/route.ts`). Put your Anthropic API key in `.env.local`:
+The chat in the main panel streams from Claude through the AI SDK and the
+Vercel AI Gateway (`app/api/chat/route.ts`). Put your gateway key in
+`.env.local`:
 
 ```bash
-ANTHROPIC_API_KEY=sk-ant-...
+AI_GATEWAY_API_KEY=...
 ```
