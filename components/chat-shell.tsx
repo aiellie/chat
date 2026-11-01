@@ -6,6 +6,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { usePathname } from "next/navigation"
 
 import { Chat } from "@/components/chat"
+import { AiDebugButton, AiDebugPanel } from "@/components/aiellie/ai-debug"
 import { ChatHeader, ChatHeaderTitle } from "@/components/aiellie/chat-header"
 import { HistoryButtons } from "@/components/aiellie/history-buttons"
 import {
@@ -59,6 +60,8 @@ function MainHeader({
         </TooltipIconButton>
       )}
       <ChatHeaderTitle title={title} onRename={onRename} />
+      <div className="ms-auto" />
+      <AiDebugButton />
     </ChatHeader>
   )
 }
@@ -153,7 +156,7 @@ function ChatShell() {
             }}
           />
         }
-        right={<div />}
+        right={<AiDebugPanel chatId={activeId ?? draftId} />}
         bottom={<div />}
         headers={{
           left: (
@@ -175,6 +178,7 @@ function ChatShell() {
               onNewChat={newChat}
             />
           ),
+          right: "AI requests",
         }}
         headerBorder={{
           left: false,

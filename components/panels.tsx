@@ -144,7 +144,7 @@ function PanelHeader({
     <header
       className={cn(
         "flex h-10 shrink-0 items-center gap-2 bg-background px-2",
-        border && "border-b",
+        border && "border-0",
         glass &&
           "absolute inset-x-0 top-0 z-[var(--z-sticky,20)] bg-popover backdrop-blur-xs supports-[backdrop-filter]:bg-background/60"
       )}
@@ -152,7 +152,7 @@ function PanelHeader({
       {start}
       <div className="flex min-w-0 flex-1 items-center gap-1">
         {typeof title === "string" && title ? (
-          <span className="min-w-0 truncate px-1 text-xs font-medium text-muted-foreground">
+          <span className="min-w-0 truncate px-1 font-medium text-foreground">
             {title}
           </span>
         ) : (

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 
 import {
   Composer,
@@ -15,6 +16,7 @@ import {
   ComposerInput,
   ComposerSubmit,
 } from "@/components/aiellie/composer"
+import { recordingFetch } from "@/components/aiellie/ai-debug-store"
 import { AttachmentGroup } from "@/components/aiellie/attachment"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { ModelSelector } from "@/components/aiellie/model-selector"
@@ -36,6 +38,11 @@ function revoke(files: PendingFile[]) {
   for (const { url } of files) URL.revokeObjectURL(url)
 }
 
+// In development every request and reply is recorded for the AI debug panel.
+const transport = new DefaultChatTransport({
+  fetch: process.env.NODE_ENV === "production" ? undefined : recordingFetch,
+})
+
 function Chat({
   id,
   onFirstMessage,
@@ -47,6 +54,7 @@ function Chat({
   const { messages, sendMessage, status, stop, error, regenerate } = useChat({
     id,
     messages: loadMessages(id),
+    transport,
   })
   const [model, setModel] = React.useState(defaultModel)
   const [models, setModels] = React.useState<ModelOption[]>([])

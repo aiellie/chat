@@ -67,7 +67,7 @@ function SheetContent({
               <Button
                 variant="ghost"
                 className="absolute end-3 top-3 [&_svg]:text-muted-foreground hover:[&_svg]:text-foreground"
-                size="icon-sm"
+                size="icon-xs"
               />
             }
           >
