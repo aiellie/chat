@@ -6,13 +6,29 @@ import {
 } from "ai"
 
 import { apiKeysFrom } from "@/lib/api-keys"
-import { defaultModel } from "@/lib/models"
-import { toModelMessages, type MessageMetadata } from "@/lib/model-messages"
+import { defaultModel, isEffort } from "@/lib/models"
+import {
+  fitToContext,
+  toModelMessages,
+  type MessageMetadata,
+} from "@/lib/model-messages"
 import { resolveModel } from "@/lib/providers"
 
 export async function POST(req: Request) {
-  const { messages, model }: { messages: UIMessage[]; model?: unknown } =
-    await req.json()
+  const {
+    messages,
+    model,
+    effort,
+    context,
+  }: {
+    messages: UIMessage[]
+    /** The model picked, or its fast variant with Fast on. */
+    model?: unknown
+    /** The reasoning effort picked, for a model that reasons. */
+    effort?: unknown
+    /** The context size picked, in tokens, for a model with a choice. */
+    context?: unknown
+  } = await req.json()
   const modelId = typeof model === "string" && model ? model : defaultModel
   // Straight to the provider when there's a key for it, from the API keys
   // dialog or the server's environment; otherwise through the AI Gateway.
@@ -21,13 +37,20 @@ export async function POST(req: Request) {
     apiKeysFrom(req)
   )
 
+  const modelMessages = await toModelMessages(messages)
+
   const result = streamText({
     model: languageModel,
-    messages: await toModelMessages(messages),
+    // A smaller context size picked keeps the request under it, so it stays
+    // at the model's standard rate: the oldest messages are left out.
+    messages:
+      typeof context === "number" && context > 0
+        ? fitToContext(modelMessages, context)
+        : modelMessages,
     // Each provider maps this to its own setting, whichever way the request
     // goes. Its reasoning streams to the client, where the AI debug panel
     // shows it. Google sends its thoughts back only when asked to.
-    reasoning: "medium",
+    reasoning: isEffort(effort) ? effort : "provider-default",
     providerOptions: {
       google: { thinkingConfig: { includeThoughts: true } },
     },

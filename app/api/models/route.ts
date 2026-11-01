@@ -1,11 +1,11 @@
 import { createGateway, gateway } from "ai"
 
 import { apiKeysFrom } from "@/lib/api-keys"
-import type { ModelOption } from "@/lib/models"
+import { EFFORTS, isEffort, type Effort, type ModelOption } from "@/lib/models"
 import { routeOf } from "@/lib/providers"
 
 // The Gateway's public catalogue, which also gives each model's context
-// window and prices. The SDK's own list leaves those out.
+// window, prices and reasoning options. The SDK's own list leaves those out.
 const CATALOGUE = "https://ai-gateway.vercel.sh/v1/models"
 
 type CatalogueEntry = {
@@ -13,10 +13,48 @@ type CatalogueEntry = {
   name?: string
   type?: string
   context_window?: number
-  pricing?: { input?: string; output?: string; input_cache_read?: string }
+  pricing?: {
+    input?: string
+    output?: string
+    input_cache_read?: string
+    /** Where a pricier rate starts, as the prompt grows. */
+    input_tiers?: Array<{ min?: number; max?: number | null }>
+  }
+  reasoning_options?: Array<{ type: string; values?: string[] }>
 }
 
 const price = (value?: string) => (value ? Number(value) : undefined)
+
+// Variants of another model rather than models of their own: fast is the
+// Fast switch, and batch can't stream a chat reply.
+const VARIANT = /-(fast|batch)$/
+
+/** The efforts a model takes, lowest first, or none if it doesn't reason. */
+function effortsOf(entry?: CatalogueEntry): Effort[] | undefined {
+  const options = entry?.reasoning_options ?? []
+  const listed = options.flatMap((option) =>
+    option.type === "effort" ? (option.values ?? []).filter(isEffort) : []
+  )
+  // One that can be switched off can go without; one set by a token budget
+  // takes the usual levels, which the SDK turns into budgets.
+  if (options.some((option) => option.type === "toggle")) listed.push("none")
+  if (options.some((option) => option.type === "budget_tokens"))
+    listed.push("low", "medium", "high")
+  const efforts = EFFORTS.filter((effort) => listed.includes(effort))
+  return efforts.length > 0 ? efforts : undefined
+}
+
+/** Sizes to pick from: each long-context price step, then the full window. */
+function contextsOf(entry?: CatalogueEntry): number[] | undefined {
+  const full = entry?.context_window
+  if (!full) return undefined
+  const steps = (entry.pricing?.input_tiers ?? []).flatMap((tier) =>
+    // Tiers end a token past a round number, as in 200001.
+    tier.max ? [Math.floor(tier.max / 1000) * 1000] : []
+  )
+  const sizes = [...new Set([...steps.filter((size) => size < full), full])]
+  return sizes.length > 1 ? sizes.sort((a, b) => a - b) : undefined
+}
 
 async function catalogue() {
   try {
@@ -46,24 +84,33 @@ export async function GET(req: Request) {
     catalogue(),
   ])
 
-  const models =
+  const models = (
     listed ??
     [...details.values()].filter(
       (entry) =>
         entry.type === "language" &&
         routeOf(entry.id, keys.providers).via === "provider"
     )
+  ).filter((model) => !VARIANT.test(model.id))
   if (models.length === 0) return Response.json([], { status: 502 })
+  const ids = new Set([
+    ...(listed ?? []).map((model) => model.id),
+    ...details.keys(),
+  ])
 
   const options: ModelOption[] = models.map((model) => {
     const entry = details.get(model.id)
     const gatewayPricing = "specification" in model ? model.pricing : undefined
     const input = price(entry?.pricing?.input ?? gatewayPricing?.input)
     const output = price(entry?.pricing?.output ?? gatewayPricing?.output)
+    const fastId = `${model.id}-fast`
     return {
       id: model.id,
       name: model.name ?? entry?.name ?? model.id,
       contextWindow: entry?.context_window,
+      efforts: effortsOf(entry),
+      contexts: contextsOf(entry),
+      fastId: ids.has(fastId) ? fastId : undefined,
       pricing:
         input !== undefined && output !== undefined
           ? {

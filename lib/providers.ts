@@ -60,7 +60,9 @@ function routeOf(
   const direct = slash > 0 ? DIRECT[provider] : undefined
   const key = direct && (providerKeys[provider] || process.env[direct.env])
   if (!direct || !key) return { via: "gateway", model: modelId }
-  const model = modelId.slice(slash + 1)
+  // A Gateway "-fast" variant has no id of its own at the provider, so a
+  // direct call goes to the model itself.
+  const model = modelId.slice(slash + 1).replace(/-fast$/, "")
   return {
     via: "provider",
     provider,

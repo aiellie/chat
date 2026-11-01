@@ -2,6 +2,7 @@ import {
   convertToModelMessages,
   type FinishReason,
   type LanguageModelUsage,
+  type ModelMessage,
   type UIMessage,
 } from "ai"
 
@@ -29,6 +30,41 @@ function toModelMessages(messages: UIMessage[]) {
   return convertToModelMessages(messages.map(withoutDroppedFiles))
 }
 
+// A rough count, enough to keep a request under a size: about four
+// characters a token, and a flat allowance for a file or picture.
+const FILE_TOKENS = 1500
+
+function tokensOf(message: ModelMessage) {
+  if (typeof message.content === "string") return message.content.length / 4
+  return message.content.reduce(
+    (sum, part) =>
+      sum +
+      ("text" in part && typeof part.text === "string"
+        ? part.text.length / 4
+        : FILE_TOKENS),
+    4
+  )
+}
+
+/**
+ * The newest messages that fit in `limit` tokens, leaving a tenth of it for
+ * the reply. The newest is always kept, and the result starts with one of
+ * the person's, as some providers require.
+ */
+function fitToContext(messages: ModelMessage[], limit: number) {
+  const budget = limit * 0.9
+  let used = 0
+  let start = messages.length
+  while (start > 0) {
+    const size = tokensOf(messages[start - 1])
+    if (start < messages.length && used + size > budget) break
+    used += size
+    start--
+  }
+  while (start < messages.length - 1 && messages[start].role !== "user") start++
+  return messages.slice(start)
+}
+
 /** What a reply's last stream event carries about how it went. */
 type ReplyMetadata = {
   model: string
@@ -51,5 +87,5 @@ type MessageMetadata = {
   report?: { reason: string; details: string; at: number }
 } & Partial<ReplyMetadata>
 
-export { toModelMessages }
+export { fitToContext, toModelMessages }
 export type { MessageMetadata, ReplyMetadata }

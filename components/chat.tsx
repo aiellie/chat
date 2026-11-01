@@ -31,7 +31,12 @@ import {
 } from "@/lib/attachments"
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
-import { defaultModel, type ModelOption } from "@/lib/models"
+import {
+  defaultEffort,
+  defaultModel,
+  type Effort,
+  type ModelOption,
+} from "@/lib/models"
 
 // A picked file waiting to go out with the next message. Its URL draws its
 // thumbnail and opens it to preview, copy or download.
@@ -91,6 +96,32 @@ function Chat({
   const [model, setModel] = React.useState(defaultModel)
   const [models, setModels] = React.useState<ModelOption[]>([])
   const [pending, setPending] = React.useState<PendingFile[]>([])
+  const [effortPick, setEffort] = React.useState<Effort>()
+  const [contextPick, setContext] = React.useState<number>()
+  const [fastPick, setFast] = React.useState(false)
+
+  // What's picked holds only where the model offers it; otherwise it takes
+  // the model's default: medium effort, its full context, and not fast.
+  const option = models.find((candidate) => candidate.id === model)
+  const efforts = option?.efforts
+  const effort = efforts
+    ? effortPick && efforts.includes(effortPick)
+      ? effortPick
+      : defaultEffort(efforts)
+    : undefined
+  const contexts = option?.contexts
+  const context = contexts
+    ? contextPick && contexts.includes(contextPick)
+      ? contextPick
+      : contexts.at(-1)
+    : undefined
+  const fast = fastPick && option?.fastId !== undefined
+  // Sent with every request, for the route to run the model as picked.
+  const body = {
+    model: fast ? option?.fastId : model,
+    effort,
+    context,
+  }
 
   const addFiles = async (files: File[]) => {
     const readable = await readableFiles(files)
@@ -150,8 +181,8 @@ function Chat({
         messages={messages}
         streaming={status === "streaming"}
         error={error}
-        onRetry={() => regenerate({ body: { model } })}
-        onRegenerate={(messageId) => regenerate({ messageId, body: { model } })}
+        onRetry={() => regenerate({ body })}
+        onRegenerate={(messageId) => regenerate({ messageId, body })}
         onRate={(messageId, rating) => annotate(messageId, { rating })}
         onReport={(messageId, report) =>
           annotate(messageId, { report: { ...report, at: Date.now() } })
@@ -204,7 +235,7 @@ function Chat({
                 : text
                   ? { text, files, metadata }
                   : { files, metadata },
-              { body: { model } }
+              { body }
             )
           }}
           onStop={() => stop()}
@@ -221,10 +252,20 @@ function Chat({
                 models={models}
                 value={model}
                 onValueChange={setModel}
+                effort={effort}
+                onEffortChange={setEffort}
+                context={context}
+                onContextChange={setContext}
+                fast={fast}
+                onFastChange={setFast}
               />
             ) : null}
             <div className="flex-1" />
-            <ContextMeter {...contextOf(messages, models, model)} />
+            {/* Measured against the context size picked, where there's one. */}
+            <ContextMeter
+              {...contextOf(messages, models, model)}
+              {...(context ? { limit: context } : {})}
+            />
             <ComposerDictate />
             <ComposerSubmit />
           </ComposerFooter>

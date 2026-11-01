@@ -396,7 +396,7 @@ function FileAttachment({
         <DialogTrigger
           render={<AttachmentTrigger aria-label={`Open ${title}`} />}
         />
-        <AttachmentMedia variant={thumbnail ? "image" : "icon"}>
+        <AttachmentMedia variant={thumbnail ? "image" : "icon"} className="bg-background border">
           {thumbnail ? (
             // A blob or data URL, which next/image has nothing to optimise.
             // eslint-disable-next-line @next/next/no-img-element
