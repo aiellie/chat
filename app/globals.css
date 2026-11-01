@@ -138,7 +138,11 @@
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
     }
-  html {
-    @apply font-sans;
+    html {
+      @apply overscroll-y-none scroll-smooth;
+    }
+    /* Scrollbars are furniture: the hairline, on no track. */
+    * {
+      scrollbar-color: var(--border) transparent;
     }
 }
