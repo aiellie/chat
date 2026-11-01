@@ -6,6 +6,7 @@ import {
   ComputerScreenShareIcon,
   FileUploadIcon,
   FolderUploadIcon,
+  Mic01Icon,
   PlusSignIcon,
   StopIcon,
 } from "@hugeicons/core-free-icons"
@@ -495,12 +496,255 @@ function ComposerAddScreenshot({
   )
 }
 
+// TypeScript's DOM types have speech results but not the recognizer itself.
+type SpeechRecognizer = {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  onresult:
+    | ((event: {
+        resultIndex: number
+        results: SpeechRecognitionResultList
+      }) => void)
+    | null
+  onerror: ((event: { error: string }) => void) | null
+  onend: (() => void) | null
+  start(): void
+  stop(): void
+  abort(): void
+}
+
+function speechRecognizer() {
+  if (typeof window === "undefined") return undefined
+  const speech = window as typeof window & {
+    SpeechRecognition?: new () => SpeechRecognizer
+    webkitSpeechRecognition?: new () => SpeechRecognizer
+  }
+  return speech.SpeechRecognition ?? speech.webkitSpeechRecognition
+}
+
+const neverChanges = () => () => {}
+
+/** Dictated words after the text, with a space between unless there is one. */
+function withWords(text: string, words: string) {
+  const said = words.trimStart()
+  if (!said) return text
+  return !text || /\s$/.test(text) ? text + said : `${text} ${said}`
+}
+
+const BARS = 28
+
+/** Draws each level as a bar centred on the canvas, oldest on the left. */
+function drawLevels(canvas: HTMLCanvasElement, levels: number[]) {
+  const context = canvas.getContext("2d")
+  if (!context) return
+  const ratio = window.devicePixelRatio || 1
+  const { width, height } = canvas.getBoundingClientRect()
+  if (canvas.width !== Math.round(width * ratio)) {
+    canvas.width = Math.round(width * ratio)
+    canvas.height = Math.round(height * ratio)
+  }
+  context.setTransform(ratio, 0, 0, ratio, 0, 0)
+  context.clearRect(0, 0, width, height)
+  context.fillStyle = getComputedStyle(canvas).color
+  const step = width / levels.length
+  levels.forEach((level, index) => {
+    const bar = Math.max(2, level * height)
+    context.beginPath()
+    context.roundRect(index * step, (height - bar) / 2, step * 0.6, bar, 1)
+    context.fill()
+  })
+}
+
+// What the microphone hears while dictating, as bars that scroll left, and
+// how long it has been listening. Speech recognition doesn't share its audio,
+// so this opens the microphone a second time, which asks nothing more.
+function DictationLevel() {
+  const canvas = React.useRef<HTMLCanvasElement>(null)
+  const [seconds, setSeconds] = React.useState(0)
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setSeconds((count) => count + 1), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  React.useEffect(() => {
+    const element = canvas.current
+    if (!element) return
+    const levels = new Array<number>(BARS).fill(0)
+    let stopped = false
+    let stream: MediaStream | undefined
+    let audio: AudioContext | undefined
+    let frame = 0
+    let drawnAt = 0
+    drawLevels(element, levels)
+
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((media) => {
+        stream = media
+        if (stopped) return media.getTracks().forEach((track) => track.stop())
+        audio = new AudioContext()
+        const analyser = audio.createAnalyser()
+        analyser.fftSize = 512
+        audio.createMediaStreamSource(media).connect(analyser)
+        const samples = new Uint8Array(analyser.fftSize)
+        const tick = (time: number) => {
+          frame = requestAnimationFrame(tick)
+          // A new bar about every 60ms scrolls at a pace speech can be read in.
+          if (time - drawnAt < 60) return
+          drawnAt = time
+          analyser.getByteTimeDomainData(samples)
+          let sum = 0
+          for (const sample of samples) sum += ((sample - 128) / 128) ** 2
+          // Speech rarely passes a fifth of full scale, so it's scaled up.
+          levels.shift()
+          levels.push(Math.min(1, Math.sqrt(sum / samples.length) * 5))
+          drawLevels(element, levels)
+        }
+        frame = requestAnimationFrame(tick)
+      })
+      .catch(() => {})
+
+    return () => {
+      stopped = true
+      cancelAnimationFrame(frame)
+      stream?.getTracks().forEach((track) => track.stop())
+      audio?.close()
+    }
+  }, [])
+
+  return (
+    <div
+      data-slot="composer-dictation"
+      className="flex animate-in items-center gap-2 px-1 duration-150 fade-in-0"
+    >
+      <canvas ref={canvas} aria-hidden className="h-5 w-24 text-foreground" />
+      <span role="timer" className="text-xs text-muted-foreground tabular-nums">
+        {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
+      </span>
+    </div>
+  )
+}
+
+// Speech is written into the box as it's heard, after what's already there.
+// It's the browser's own recognition, which Firefox doesn't have, so the
+// button isn't there at all.
+function ComposerDictate({
+  className,
+  side = "top",
+  ...props
+}: Omit<TooltipIconButtonProps, "tooltip" | "onClick" | "children">) {
+  const { value, setValue, busy, disabled } = useComposer()
+  const supported = React.useSyncExternalStore(
+    neverChanges,
+    () => speechRecognizer() !== undefined,
+    () => false
+  )
+  const [listening, setListening] = React.useState(false)
+  const [blocked, setBlocked] = React.useState(false)
+  const recognizer = React.useRef<SpeechRecognizer | null>(null)
+  // Results can arrive faster than renders, so each builds on the text the
+  // last one wrote rather than the text this render saw.
+  const box = React.useRef({ value, setValue })
+  React.useEffect(() => {
+    box.current = { value, setValue }
+  })
+
+  // Sending stops it, so what's said next doesn't start the next message.
+  React.useEffect(() => {
+    if (busy) recognizer.current?.stop()
+  }, [busy])
+  React.useEffect(() => () => recognizer.current?.abort(), [])
+
+  const start = () => {
+    const Recognizer = speechRecognizer()
+    if (!Recognizer) return
+    const recognition = new Recognizer()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = navigator.language
+    // Words still being made out sit at the end of the box until they settle.
+    let guess = ""
+    recognition.onresult = (event) => {
+      let heard = ""
+      let unsure = ""
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i]
+        if (result.isFinal) heard += result[0].transcript
+        else unsure += result[0].transcript
+      }
+      const { value: text, setValue: write } = box.current
+      // Typing after the guess keeps it, as typed text.
+      const kept =
+        guess && text.endsWith(guess) ? text.slice(0, -guess.length) : text
+      const settled = withWords(kept, heard)
+      const next = withWords(settled, unsure)
+      guess = next.slice(settled.length)
+      box.current = { value: next, setValue: write }
+      write(next)
+    }
+    recognition.onerror = (event) => {
+      if (
+        event.error === "not-allowed" ||
+        event.error === "service-not-allowed"
+      )
+        setBlocked(true)
+    }
+    recognition.onend = () => {
+      recognizer.current = null
+      setListening(false)
+    }
+    recognizer.current = recognition
+    recognition.start()
+    setBlocked(false)
+    setListening(true)
+  }
+
+  if (!supported) return null
+
+  return (
+    <>
+      {listening ? <DictationLevel /> : null}
+      <TooltipIconButton
+        data-slot="composer-dictate"
+        type="button"
+        side={side}
+        tooltip={
+          listening
+            ? "Stop dictating"
+            : blocked
+              ? "Allow the microphone to dictate"
+              : "Dictate"
+        }
+        aria-pressed={listening}
+        disabled={disabled}
+        onClick={() => (listening ? recognizer.current?.stop() : start())}
+        className={cn(
+          "size-7 shrink-0 rounded-full p-1.5",
+          listening &&
+            "bg-destructive/10 hover:bg-destructive/20 [&_svg]:text-destructive hover:[&_svg]:text-destructive",
+          className
+        )}
+        {...props}
+      >
+        <HugeiconsIcon
+          aria-hidden
+          icon={listening ? StopIcon : Mic01Icon}
+          strokeWidth={2}
+        />
+      </TooltipIconButton>
+    </>
+  )
+}
+
 export {
   Composer,
   ComposerAddFiles,
   ComposerAddFolder,
   ComposerAddMenu,
   ComposerAddScreenshot,
+  ComposerDictate,
   ComposerFooter,
   ComposerHeader,
   ComposerInput,

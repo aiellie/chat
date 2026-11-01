@@ -9,6 +9,7 @@ import {
   ComposerAddFolder,
   ComposerAddMenu,
   ComposerAddScreenshot,
+  ComposerDictate,
   ComposerFooter,
   ComposerHeader,
   ComposerInput,
@@ -157,6 +158,7 @@ function Chat({
               />
             ) : null}
             <div className="flex-1" />
+            <ComposerDictate />
             <ComposerSubmit />
           </ComposerFooter>
         </Composer>
