@@ -105,7 +105,7 @@ function ApiKeysForm({ onDone }: { onDone: () => void }) {
         <DialogTitle>API keys</DialogTitle>
         <DialogDescription>
           Kept in this browser only, and sent with each request to this app,
-          which passes them to the AI Gateway.
+          which uses them to reach the models.
         </DialogDescription>
       </DialogHeader>
 
@@ -116,7 +116,7 @@ function ApiKeysForm({ onDone }: { onDone: () => void }) {
         <KeyField
           id="api-key-gateway"
           label="Vercel AI Gateway"
-          hint="Used for every model. Leave it empty to use the server's key."
+          hint="Used for models without a provider key below. Leave it empty to use the server's key."
           value={keys.gateway ?? ""}
           onChange={(gateway) =>
             setKeys((current) => ({ ...current, gateway }))
@@ -128,8 +128,8 @@ function ApiKeysForm({ onDone }: { onDone: () => void }) {
           <div>
             <h3 className="text-sm font-medium">Provider keys</h3>
             <p className="text-xs text-muted-foreground">
-              Optional. The Gateway uses these for that provider&apos;s models
-              in place of its own credentials.
+              Optional. With one, that provider&apos;s models are called
+              directly instead of through the Gateway.
             </p>
           </div>
           {PROVIDERS.map((provider) => (

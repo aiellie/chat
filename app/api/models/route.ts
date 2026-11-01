@@ -2,6 +2,7 @@ import { createGateway, gateway } from "ai"
 
 import { apiKeysFrom } from "@/lib/api-keys"
 import type { ModelOption } from "@/lib/models"
+import { routeOf } from "@/lib/providers"
 
 // The Gateway's public catalogue, which also gives each model's context
 // window and prices. The SDK's own list leaves those out.
@@ -9,6 +10,8 @@ const CATALOGUE = "https://ai-gateway.vercel.sh/v1/models"
 
 type CatalogueEntry = {
   id: string
+  name?: string
+  type?: string
   context_window?: number
   pricing?: { input?: string; output?: string; input_cache_read?: string }
 }
@@ -29,45 +32,59 @@ async function catalogue() {
 
 // The list comes from the AI Gateway itself, so it only ever offers models
 // the key can actually call: the one set in the app's API keys dialog, or
-// the server's.
+// the server's. Without a working Gateway key, it offers the catalogue's
+// models whose provider there's a key for, as those are called directly.
 export async function GET(req: Request) {
-  const { gateway: key } = apiKeysFrom(req)
-  try {
-    const [{ models }, details] = await Promise.all([
-      (key ? createGateway({ apiKey: key }) : gateway).getAvailableModels(),
-      catalogue(),
-    ])
-    const options: ModelOption[] = models
-      .filter((model) => (model.modelType ?? "language") === "language")
-      .map((model) => {
-        const entry = details.get(model.id)
-        const input = price(entry?.pricing?.input ?? model.pricing?.input)
-        const output = price(entry?.pricing?.output ?? model.pricing?.output)
-        return {
-          id: model.id,
-          name: model.name,
-          contextWindow: entry?.context_window,
-          pricing:
-            input !== undefined && output !== undefined
-              ? {
-                  input,
-                  output,
-                  cacheRead: price(
-                    entry?.pricing?.input_cache_read ??
-                      model.pricing?.cachedInputTokens
-                  ),
-                }
-              : undefined,
-        }
-      })
+  const keys = apiKeysFrom(req)
+  const [listed, details] = await Promise.all([
+    (keys.gateway ? createGateway({ apiKey: keys.gateway }) : gateway)
+      .getAvailableModels()
+      .then(({ models }) =>
+        models.filter((model) => (model.modelType ?? "language") === "language")
+      )
+      .catch(() => undefined),
+    catalogue(),
+  ])
 
-    return Response.json(options, {
-      // A list for someone's own key is theirs alone, so it isn't shared.
-      headers: {
-        "Cache-Control": key ? "private, no-store" : "public, s-maxage=3600",
-      },
-    })
-  } catch {
-    return Response.json([], { status: 502 })
-  }
+  const models =
+    listed ??
+    [...details.values()].filter(
+      (entry) =>
+        entry.type === "language" &&
+        routeOf(entry.id, keys.providers).via === "provider"
+    )
+  if (models.length === 0) return Response.json([], { status: 502 })
+
+  const options: ModelOption[] = models.map((model) => {
+    const entry = details.get(model.id)
+    const gatewayPricing = "specification" in model ? model.pricing : undefined
+    const input = price(entry?.pricing?.input ?? gatewayPricing?.input)
+    const output = price(entry?.pricing?.output ?? gatewayPricing?.output)
+    return {
+      id: model.id,
+      name: model.name ?? entry?.name ?? model.id,
+      contextWindow: entry?.context_window,
+      pricing:
+        input !== undefined && output !== undefined
+          ? {
+              input,
+              output,
+              cacheRead: price(
+                entry?.pricing?.input_cache_read ??
+                  gatewayPricing?.cachedInputTokens
+              ),
+            }
+          : undefined,
+    }
+  })
+
+  return Response.json(options, {
+    // A list for someone's own keys is theirs alone, so it isn't shared.
+    headers: {
+      "Cache-Control":
+        keys.gateway || Object.keys(keys.providers).length > 0
+          ? "private, no-store"
+          : "public, s-maxage=3600",
+    },
+  })
 }

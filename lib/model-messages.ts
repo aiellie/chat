@@ -32,6 +32,8 @@ function toModelMessages(messages: UIMessage[]) {
 /** What a reply's last stream event carries about how it went. */
 type ReplyMetadata = {
   model: string
+  /** Whether the provider was called directly or through the AI Gateway. */
+  via?: "provider" | "gateway"
   finishReason: FinishReason
   usage: LanguageModelUsage
 }

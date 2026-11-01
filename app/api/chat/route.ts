@@ -1,5 +1,4 @@
 import {
-  createGateway,
   createUIMessageStreamResponse,
   streamText,
   toUIMessageStream,
@@ -9,30 +8,28 @@ import {
 import { apiKeysFrom } from "@/lib/api-keys"
 import { defaultModel } from "@/lib/models"
 import { toModelMessages, type MessageMetadata } from "@/lib/model-messages"
+import { resolveModel } from "@/lib/providers"
 
 export async function POST(req: Request) {
   const { messages, model }: { messages: UIMessage[]; model?: unknown } =
     await req.json()
   const modelId = typeof model === "string" && model ? model : defaultModel
-  const keys = apiKeysFrom(req)
+  // Straight to the provider when there's a key for it, from the API keys
+  // dialog or the server's environment; otherwise through the AI Gateway.
+  const { model: languageModel, route } = resolveModel(
+    modelId,
+    apiKeysFrom(req)
+  )
 
   const result = streamText({
-    // A plain model id goes through the Vercel AI Gateway, which reads
-    // AI_GATEWAY_API_KEY from the environment. A key set in the app's API
-    // keys dialog takes its place.
-    model: keys.gateway
-      ? createGateway({ apiKey: keys.gateway })(modelId)
-      : modelId,
+    model: languageModel,
     messages: await toModelMessages(messages),
-    // Each provider maps this to its own setting. Its reasoning streams to
-    // the client, where the AI debug panel shows it. Google sends its
-    // thoughts back only when asked to.
+    // Each provider maps this to its own setting, whichever way the request
+    // goes. Its reasoning streams to the client, where the AI debug panel
+    // shows it. Google sends its thoughts back only when asked to.
     reasoning: "medium",
     providerOptions: {
       google: { thinkingConfig: { includeThoughts: true } },
-      // Provider keys from the dialog, used for this request in place of
-      // the Gateway's own credentials.
-      ...(keys.byok ? { gateway: { byok: keys.byok } } : {}),
     },
   })
 
@@ -47,6 +44,7 @@ export async function POST(req: Request) {
           : part.type === "finish"
             ? {
                 model: modelId,
+                via: route.via,
                 finishReason: part.finishReason,
                 usage: part.totalUsage,
               }

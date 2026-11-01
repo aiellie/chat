@@ -1,9 +1,9 @@
 // API keys the person sets in the app, kept in this browser's localStorage.
-// Each request to the app's routes carries them in headers, and the routes
-// hand them to the AI Gateway: the Gateway key in place of the server's
-// AI_GATEWAY_API_KEY, and provider keys as the Gateway's bring-your-own-key
-// credentials for that request. Headers, not the body, so the AI debug panel,
-// which records request bodies, never holds them.
+// Each request to the app's routes carries them in headers. The Gateway key
+// takes the place of the server's AI_GATEWAY_API_KEY; a provider key has
+// that provider's models called directly instead of through the Gateway (see
+// lib/providers.ts). Headers, not the body, so the AI debug panel, which
+// records request bodies, never holds them.
 
 const STORAGE_KEY = "aiellie:api-keys"
 const GATEWAY_HEADER = "x-aiellie-gateway-key"
@@ -73,27 +73,24 @@ function apiKeyHeaders(): Record<string, string> {
 }
 
 /**
- * On the server: the keys a request carried, as the Gateway takes them. Only
- * the providers listed above are passed on.
+ * On the server: the keys a request carried. Only the providers listed above
+ * are kept.
  */
 function apiKeysFrom(request: Request) {
   const gateway = request.headers.get(GATEWAY_HEADER) || undefined
-  let byok: Record<string, Array<{ apiKey: string }>> | undefined
+  const providers: Partial<Record<ProviderId, string>> = {}
   try {
-    const providers = JSON.parse(
+    const sent = JSON.parse(
       request.headers.get(PROVIDERS_HEADER) ?? "{}"
     ) as Record<string, unknown>
-    const entries = PROVIDERS.flatMap(
-      ({ id }): Array<[string, Array<{ apiKey: string }>]> =>
-        typeof providers[id] === "string" && providers[id]
-          ? [[id, [{ apiKey: providers[id] }]]]
-          : []
-    )
-    if (entries.length > 0) byok = Object.fromEntries(entries)
+    for (const { id } of PROVIDERS) {
+      const key = sent[id]
+      if (typeof key === "string" && key) providers[id] = key
+    }
   } catch {
     // A header that isn't JSON is ignored, as if it weren't sent.
   }
-  return { gateway, byok }
+  return { gateway, providers }
 }
 
 export {

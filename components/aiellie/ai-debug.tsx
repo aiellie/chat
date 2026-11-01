@@ -260,6 +260,14 @@ function ExchangeCard({
               {STATE_LABEL[exchange.state]}
               {exchange.httpStatus ? ` · HTTP ${exchange.httpStatus}` : ""}
             </dd>
+            <dt className="text-muted-foreground">Via</dt>
+            <dd>
+              {metadata?.via === "provider"
+                ? "Provider, directly"
+                : metadata?.via === "gateway"
+                  ? "AI Gateway"
+                  : "–"}
+            </dd>
             <dt className="text-muted-foreground">Finish reason</dt>
             <dd>{finishReason ?? "–"}</dd>
             <dt className="text-muted-foreground">First token</dt>
