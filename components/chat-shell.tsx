@@ -6,6 +6,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { usePathname } from "next/navigation"
 
 import { Chat } from "@/components/chat"
+import { ChatHeader, ChatHeaderTitle } from "@/components/aiellie/chat-header"
 import { HistoryButtons } from "@/components/aiellie/history-buttons"
 import {
   NO_THREADS,
@@ -33,18 +34,20 @@ function titleOf(text: string) {
   return line.length > 80 ? `${line.slice(0, 80)}…` : line
 }
 
-// The main header's title, after a new chat button while the left panel, and
-// the one in its sidebar, is out of sight.
-function MainTitle({
+// The chat header, with a new chat button while the left panel, and the one in
+// its sidebar, is out of sight.
+function MainHeader({
   title,
+  onRename,
   onNewChat,
 }: {
   title: string
+  onRename?: (title: string) => void
   onNewChat: () => void
 }) {
   const { isOpen } = usePanels()
   return (
-    <>
+    <ChatHeader>
       {isOpen("left") ? null : (
         <TooltipIconButton
           tooltip="New chat"
@@ -55,10 +58,8 @@ function MainTitle({
           <HugeiconsIcon icon={PencilEdit02Icon} />
         </TooltipIconButton>
       )}
-      <span className="min-w-0 truncate px-1 text-xs font-medium text-muted-foreground">
-        {title}
-      </span>
-    </>
+      <ChatHeaderTitle title={title} onRename={onRename} />
+    </ChatHeader>
   )
 }
 
@@ -164,8 +165,13 @@ function ChatShell() {
             />
           ),
           main: (
-            <MainTitle
+            <MainHeader
+              // Keyed so a rename left open doesn't follow you to another chat.
+              key={active?.id ?? "new"}
               title={active?.title ?? "New chat"}
+              onRename={
+                active ? (title) => update(active.id, { title }) : undefined
+              }
               onNewChat={newChat}
             />
           ),
