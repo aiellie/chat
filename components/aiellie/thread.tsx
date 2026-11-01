@@ -30,10 +30,13 @@ function Thread({
   onRetry?: () => void
 }) {
   return (
-    <MessageScrollerProvider autoScroll>
+    // The chat's header is glass over the top 40px, so the thread scrolls
+    // under it: it starts below it, and a message brought to the top stops
+    // clear of it.
+    <MessageScrollerProvider autoScroll scrollMargin={40}>
       <MessageScroller>
         <MessageScrollerViewport>
-          <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
+          <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 pt-16 pb-6">
             {messages.map((message, index) => {
               const text = message.parts
                 .map((part) => (part.type === "text" ? part.text : ""))

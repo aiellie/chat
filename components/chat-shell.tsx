@@ -116,6 +116,8 @@ function ChatShell() {
     // while the panels lay out the page.
     <SidebarProvider className="contents">
       <Panels
+        // The thread pads its own top to start below it.
+        glassHeader
         left={
           <ChatSidebar
             chats={chats}
