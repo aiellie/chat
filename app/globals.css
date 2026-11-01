@@ -108,7 +108,7 @@
     --sidebar-border: oklch(0.92 0.004 286.32);
     --sidebar-ring: oklch(0.705 0.015 286.067);
     /* The ink words land in while a reply streams, before they settle. */
-    --live: oklch(0.552 0.016 285.938);
+    --live:  oklch(0.488 0.243 264.376);
 }
 
 .dark {
@@ -143,7 +143,7 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.552 0.016 285.938);
-    --live: oklch(0.705 0.015 286.067);
+    --live:  oklch(0.488 0.243 264.376);
 }
 
 @layer base {
