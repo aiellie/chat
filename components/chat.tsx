@@ -113,6 +113,7 @@ function Chat({
                 key={item.id}
                 name={pathOf(item.file)}
                 mediaType={mediaTypeOf(item.file)}
+                size={item.file.size}
                 src={item.preview}
                 onRemove={() => removeFile(item.id)}
               />
