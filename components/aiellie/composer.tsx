@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import {
+  ArrowDown01Icon,
   ArrowUp02Icon,
   ComputerScreenShareIcon,
   FileUploadIcon,
@@ -13,7 +14,17 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { Button } from "@/components/ui/button"
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/menu"
+import {
+  Menu,
+  MenuContent,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuItem,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuSeparator,
+  MenuTrigger,
+} from "@/components/ui/menu"
 import { Textarea } from "@/components/ui/textarea"
 import {
   TooltipIconButton,
@@ -509,7 +520,8 @@ type SpeechRecognizer = {
     | null
   onerror: ((event: { error: string }) => void) | null
   onend: (() => void) | null
-  start(): void
+  /** Chrome listens to the track it's given; other browsers ignore it. */
+  start(track?: MediaStreamTrack): void
   stop(): void
   abort(): void
 }
@@ -556,11 +568,62 @@ function drawLevels(canvas: HTMLCanvasElement, levels: number[]) {
   })
 }
 
-// What the microphone hears while dictating, as bars that scroll left, and
-// how long it has been listening. Speech recognition doesn't share its audio,
-// so this opens the microphone a second time, which asks nothing more.
-function DictationLevel() {
+/** What a microphone hears, as bars that scroll left. Flat until it has one. */
+function Waveform({
+  stream,
+  bars = BARS,
+  className,
+}: {
+  stream?: MediaStream
+  bars?: number
+  className?: string
+}) {
   const canvas = React.useRef<HTMLCanvasElement>(null)
+
+  React.useEffect(() => {
+    const element = canvas.current
+    if (!element) return
+    const levels = new Array<number>(bars).fill(0)
+    drawLevels(element, levels)
+    if (!stream) return
+    const audio = new AudioContext()
+    const analyser = audio.createAnalyser()
+    analyser.fftSize = 512
+    audio.createMediaStreamSource(stream).connect(analyser)
+    const samples = new Uint8Array(analyser.fftSize)
+    let drawnAt = 0
+    const tick = (time: number) => {
+      frame = requestAnimationFrame(tick)
+      // A new bar about every 60ms scrolls at a pace speech can be read in.
+      if (time - drawnAt < 60) return
+      drawnAt = time
+      analyser.getByteTimeDomainData(samples)
+      let sum = 0
+      for (const sample of samples) sum += ((sample - 128) / 128) ** 2
+      // Speech rarely passes a fifth of full scale, so it's scaled up.
+      levels.shift()
+      levels.push(Math.min(1, Math.sqrt(sum / samples.length) * 5))
+      drawLevels(element, levels)
+    }
+    let frame = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(frame)
+      audio.close()
+    }
+  }, [stream, bars])
+
+  return (
+    <canvas
+      ref={canvas}
+      aria-hidden
+      className={cn("text-foreground", className)}
+    />
+  )
+}
+
+// While dictating: what the microphone hears, and how long it has listened.
+function DictationLevel({ stream }: { stream: MediaStream }) {
   const [seconds, setSeconds] = React.useState(0)
 
   React.useEffect(() => {
@@ -568,58 +631,12 @@ function DictationLevel() {
     return () => clearInterval(timer)
   }, [])
 
-  React.useEffect(() => {
-    const element = canvas.current
-    if (!element) return
-    const levels = new Array<number>(BARS).fill(0)
-    let stopped = false
-    let stream: MediaStream | undefined
-    let audio: AudioContext | undefined
-    let frame = 0
-    let drawnAt = 0
-    drawLevels(element, levels)
-
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((media) => {
-        stream = media
-        if (stopped) return media.getTracks().forEach((track) => track.stop())
-        audio = new AudioContext()
-        const analyser = audio.createAnalyser()
-        analyser.fftSize = 512
-        audio.createMediaStreamSource(media).connect(analyser)
-        const samples = new Uint8Array(analyser.fftSize)
-        const tick = (time: number) => {
-          frame = requestAnimationFrame(tick)
-          // A new bar about every 60ms scrolls at a pace speech can be read in.
-          if (time - drawnAt < 60) return
-          drawnAt = time
-          analyser.getByteTimeDomainData(samples)
-          let sum = 0
-          for (const sample of samples) sum += ((sample - 128) / 128) ** 2
-          // Speech rarely passes a fifth of full scale, so it's scaled up.
-          levels.shift()
-          levels.push(Math.min(1, Math.sqrt(sum / samples.length) * 5))
-          drawLevels(element, levels)
-        }
-        frame = requestAnimationFrame(tick)
-      })
-      .catch(() => {})
-
-    return () => {
-      stopped = true
-      cancelAnimationFrame(frame)
-      stream?.getTracks().forEach((track) => track.stop())
-      audio?.close()
-    }
-  }, [])
-
   return (
     <div
       data-slot="composer-dictation"
       className="flex animate-in items-center gap-2 px-1 duration-150 fade-in-0"
     >
-      <canvas ref={canvas} aria-hidden className="h-5 w-24 text-foreground" />
+      <Waveform stream={stream} className="h-5 w-24" />
       <span role="timer" className="text-xs text-muted-foreground tabular-nums">
         {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}
       </span>
@@ -627,9 +644,85 @@ function DictationLevel() {
   )
 }
 
+// In the microphone menu: what the chosen one hears, so it can be told apart
+// from the rest. It opens the microphone only while the menu is open.
+function MicrophoneCheck({ microphone }: { microphone: string }) {
+  const [heard, setHeard] = React.useState<{
+    microphone: string
+    stream: MediaStream
+  }>()
+
+  React.useEffect(() => {
+    let closed = false
+    let media: MediaStream | undefined
+    navigator.mediaDevices
+      .getUserMedia({ audio: microphone ? { deviceId: microphone } : true })
+      .then((stream) => {
+        media = stream
+        if (closed) return stream.getTracks().forEach((track) => track.stop())
+        setHeard({ microphone, stream })
+      })
+      .catch(() => {})
+    return () => {
+      closed = true
+      media?.getTracks().forEach((track) => track.stop())
+    }
+  }, [microphone])
+
+  return (
+    <div
+      data-slot="composer-microphone-check"
+      className="flex items-center gap-2 px-2 py-1.5"
+    >
+      <HugeiconsIcon
+        aria-hidden
+        icon={Mic01Icon}
+        strokeWidth={2}
+        className="size-3.5 shrink-0 text-muted-foreground"
+      />
+      <Waveform
+        stream={heard?.microphone === microphone ? heard.stream : undefined}
+        bars={40}
+        className="h-4 min-w-0 flex-1"
+      />
+    </div>
+  )
+}
+
+const MICROPHONE_KEY = "aiellie:microphone"
+
+/** The microphone picked last time, or "" for the system's. */
+function savedMicrophone() {
+  try {
+    return localStorage.getItem(MICROPHONE_KEY) ?? ""
+  } catch {
+    return ""
+  }
+}
+
+/** The microphones there are, leaving out the browser's own aliases. */
+async function microphones() {
+  const list = async () =>
+    (await navigator.mediaDevices.enumerateDevices()).filter(
+      (device) =>
+        device.kind === "audioinput" &&
+        device.deviceId !== "" &&
+        device.deviceId !== "default" &&
+        device.deviceId !== "communications"
+    )
+  const found = await list()
+  if (found.length > 0) return found
+  // Until the microphone is allowed, the browser won't say which ones there are.
+  const media = await navigator.mediaDevices.getUserMedia({ audio: true })
+  media.getTracks().forEach((track) => track.stop())
+  return list()
+}
+
 // Speech is written into the box as it's heard, after what's already there.
 // It's the browser's own recognition, which Firefox doesn't have, so the
-// button isn't there at all.
+// buttons aren't there at all. The arrow beside the mic picks the microphone,
+// which Chrome listens to; Safari takes the waveform from it but hears the
+// system's.
 function ComposerDictate({
   className,
   side = "top",
@@ -642,8 +735,14 @@ function ComposerDictate({
     () => false
   )
   const [listening, setListening] = React.useState(false)
+  const [stream, setStream] = React.useState<MediaStream | null>(null)
   const [blocked, setBlocked] = React.useState(false)
+  const [microphone, setMicrophone] = React.useState(savedMicrophone)
+  const [found, setFound] = React.useState<MediaDeviceInfo[]>([])
   const recognizer = React.useRef<SpeechRecognizer | null>(null)
+  // Read when listening starts, which can be from a restart after a change.
+  const chosen = React.useRef(microphone)
+  const restart = React.useRef(false)
   // Results can arrive faster than renders, so each builds on the text the
   // last one wrote rather than the text this render saw.
   const box = React.useRef({ value, setValue })
@@ -657,9 +756,21 @@ function ComposerDictate({
   }, [busy])
   React.useEffect(() => () => recognizer.current?.abort(), [])
 
-  const start = () => {
+  const start = async () => {
     const Recognizer = speechRecognizer()
     if (!Recognizer) return
+    setListening(true)
+    let media: MediaStream
+    try {
+      media = await navigator.mediaDevices.getUserMedia({
+        // Asked for, not insisted on, so an unplugged one falls back.
+        audio: chosen.current ? { deviceId: chosen.current } : true,
+      })
+    } catch {
+      setBlocked(true)
+      setListening(false)
+      return
+    }
     const recognition = new Recognizer()
     recognition.continuous = true
     recognition.interimResults = true
@@ -692,48 +803,116 @@ function ComposerDictate({
         setBlocked(true)
     }
     recognition.onend = () => {
+      media.getTracks().forEach((track) => track.stop())
       recognizer.current = null
+      setStream(null)
       setListening(false)
+      if (restart.current) {
+        restart.current = false
+        start()
+      }
     }
     recognizer.current = recognition
-    recognition.start()
+    recognition.start(media.getAudioTracks()[0])
     setBlocked(false)
-    setListening(true)
+    setStream(media)
+  }
+
+  const choose = (id: string) => {
+    setMicrophone(id)
+    chosen.current = id
+    try {
+      localStorage.setItem(MICROPHONE_KEY, id)
+    } catch {
+      // Blocked storage only means it's asked for again next visit.
+    }
+    // A change while listening carries on with the new one.
+    if (recognizer.current) {
+      restart.current = true
+      recognizer.current.stop()
+    }
   }
 
   if (!supported) return null
 
   return (
     <>
-      {listening ? <DictationLevel /> : null}
-      <TooltipIconButton
+      {stream ? <DictationLevel stream={stream} /> : null}
+      <div
         data-slot="composer-dictate"
-        type="button"
-        side={side}
-        tooltip={
-          listening
-            ? "Stop dictating"
-            : blocked
-              ? "Allow the microphone to dictate"
-              : "Dictate"
-        }
-        aria-pressed={listening}
-        disabled={disabled}
-        onClick={() => (listening ? recognizer.current?.stop() : start())}
+        role="group"
+        aria-label="Dictation"
         className={cn(
-          "size-7 shrink-0 rounded-full p-1.5",
-          listening &&
-            "bg-destructive/10 hover:bg-destructive/20 [&_svg]:text-destructive hover:[&_svg]:text-destructive",
-          className
+          "flex shrink-0 items-center rounded-full transition-colors",
+          listening && "bg-destructive/10"
         )}
-        {...props}
       >
-        <HugeiconsIcon
-          aria-hidden
-          icon={listening ? StopIcon : Mic01Icon}
-          strokeWidth={2}
-        />
-      </TooltipIconButton>
+        <TooltipIconButton
+          type="button"
+          side={side}
+          tooltip={
+            listening
+              ? "Stop dictating"
+              : blocked
+                ? "Allow the microphone to dictate"
+                : "Dictate"
+          }
+          aria-pressed={listening}
+          disabled={disabled}
+          onClick={() => (listening ? recognizer.current?.stop() : start())}
+          className={cn(
+            "size-7 shrink-0 rounded-full p-1.5",
+            listening &&
+              "hover:bg-destructive/15 [&_svg]:text-destructive hover:[&_svg]:text-destructive",
+            className
+          )}
+          {...props}
+        >
+          <HugeiconsIcon
+            aria-hidden
+            icon={listening ? StopIcon : Mic01Icon}
+            strokeWidth={2}
+          />
+        </TooltipIconButton>
+        <Menu
+          onOpenChange={(open) => {
+            if (open) microphones().then(setFound, () => setFound([]))
+          }}
+        >
+          <MenuTrigger
+            disabled={disabled}
+            render={
+              <TooltipIconButton
+                type="button"
+                tooltip="Choose microphone"
+                side={side}
+                className={cn(
+                  "-ms-1 h-7 w-4 shrink-0 rounded-full p-0 data-popup-open:bg-accent [&_svg]:size-3! data-popup-open:[&_svg]:text-foreground",
+                  listening &&
+                    "hover:bg-destructive/15 [&_svg]:text-destructive hover:[&_svg]:text-destructive"
+                )}
+              />
+            }
+          >
+            <HugeiconsIcon aria-hidden icon={ArrowDown01Icon} strokeWidth={2} />
+          </MenuTrigger>
+          <MenuContent side={side} align="end" className="min-w-56">
+            <MenuGroup>
+              <MenuGroupLabel>Microphone</MenuGroupLabel>
+              <MenuRadioGroup value={microphone} onValueChange={choose}>
+                <MenuRadioItem value="">System default</MenuRadioItem>
+                {found.map((device, index) => (
+                  <MenuRadioItem key={device.deviceId} value={device.deviceId}>
+                    {device.label || `Microphone ${index + 1}`}
+                  </MenuRadioItem>
+                ))}
+              </MenuRadioGroup>
+            </MenuGroup>
+            <MenuSeparator />
+            <MicrophoneCheck microphone={microphone} />
+          </MenuContent>
+        </Menu>
+      </div>
     </>
   )
 }
