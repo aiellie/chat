@@ -102,6 +102,7 @@ function Chat({
     <div className="flex min-h-0 flex-1 flex-col">
       <Thread
         messages={messages}
+        streaming={status === "streaming"}
         error={error}
         onRetry={() => regenerate({ body: { model } })}
       />

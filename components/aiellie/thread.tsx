@@ -4,6 +4,7 @@ import type { UIMessage } from "ai"
 
 import { AttachmentGroup } from "@/components/aiellie/attachment"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
+import { StreamText } from "@/components/aiellie/stream-text"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { Message, MessageContent } from "@/components/ui/message"
 import {
@@ -17,10 +18,13 @@ import {
 
 function Thread({
   messages,
+  streaming = false,
   error,
   onRetry,
 }: {
   messages: UIMessage[]
+  /** Whether the last message is a reply still coming in. */
+  streaming?: boolean
   /** Shows a bubble that retries the last message when pressed. */
   error?: Error
   onRetry?: () => void
@@ -30,12 +34,13 @@ function Thread({
       <MessageScroller>
         <MessageScrollerViewport>
           <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
-            {messages.map((message) => {
+            {messages.map((message, index) => {
               const text = message.parts
                 .map((part) => (part.type === "text" ? part.text : ""))
                 .join("")
               const files = message.parts.filter((part) => part.type === "file")
               const mine = message.role === "user"
+              const live = streaming && !mine && index === messages.length - 1
               return (
                 <MessageScrollerItem
                   key={message.id}
@@ -59,7 +64,17 @@ function Thread({
                       {text || files.length === 0 ? (
                         <Bubble variant={mine ? "secondary" : "ghost"}>
                           <BubbleContent className="whitespace-pre-wrap">
-                            {text}
+                            {mine ? (
+                              text
+                            ) : (
+                              // Replies loaded from history show at once; one
+                              // arriving now is written out from its first word.
+                              <StreamText
+                                text={text}
+                                streaming={live}
+                                revealInitial={live}
+                              />
+                            )}
                           </BubbleContent>
                         </Bubble>
                       ) : null}
