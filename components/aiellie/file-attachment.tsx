@@ -59,7 +59,7 @@ function FileAttachment({
       </AttachmentContent>
       {onRemove ? (
         <AttachmentActions>
-          <AttachmentAction aria-label={`Remove ${title}`} onClick={onRemove}>
+          <AttachmentAction aria-label={`Remove ${title}`} onClick={onRemove} className="text-muted-foreground hover:text-foreground">
             <HugeiconsIcon aria-hidden icon={Cancel01Icon} />
           </AttachmentAction>
         </AttachmentActions>
