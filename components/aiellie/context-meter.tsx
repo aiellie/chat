@@ -1,10 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { Popover } from "@base-ui/react/popover"
 import type { LanguageModelUsage, UIMessage } from "ai"
 
-import { menuPopup } from "@/components/ui/menu"
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import type { ReplyMetadata } from "@/lib/model-messages"
 import type { ModelOption } from "@/lib/models"
 import { cn } from "@/lib/utils"
@@ -126,8 +132,8 @@ function ContextMeter({
     : compact.format(used)
 
   return (
-    <Popover.Root>
-      <Popover.Trigger
+    <Popover>
+      <PopoverTrigger
         openOnHover
         delay={150}
         aria-label={
@@ -145,72 +151,69 @@ function ContextMeter({
       >
         <Ring share={share} />
         {percent}
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Positioner
-          side="top"
-          align="end"
-          sideOffset={6}
-          collisionPadding={8}
-          className="isolate z-50"
-        >
-          <Popover.Popup className={cn(menuPopup("solid"), "w-64 p-3 text-sm")}>
-            <div className="flex items-baseline justify-between gap-2">
-              <Popover.Title className="font-medium">Context</Popover.Title>
-              {limit ? (
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {percent}
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-              {count.format(used)}
-              {limit ? ` of ${count.format(limit)}` : ""} tokens
-            </p>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        align="end"
+        sideOffset={6}
+        className="w-64 gap-3 p-3"
+      >
+        <PopoverHeader>
+          <div className="flex items-baseline justify-between gap-2">
+            <PopoverTitle>Context</PopoverTitle>
             {limit ? (
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                <div
-                  className={cn(
-                    "h-full rounded-full bg-foreground transition-[width] duration-300",
-                    share >= 0.9 && "bg-destructive"
-                  )}
-                  style={{ width: `${share * 100}%` }}
-                />
-              </div>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {percent}
+              </span>
             ) : null}
-            {last ? (
-              <>
-                <p className="mt-3 text-xs font-medium text-muted-foreground">
-                  Last reply
-                </p>
-                <dl className="mt-1 grid grid-cols-[1fr_auto] gap-y-0.5 text-xs">
-                  <Row label="Input" value={last.inputTokens} />
-                  <Row
-                    label="Cached input"
-                    value={last.inputTokenDetails?.cacheReadTokens}
-                  />
-                  <Row label="Output" value={last.outputTokens} />
-                  <Row
-                    label="Reasoning"
-                    value={last.outputTokenDetails?.reasoningTokens}
-                  />
-                </dl>
-              </>
-            ) : (
-              <Popover.Description className="mt-3 text-xs text-muted-foreground">
-                Nothing sent yet. It fills as the chat goes on.
-              </Popover.Description>
-            )}
-            {cost !== undefined ? (
-              <div className="mt-3 flex justify-between border-t pt-2 text-xs">
-                <span className="text-muted-foreground">Chat so far</span>
-                <span className="tabular-nums">{dollars.format(cost)}</span>
-              </div>
-            ) : null}
-          </Popover.Popup>
-        </Popover.Positioner>
-      </Popover.Portal>
-    </Popover.Root>
+          </div>
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {count.format(used)}
+            {limit ? ` of ${count.format(limit)}` : ""} tokens
+          </p>
+        </PopoverHeader>
+        {limit ? (
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className={cn(
+                "h-full rounded-full bg-foreground transition-[width] duration-300",
+                share >= 0.9 && "bg-destructive"
+              )}
+              style={{ width: `${share * 100}%` }}
+            />
+          </div>
+        ) : null}
+        {last ? (
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-medium text-muted-foreground">
+              Last reply
+            </p>
+            <dl className="grid grid-cols-[1fr_auto] gap-y-0.5 text-xs">
+              <Row label="Input" value={last.inputTokens} />
+              <Row
+                label="Cached input"
+                value={last.inputTokenDetails?.cacheReadTokens}
+              />
+              <Row label="Output" value={last.outputTokens} />
+              <Row
+                label="Reasoning"
+                value={last.outputTokenDetails?.reasoningTokens}
+              />
+            </dl>
+          </div>
+        ) : (
+          <PopoverDescription className="text-xs">
+            Nothing sent yet. It fills as the chat goes on.
+          </PopoverDescription>
+        )}
+        {cost !== undefined ? (
+          <div className="flex justify-between border-t pt-2 text-xs">
+            <span className="text-muted-foreground">Chat so far</span>
+            <span className="tabular-nums">{dollars.format(cost)}</span>
+          </div>
+        ) : null}
+      </PopoverContent>
+    </Popover>
   )
 }
 
