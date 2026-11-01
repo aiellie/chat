@@ -55,8 +55,20 @@ function subscribeThreads(listener: () => void) {
 }
 
 const loadMessages = (id: string) => read<UIMessage[]>(messagesKey(id))
+// Files are kept by name only: their contents would fill the few megabytes
+// localStorage allows within a handful of pictures.
 const saveMessages = (id: string, messages: UIMessage[]) =>
-  write(messagesKey(id), messages)
+  write(
+    messagesKey(id),
+    messages.map((message) => ({
+      ...message,
+      parts: message.parts.map((part) =>
+        part.type === "file" && part.url.startsWith("data:")
+          ? { ...part, url: "" }
+          : part
+      ),
+    }))
+  )
 const removeMessages = (id: string) => {
   try {
     localStorage.removeItem(messagesKey(id))

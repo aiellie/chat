@@ -3,7 +3,9 @@
 import * as React from "react"
 import {
   ArrowUp02Icon,
-  Attachment01Icon,
+  ComputerScreenShareIcon,
+  FileUploadIcon,
+  FolderUploadIcon,
   PlusSignIcon,
   StopIcon,
 } from "@hugeicons/core-free-icons"
@@ -29,8 +31,10 @@ type ComposerContextValue = {
   canSubmit: boolean
   submit: () => void
   stop?: () => void
-  /** Opens the file picker. Missing when the composer takes no files. */
+  /** The composer's `onFilesAdd`. The pickers below are missing without it. */
+  addFiles?: (files: File[]) => void
   pickFiles?: () => void
+  pickFolder?: () => void
 }
 
 const ComposerContext = React.createContext<ComposerContextValue | null>(null)
@@ -85,6 +89,7 @@ function Composer({
   // counts them rather than trusting the last one.
   const dragDepth = React.useRef(0)
   const fileInput = React.useRef<HTMLInputElement>(null)
+  const folderInput = React.useRef<HTMLInputElement>(null)
 
   const setValue = (next: string) => {
     if (!controlled) setUncontrolledValue(next)
@@ -110,7 +115,9 @@ function Composer({
         canSubmit,
         submit,
         stop: onStop,
+        addFiles: onFilesAdd,
         pickFiles: onFilesAdd ? () => fileInput.current?.click() : undefined,
+        pickFolder: onFilesAdd ? () => folderInput.current?.click() : undefined,
       }}
     >
       <form
@@ -167,30 +174,50 @@ function Composer({
           onFilesAdd(files)
         }}
         className={cn(
-          "flex w-full flex-col gap-1 rounded-xl border border-input bg-background p-2 transition-colors has-[textarea:focus-visible]:border-ring/60 data-dragging:border-dashed data-dragging:border-ring motion-reduce:transition-none dark:bg-input/30 shadow-md",
+          "flex w-full flex-col gap-1 rounded-xl border border-input bg-background p-2 shadow-md transition-colors has-[textarea:focus-visible]:border-ring/60 data-dragging:border-dashed data-dragging:border-ring motion-reduce:transition-none dark:bg-input/30",
           className
         )}
         {...props}
       >
         {children}
         {onFilesAdd ? (
-          // Lives here rather than in a menu, which unmounts once it closes.
-          <input
-            ref={fileInput}
-            type="file"
-            multiple
-            hidden
-            tabIndex={-1}
-            onChange={(event) => {
-              const files = Array.from(event.target.files ?? [])
-              // Cleared so picking the same file again still fires.
-              event.target.value = ""
-              if (files.length > 0) onFilesAdd(files)
-            }}
-          />
+          // These live here rather than in a menu, which unmounts once it closes.
+          <>
+            <FilePicker ref={fileInput} onFilesAdd={onFilesAdd} />
+            <FilePicker ref={folderInput} onFilesAdd={onFilesAdd} folder />
+          </>
         ) : null}
       </form>
     </ComposerContext.Provider>
+  )
+}
+
+function FilePicker({
+  ref,
+  folder = false,
+  onFilesAdd,
+}: {
+  ref: React.Ref<HTMLInputElement>
+  /** Picks a whole folder, whose files arrive with their paths inside it. */
+  folder?: boolean
+  onFilesAdd: (files: File[]) => void
+}) {
+  return (
+    <input
+      ref={ref}
+      type="file"
+      multiple
+      hidden
+      tabIndex={-1}
+      // Not in React's types, though every current browser supports it.
+      {...(folder ? { webkitdirectory: "" } : {})}
+      onChange={(event) => {
+        const files = Array.from(event.target.files ?? [])
+        // Cleared so picking the same files again still fires.
+        event.target.value = ""
+        if (files.length > 0) onFilesAdd(files)
+      }}
+    />
   )
 }
 
@@ -357,9 +384,11 @@ function ComposerAddMenu({
   )
 }
 
-// Disabled until the composer is given `onFilesAdd`, which the picked files go to.
+// The rows below are disabled until the composer is given `onFilesAdd`, which
+// what they pick goes to.
+
 function ComposerAddFiles({
-  children = "Add photos & files",
+  children = "Upload files",
   ...props
 }: Omit<React.ComponentProps<typeof MenuItem>, "onClick">) {
   const { pickFiles } = useComposer()
@@ -371,7 +400,91 @@ function ComposerAddFiles({
       onClick={() => pickFiles?.()}
       {...props}
     >
-      <HugeiconsIcon aria-hidden icon={Attachment01Icon} />
+      <HugeiconsIcon aria-hidden icon={FileUploadIcon} />
+      {children}
+    </MenuItem>
+  )
+}
+
+function ComposerAddFolder({
+  children = "Upload folder",
+  ...props
+}: Omit<React.ComponentProps<typeof MenuItem>, "onClick">) {
+  const { pickFolder } = useComposer()
+
+  return (
+    <MenuItem
+      data-slot="composer-add-folder"
+      disabled={!pickFolder}
+      onClick={() => pickFolder?.()}
+      {...props}
+    >
+      <HugeiconsIcon aria-hidden icon={FolderUploadIcon} />
+      {children}
+    </MenuItem>
+  )
+}
+
+// The browser asks which screen, window or tab to share, and one frame of it
+// is kept as a PNG. Phones can't share their screen, so it's disabled there.
+async function captureScreen() {
+  const stream = await navigator.mediaDevices.getDisplayMedia({
+    video: true,
+    audio: false,
+  })
+  try {
+    const video = document.createElement("video")
+    video.muted = true
+    video.srcObject = stream
+    await video.play()
+    // The first frame can be blank until the stream has painted once.
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    // Models scale pictures down to about this anyway, and a full retina
+    // screen would make a request too big to send.
+    const scale = Math.min(
+      1,
+      2000 / Math.max(video.videoWidth, video.videoHeight)
+    )
+    const canvas = document.createElement("canvas")
+    canvas.width = Math.round(video.videoWidth * scale)
+    canvas.height = Math.round(video.videoHeight * scale)
+    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/png")
+    )
+    if (!blob) throw new Error("The screenshot couldn't be encoded.")
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-")
+    return new File([blob], `Screenshot ${stamp}.png`, { type: "image/png" })
+  } finally {
+    stream.getTracks().forEach((track) => track.stop())
+  }
+}
+
+function ComposerAddScreenshot({
+  children = "Take screenshot",
+  ...props
+}: Omit<React.ComponentProps<typeof MenuItem>, "onClick">) {
+  const { addFiles } = useComposer()
+  // Menu rows only render once the menu opens, so this never runs on the server.
+  const supported =
+    typeof navigator !== "undefined" &&
+    typeof navigator.mediaDevices?.getDisplayMedia === "function"
+
+  return (
+    <MenuItem
+      data-slot="composer-add-screenshot"
+      disabled={!addFiles || !supported}
+      onClick={() => {
+        if (!addFiles) return
+        captureScreen().then(
+          (file) => addFiles([file]),
+          // Closing the share prompt lands here, and that isn't a failure.
+          () => {}
+        )
+      }}
+      {...props}
+    >
+      <HugeiconsIcon aria-hidden icon={ComputerScreenShareIcon} />
       {children}
     </MenuItem>
   )
@@ -380,7 +493,9 @@ function ComposerAddFiles({
 export {
   Composer,
   ComposerAddFiles,
+  ComposerAddFolder,
   ComposerAddMenu,
+  ComposerAddScreenshot,
   ComposerFooter,
   ComposerHeader,
   ComposerInput,

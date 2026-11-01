@@ -2,6 +2,8 @@
 
 import type { UIMessage } from "ai"
 
+import { AttachmentGroup } from "@/components/aiellie/attachment"
+import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { Message, MessageContent } from "@/components/ui/message"
 import {
@@ -32,6 +34,7 @@ function Thread({
               const text = message.parts
                 .map((part) => (part.type === "text" ? part.text : ""))
                 .join("")
+              const files = message.parts.filter((part) => part.type === "file")
               const mine = message.role === "user"
               return (
                 <MessageScrollerItem
@@ -41,11 +44,25 @@ function Thread({
                 >
                   <Message align={mine ? "end" : "start"}>
                     <MessageContent>
-                      <Bubble variant={mine ? "secondary" : "ghost"}>
-                        <BubbleContent className="whitespace-pre-wrap">
-                          {text}
-                        </BubbleContent>
-                      </Bubble>
+                      {files.length > 0 ? (
+                        <AttachmentGroup className="max-w-full">
+                          {files.map((file, index) => (
+                            <FileAttachment
+                              key={index}
+                              name={file.filename ?? "File"}
+                              mediaType={file.mediaType}
+                              src={file.url || undefined}
+                            />
+                          ))}
+                        </AttachmentGroup>
+                      ) : null}
+                      {text || files.length === 0 ? (
+                        <Bubble variant={mine ? "secondary" : "ghost"}>
+                          <BubbleContent className="whitespace-pre-wrap">
+                            {text}
+                          </BubbleContent>
+                        </Bubble>
+                      ) : null}
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>
