@@ -19,6 +19,7 @@ import {
 import { recordingFetch } from "@/components/aiellie/ai-debug-store"
 import { AttachmentGroup } from "@/components/aiellie/attachment"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
+import { ContextMeter, contextOf } from "@/components/aiellie/context-meter"
 import { ModelSelector } from "@/components/aiellie/model-selector"
 import { Thread } from "@/components/aiellie/thread"
 import { loadMessages, saveMessages } from "@/components/aiellie/thread-store"
@@ -167,6 +168,7 @@ function Chat({
               />
             ) : null}
             <div className="flex-1" />
+            <ContextMeter {...contextOf(messages, models, model)} />
             <ComposerDictate />
             <ComposerSubmit />
           </ComposerFooter>
