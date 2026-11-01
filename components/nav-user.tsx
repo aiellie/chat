@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   ChartLineData01Icon,
   HelpCircleIcon,
+  Key01Icon,
   Login03Icon,
   Logout01Icon,
   Settings01Icon,
@@ -11,6 +12,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { ApiKeysDialog } from "@/components/aiellie/api-keys-dialog"
 import {
   Menu,
   MenuContent,
@@ -19,16 +21,9 @@ import {
   MenuShortcut,
   MenuTrigger,
 } from "@/components/ui/menu"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import {
-  LoginDialog,
-  type LoginValues,
-} from "@/components/login-form"
+import { LoginDialog, type LoginValues } from "@/components/login-form"
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -37,6 +32,7 @@ import {
 
 type User = {
   name: string
+  /** Their picture. Without one, they get a critter drawn from their name. */
   avatar?: string
   /** The plan they are on, e.g. "Pro" or "Free", badged beside their name. */
   plan?: string
@@ -52,10 +48,15 @@ function initials(name: string) {
     .toUpperCase()
 }
 
+/** A critter drawn from their name, so the same name always gets the same one. */
+function avatarUrl(name: string) {
+  return `https://avatar.aiellie.dev/${encodeURIComponent(name)}.svg?style=critters`
+}
+
 function UserAvatar({ user }: { user: User }) {
   return (
     <Avatar size="sm">
-      {user.avatar ? <AvatarImage src={user.avatar} alt="" /> : null}
+      <AvatarImage src={user.avatar ?? avatarUrl(user.name)} alt="" />
       <AvatarFallback>{initials(user.name)}</AvatarFallback>
     </Avatar>
   )
@@ -90,6 +91,7 @@ function NavUser({
   >
 }) {
   const [loginOpen, setLoginOpen] = React.useState(false)
+  const [apiKeysOpen, setApiKeysOpen] = React.useState(false)
 
   if (!user) {
     return (
@@ -153,6 +155,10 @@ function NavUser({
               <HugeiconsIcon icon={Settings01Icon} aria-hidden />
               Settings
             </MenuItem>
+            <MenuItem onClick={() => setApiKeysOpen(true)}>
+              <HugeiconsIcon icon={Key01Icon} aria-hidden />
+              API keys
+            </MenuItem>
             <MenuItem onClick={onHelp}>
               <HugeiconsIcon icon={HelpCircleIcon} aria-hidden />
               Help
@@ -164,6 +170,8 @@ function NavUser({
             </MenuItem>
           </MenuContent>
         </Menu>
+        {/* Out here, as the menu unmounts its rows once it closes. */}
+        <ApiKeysDialog open={apiKeysOpen} onOpenChange={setApiKeysOpen} />
       </SidebarMenuItem>
     </SidebarMenu>
   )

@@ -11,6 +11,11 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import type { ReplyMetadata } from "@/lib/model-messages"
 import type { ModelOption } from "@/lib/models"
 import { cn } from "@/lib/utils"
@@ -108,7 +113,7 @@ function Row({ label, value }: { label: string; value?: number }) {
 
 /**
  * How full the chat's context window is, as a ring in the composer. Hovering
- * it shows the tokens behind that and what the chat has cost.
+ * it names that usage; clicking opens the tokens and cost behind it.
  */
 function ContextMeter({
   used,
@@ -130,27 +135,34 @@ function ContextMeter({
   const percent = limit
     ? `${share < 0.1 && share > 0 ? (share * 100).toFixed(1) : Math.round(share * 100)}%`
     : compact.format(used)
+  const label = limit
+    ? `Context used: ${percent} of ${compact.format(limit)} tokens`
+    : `Context used: ${count.format(used)} tokens`
+  const hint = limit ? `${percent} context used` : label
 
   return (
     <Popover>
-      <PopoverTrigger
-        delay={150}
-        aria-label={
-          limit
-            ? `Context used: ${percent} of ${compact.format(limit)} tokens`
-            : `Context used: ${count.format(used)} tokens`
-        }
-        data-slot="context-meter"
-        className={cn(
-          "flex h-7 shrink-0 items-center gap-1.5 rounded-full px-1.5 text-xs text-muted-foreground tabular-nums outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 data-popup-open:bg-muted",
-          share >= 0.75 && "text-foreground",
-          share >= 0.9 && "text-destructive hover:text-destructive",
-          className
-        )}
-      >
-        <Ring share={share} />
-        {percent}
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <PopoverTrigger
+              delay={150}
+              aria-label={label}
+              data-slot="context-meter"
+              className={cn(
+                "inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 data-popup-open:text-foreground",
+                share >= 0.75 && "text-foreground",
+                share >= 0.9 && "text-destructive hover:text-destructive",
+                className
+              )}
+            />
+          }
+        >
+          <Ring share={share} />
+          <span className="sr-only">{label}</span>
+        </TooltipTrigger>
+        <TooltipContent side="top">{hint}</TooltipContent>
+      </Tooltip>
       <PopoverContent
         side="top"
         align="end"

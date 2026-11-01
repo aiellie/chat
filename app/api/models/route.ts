@@ -1,5 +1,6 @@
-import { gateway } from "ai"
+import { createGateway, gateway } from "ai"
 
+import { apiKeysFrom } from "@/lib/api-keys"
 import type { ModelOption } from "@/lib/models"
 
 // The Gateway's public catalogue, which also gives each model's context
@@ -27,11 +28,13 @@ async function catalogue() {
 }
 
 // The list comes from the AI Gateway itself, so it only ever offers models
-// the key can actually call.
-export async function GET() {
+// the key can actually call: the one set in the app's API keys dialog, or
+// the server's.
+export async function GET(req: Request) {
+  const { gateway: key } = apiKeysFrom(req)
   try {
     const [{ models }, details] = await Promise.all([
-      gateway.getAvailableModels(),
+      (key ? createGateway({ apiKey: key }) : gateway).getAvailableModels(),
       catalogue(),
     ])
     const options: ModelOption[] = models
@@ -59,7 +62,10 @@ export async function GET() {
       })
 
     return Response.json(options, {
-      headers: { "Cache-Control": "public, s-maxage=3600" },
+      // A list for someone's own key is theirs alone, so it isn't shared.
+      headers: {
+        "Cache-Control": key ? "private, no-store" : "public, s-maxage=3600",
+      },
     })
   } catch {
     return Response.json([], { status: 502 })

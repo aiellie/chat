@@ -66,12 +66,12 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-2 end-2"
-                size="icon-sm"
+                className="absolute top-2 end-2 text-muted-foreground hover:text-foreground"
+                size="icon-xs"
               />
             }
           >
-            <HugeiconsIcon icon={Cancel01Icon} />
+            <HugeiconsIcon icon={Cancel01Icon}/>
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
@@ -102,7 +102,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-border/60 border-t bg-background p-4 sm:flex-row sm:justify-end",
+        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-border/60 border-t bg-background px-4 py-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}

@@ -29,6 +29,7 @@ import {
   readableFiles,
   toFileParts,
 } from "@/lib/attachments"
+import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
 import { defaultModel, type ModelOption } from "@/lib/models"
 
@@ -41,8 +42,10 @@ function revoke(files: PendingFile[]) {
 }
 
 // In development every request and reply is recorded for the AI debug panel.
+// API keys from the dialog go with every request, read fresh each time.
 const transport = new DefaultChatTransport({
   fetch: process.env.NODE_ENV === "production" ? undefined : recordingFetch,
+  headers: apiKeyHeaders,
 })
 
 function Chat({
@@ -115,16 +118,22 @@ function Chat({
 
   // Until the gateway answers there's nothing to pick from, so the selector
   // stays hidden and messages go to the default.
+  // A new Gateway key can offer other models, so the list is fetched again
+  // when the keys change.
   React.useEffect(() => {
     let cancelled = false
-    fetch("/api/models")
-      .then((response) => (response.ok ? response.json() : []))
-      .then((list: ModelOption[]) => {
-        if (!cancelled) setModels(list)
-      })
-      .catch(() => {})
+    const load = () =>
+      fetch("/api/models", { headers: apiKeyHeaders() })
+        .then((response) => (response.ok ? response.json() : []))
+        .then((list: ModelOption[]) => {
+          if (!cancelled) setModels(list)
+        })
+        .catch(() => {})
+    load()
+    const stop = onApiKeysChange(load)
     return () => {
       cancelled = true
+      stop()
     }
   }, [])
 
