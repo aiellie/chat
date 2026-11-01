@@ -52,7 +52,7 @@ function MenuSearch({
   return (
     <div
       data-slot="menu-search"
-      className="-mx-1 -mt-1 mb-1 flex shrink-0 items-center gap-2 border-b border-border/60 py-1 ps-3 pe-1.5"
+      className="-mx-1 -mt-1 mb-1 flex shrink-0 items-center gap-2 border-b border-border/60 py-1.5 ps-3 pe-1.5"
     >
       <HugeiconsIcon
         aria-hidden
