@@ -134,7 +134,6 @@ function ContextMeter({
   return (
     <Popover>
       <PopoverTrigger
-        openOnHover
         delay={150}
         aria-label={
           limit
