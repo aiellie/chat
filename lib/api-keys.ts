@@ -10,14 +10,47 @@ const GATEWAY_HEADER = "x-aiellie-gateway-key"
 const PROVIDERS_HEADER = "x-aiellie-provider-keys"
 const CHANGE_EVENT = "aiellie:api-keys"
 
-/** Providers a key can be set for, by the slug their model ids start with. */
+/**
+ * Providers a key can be set for, by the slug their model ids start with,
+ * how their keys begin (Mistral's have no set start), and where to make one.
+ */
 const PROVIDERS = [
-  { id: "anthropic", name: "Anthropic" },
-  { id: "openai", name: "OpenAI" },
-  { id: "google", name: "Google" },
-  { id: "mistral", name: "Mistral" },
-  { id: "deepseek", name: "DeepSeek" },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    keyPrefix: "sk-ant-",
+    keyUrl: "https://platform.claude.com/settings/keys",
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
+    keyPrefix: "sk-",
+    keyUrl: "https://platform.openai.com/api-keys",
+  },
+  {
+    id: "google",
+    name: "Google",
+    keyPrefix: "AIza",
+    keyUrl: "https://aistudio.google.com/apikey",
+  },
+  {
+    id: "mistral",
+    name: "Mistral",
+    keyPrefix: "",
+    keyUrl: "https://console.mistral.ai/api-keys",
+  },
+  {
+    id: "deepseek",
+    name: "DeepSeek",
+    keyPrefix: "sk-",
+    keyUrl: "https://platform.deepseek.com/api_keys",
+  },
 ] as const
+
+/** How a Vercel AI Gateway key begins, and where to make one. */
+const GATEWAY_KEY_PREFIX = "vck_"
+const GATEWAY_KEY_URL =
+  "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys&title=AI+Gateway+API+Keys"
 
 type ProviderId = (typeof PROVIDERS)[number]["id"]
 
@@ -96,6 +129,8 @@ function apiKeysFrom(request: Request) {
 export {
   apiKeyHeaders,
   apiKeysFrom,
+  GATEWAY_KEY_PREFIX,
+  GATEWAY_KEY_URL,
   loadApiKeys,
   onApiKeysChange,
   PROVIDERS,
