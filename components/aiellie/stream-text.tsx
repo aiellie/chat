@@ -148,41 +148,19 @@ function renderWords(
   return nodes
 }
 
-function StreamText({
-  text,
-  streaming = false,
-  pace = 16,
-  revealInitial = false,
-  inlineCode = true,
-  freshWords = 2,
-  onRevealed,
-  className,
-  ...props
-}: Omit<React.ComponentProps<"span">, "children"> & {
-  /** The reply so far. Each value should carry on from the one before. */
-  text: string
-  /** Whether more is still on its way. */
-  streaming?: boolean
-  /** Words a second, until the stream's own rate is known, and for `revealInitial`. */
-  pace?: number
-  /** Write out the text it mounts with too, instead of showing it at once. */
-  revealInitial?: boolean
-  /** Set runs inside `backticks` as code. */
-  inlineCode?: boolean
-  /** How many of the newest words hold the live ink while more are coming. */
-  freshWords?: number
-  /** Called once the reply is finished and every word of it is on screen. */
-  onRevealed?: () => void
-}) {
-  const { lead, words } = React.useMemo(
-    () => splitWords(text, inlineCode),
-    [text, inlineCode]
-  )
-
-  // While more is coming, a last word with nothing after it may be half a word.
-  const endsMidWord = (inlineCode ? /[^\s`]$/ : /\S$/).test(text)
-  const ready = streaming && endsMidWord ? words.length - 1 : words.length
-
+/**
+ * How many of `ready` words are on screen, written out at the stream's own
+ * pace. `quiet` is how many it mounted with, which need no fading in.
+ */
+function useWordReveal(
+  text: string,
+  ready: number,
+  {
+    streaming,
+    pace,
+    revealInitial,
+  }: { streaming: boolean; pace: number; revealInitial: boolean }
+) {
   const reducedMotion = React.useSyncExternalStore(
     subscribeToReducedMotion,
     prefersReducedMotion,
@@ -304,6 +282,50 @@ function StreamText({
     }
   }, [ready, streaming, typing, pace, unwatched])
 
+  return { shown, quiet }
+}
+
+function StreamText({
+  text,
+  streaming = false,
+  pace = 16,
+  revealInitial = false,
+  inlineCode = true,
+  freshWords = 2,
+  onRevealed,
+  className,
+  ...props
+}: Omit<React.ComponentProps<"span">, "children"> & {
+  /** The reply so far. Each value should carry on from the one before. */
+  text: string
+  /** Whether more is still on its way. */
+  streaming?: boolean
+  /** Words a second, until the stream's own rate is known, and for `revealInitial`. */
+  pace?: number
+  /** Write out the text it mounts with too, instead of showing it at once. */
+  revealInitial?: boolean
+  /** Set runs inside `backticks` as code. */
+  inlineCode?: boolean
+  /** How many of the newest words hold the live ink while more are coming. */
+  freshWords?: number
+  /** Called once the reply is finished and every word of it is on screen. */
+  onRevealed?: () => void
+}) {
+  const { lead, words } = React.useMemo(
+    () => splitWords(text, inlineCode),
+    [text, inlineCode]
+  )
+
+  // While more is coming, a last word with nothing after it may be half a word.
+  const endsMidWord = (inlineCode ? /[^\s`]$/ : /\S$/).test(text)
+  const ready = streaming && endsMidWord ? words.length - 1 : words.length
+
+  const { shown, quiet } = useWordReveal(text, ready, {
+    streaming,
+    pace,
+    revealInitial,
+  })
+
   const visible = Math.min(shown, words.length)
   const busy = streaming || visible < words.length
 
@@ -344,4 +366,4 @@ function StreamText({
   )
 }
 
-export { StreamText }
+export { StreamText, useWordReveal }

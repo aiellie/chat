@@ -4,7 +4,7 @@ import type { UIMessage } from "ai"
 
 import { AttachmentGroup } from "@/components/aiellie/attachment"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
-import { StreamText } from "@/components/aiellie/stream-text"
+import { StreamMarkdown } from "@/components/aiellie/stream-markdown"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { Message, MessageContent } from "@/components/ui/message"
 import {
@@ -63,13 +63,17 @@ function Thread({
                       ) : null}
                       {text || files.length === 0 ? (
                         <Bubble variant={mine ? "secondary" : "ghost"}>
-                          <BubbleContent className="whitespace-pre-wrap">
+                          {/* Markdown lays out its own lines, so only what
+                              the person typed keeps theirs as written. */}
+                          <BubbleContent
+                            className={mine ? "whitespace-pre-wrap" : undefined}
+                          >
                             {mine ? (
                               text
                             ) : (
                               // Replies loaded from history show at once; one
                               // arriving now is written out from its first word.
-                              <StreamText
+                              <StreamMarkdown
                                 text={text}
                                 streaming={live}
                                 revealInitial={live}
