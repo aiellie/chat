@@ -275,6 +275,11 @@ function ComposerHeader({
 }: React.ComponentProps<"div"> & {
   open?: boolean
 }) {
+  // Closed, it keeps what it last showed, so it folds away with its contents
+  // instead of emptying first and then closing on nothing.
+  const [shown, setShown] = React.useState(children)
+  if (open && shown !== children) setShown(children)
+
   return (
     <div
       data-slot="composer-header"
@@ -290,7 +295,7 @@ function ComposerHeader({
           )}
           {...props}
         >
-          {children}
+          {open ? children : shown}
         </div>
       </div>
     </div>

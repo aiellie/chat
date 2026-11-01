@@ -27,11 +27,12 @@ import {
 } from "@/lib/attachments"
 import { defaultModel, type ModelOption } from "@/lib/models"
 
-// A picked file waiting to go out with the next message.
-type PendingFile = { id: string; file: File; preview?: string }
+// A picked file waiting to go out with the next message. Its URL draws its
+// thumbnail and opens it to preview, copy or download.
+type PendingFile = { id: string; file: File; url: string }
 
 function revoke(files: PendingFile[]) {
-  for (const { preview } of files) if (preview) URL.revokeObjectURL(preview)
+  for (const { url } of files) URL.revokeObjectURL(url)
 }
 
 function Chat({
@@ -57,9 +58,7 @@ function Chat({
       ...readable.map((file) => ({
         id: crypto.randomUUID(),
         file,
-        preview: file.type.startsWith("image/")
-          ? URL.createObjectURL(file)
-          : undefined,
+        url: URL.createObjectURL(file),
       })),
     ])
   }
@@ -114,7 +113,7 @@ function Chat({
                 name={pathOf(item.file)}
                 mediaType={mediaTypeOf(item.file)}
                 size={item.file.size}
-                src={item.preview}
+                src={item.url}
                 onRemove={() => removeFile(item.id)}
               />
             ))}
