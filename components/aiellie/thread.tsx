@@ -1,5 +1,7 @@
 "use client"
 
+import { RefreshIcon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import type { UIMessage } from "ai"
 
 import { AttachmentGroup } from "@/components/aiellie/attachment"
@@ -10,6 +12,11 @@ import {
 } from "@/components/aiellie/date-divider"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { Markdown } from "@/components/aiellie/markdown"
+import {
+  MessageAction,
+  MessageActions,
+  MessageCopyAction,
+} from "@/components/aiellie/message-actions"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { Message, MessageContent, MessageFooter } from "@/components/ui/message"
 import type { MessageMetadata } from "@/lib/model-messages"
@@ -44,6 +51,7 @@ function Thread({
   streaming = false,
   error,
   onRetry,
+  onRegenerate,
 }: {
   messages: UIMessage[]
   /** Whether the last message is a reply still coming in. */
@@ -51,6 +59,8 @@ function Thread({
   /** Shows a bubble that retries the last message when pressed. */
   error?: Error
   onRetry?: () => void
+  /** Asks for a reply again. Without it, replies have no regenerate action. */
+  onRegenerate?: (messageId: string) => void
 }) {
   const firsts = firstsOfDay(messages)
 
@@ -117,13 +127,31 @@ function Thread({
                         </Bubble>
                       ) : null}
                     </MessageContent>
-                    {sentAt !== undefined ? (
+                    {sentAt !== undefined || (!mine && !live) ? (
                       // Laid in the gap under the message, so showing it on
-                      // hover moves nothing.
-                      <MessageFooter className="pointer-events-none absolute start-0 top-full mt-1 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0">
-                        <time dateTime={new Date(sentAt).toISOString()}>
-                          {timeLabel(sentAt)}
-                        </time>
+                      // hover moves nothing. It takes clicks only while it
+                      // shows, and shows too when a button in it has focus.
+                      <MessageFooter className="pointer-events-none absolute start-0 top-full gap-2 opacity-0 transition-opacity duration-150 group-focus-within/message:pointer-events-auto group-focus-within/message:opacity-100 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0">
+                        {/* A reply still being written has nothing to act on yet. */}
+                        {!mine && !live ? (
+                          <MessageActions>
+                            <MessageCopyAction value={text} />
+                            {onRegenerate ? (
+                              <MessageAction
+                                tooltip="Regenerate"
+                                disabled={streaming}
+                                onClick={() => onRegenerate(message.id)}
+                              >
+                                <HugeiconsIcon aria-hidden icon={RefreshIcon} />
+                              </MessageAction>
+                            ) : null}
+                          </MessageActions>
+                        ) : null}
+                        {sentAt !== undefined ? (
+                          <time dateTime={new Date(sentAt).toISOString()}>
+                            {timeLabel(sentAt)}
+                          </time>
+                        ) : null}
                       </MessageFooter>
                     ) : null}
                   </Message>

@@ -159,8 +159,10 @@ function ExchangeCard({
   defaultOpen,
 }: {
   exchange: Exchange
+  /** Read once: a newer request arriving shouldn't fold this one away. */
   defaultOpen: boolean
 }) {
+  const [open, setOpen] = React.useState(defaultOpen)
   const sent = useModelMessages(exchange.request.messages)
   const { thinking, reply, tools, metadata, finishReason } = summarize(exchange)
   const usage = metadata?.usage
@@ -175,7 +177,8 @@ function ExchangeCard({
 
   return (
     <Collapsible
-      defaultOpen={defaultOpen}
+      open={open}
+      onOpenChange={setOpen}
       className="rounded-xl border bg-card text-card-foreground"
     >
       <CollapsibleTrigger className="text-sm group/exchange flex w-full items-center gap-2 px-3 py-2.5 text-start">

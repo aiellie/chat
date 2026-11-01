@@ -115,6 +115,7 @@ function Chat({
         streaming={status === "streaming"}
         error={error}
         onRetry={() => regenerate({ body: { model } })}
+        onRegenerate={(messageId) => regenerate({ messageId, body: { model } })}
       />
       <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4">
         <ComposerHeader open={pending.length > 0}>
