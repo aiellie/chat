@@ -1,11 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { ArrowUp02Icon, StopIcon } from "@hugeicons/core-free-icons"
+import {
+  ArrowUp02Icon,
+  Attachment01Icon,
+  PlusSignIcon,
+  StopIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { Button } from "@/components/ui/button"
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/menu"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  TooltipIconButton,
+  type TooltipIconButtonProps,
+} from "@/components/ui/tooltip-icon-button"
 import { cn } from "@/lib/utils"
 
 // Named like the AI SDK's `useChat` status, so that value can be handed in.
@@ -19,6 +29,8 @@ type ComposerContextValue = {
   canSubmit: boolean
   submit: () => void
   stop?: () => void
+  /** Opens the file picker. Missing when the composer takes no files. */
+  pickFiles?: () => void
 }
 
 const ComposerContext = React.createContext<ComposerContextValue | null>(null)
@@ -72,6 +84,7 @@ function Composer({
   // Enter and leave fire for every child the pointer crosses, so the box
   // counts them rather than trusting the last one.
   const dragDepth = React.useRef(0)
+  const fileInput = React.useRef<HTMLInputElement>(null)
 
   const setValue = (next: string) => {
     if (!controlled) setUncontrolledValue(next)
@@ -97,6 +110,7 @@ function Composer({
         canSubmit,
         submit,
         stop: onStop,
+        pickFiles: onFilesAdd ? () => fileInput.current?.click() : undefined,
       }}
     >
       <form
@@ -159,6 +173,22 @@ function Composer({
         {...props}
       >
         {children}
+        {onFilesAdd ? (
+          // Lives here rather than in a menu, which unmounts once it closes.
+          <input
+            ref={fileInput}
+            type="file"
+            multiple
+            hidden
+            tabIndex={-1}
+            onChange={(event) => {
+              const files = Array.from(event.target.files ?? [])
+              // Cleared so picking the same file again still fires.
+              event.target.value = ""
+              if (files.length > 0) onFilesAdd(files)
+            }}
+          />
+        ) : null}
       </form>
     </ComposerContext.Provider>
   )
@@ -281,8 +311,76 @@ function ComposerSubmit({
   )
 }
 
+// The plus button whose menu holds ways to add to the message. The rows are
+// the caller's, e.g. <ComposerAddFiles />.
+function ComposerAddMenu({
+  tooltip = "Add",
+  side = "top",
+  align = "start",
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<typeof MenuTrigger>, "render" | "children"> & {
+  tooltip?: string
+  /** Where both the menu and the tooltip open. */
+  side?: TooltipIconButtonProps["side"]
+  align?: React.ComponentProps<typeof MenuContent>["align"]
+  children: React.ReactNode
+}) {
+  const { disabled } = useComposer()
+
+  return (
+    <Menu>
+      <MenuTrigger
+        data-slot="composer-add-menu"
+        disabled={disabled}
+        render={
+          <TooltipIconButton
+            type="button"
+            tooltip={tooltip}
+            side={side}
+            className={cn(
+              "size-7 shrink-0 rounded-full p-1.5 data-popup-open:bg-accent data-popup-open:[&_svg]:text-foreground",
+              "[&>svg]:transition-transform [&>svg]:duration-150 [&>svg]:ease-out aria-expanded:[&>svg]:rotate-45 motion-reduce:[&>svg]:transition-none",
+              className
+            )}
+          />
+        }
+        {...props}
+      >
+        <HugeiconsIcon aria-hidden icon={PlusSignIcon} strokeWidth={2} />
+      </MenuTrigger>
+      <MenuContent side={side} align={align}>
+        {children}
+      </MenuContent>
+    </Menu>
+  )
+}
+
+// Disabled until the composer is given `onFilesAdd`, which the picked files go to.
+function ComposerAddFiles({
+  children = "Add photos & files",
+  ...props
+}: Omit<React.ComponentProps<typeof MenuItem>, "onClick">) {
+  const { pickFiles } = useComposer()
+
+  return (
+    <MenuItem
+      data-slot="composer-add-files"
+      disabled={!pickFiles}
+      onClick={() => pickFiles?.()}
+      {...props}
+    >
+      <HugeiconsIcon aria-hidden icon={Attachment01Icon} />
+      {children}
+    </MenuItem>
+  )
+}
+
 export {
   Composer,
+  ComposerAddFiles,
+  ComposerAddMenu,
   ComposerFooter,
   ComposerHeader,
   ComposerInput,

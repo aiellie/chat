@@ -5,6 +5,8 @@ import { useChat } from "@ai-sdk/react"
 
 import {
   Composer,
+  ComposerAddFiles,
+  ComposerAddMenu,
   ComposerFooter,
   ComposerInput,
   ComposerSubmit,
@@ -69,14 +71,17 @@ function Chat({
         >
           <ComposerInput />
           <ComposerFooter>
+            <ComposerAddMenu>
+              <ComposerAddFiles />
+            </ComposerAddMenu>
             {models.length > 0 ? (
               <ModelSelector
                 models={models}
                 value={model}
                 onValueChange={setModel}
-                className="me-auto"
               />
             ) : null}
+            <div className="flex-1" />
             <ComposerSubmit />
           </ComposerFooter>
         </Composer>
