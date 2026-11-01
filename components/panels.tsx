@@ -426,7 +426,8 @@ function Panels({
       if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey)
         return
       const side = (Object.keys(PANELS) as Side[]).find(
-        (side) => has[side] && PANELS[side].key === event.key.toLowerCase()
+        // Some keydowns carry no key, such as the ones autofill sends.
+        (side) => has[side] && PANELS[side].key === event.key?.toLowerCase()
       )
       if (!side) return
       event.preventDefault()

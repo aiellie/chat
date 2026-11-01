@@ -84,7 +84,8 @@ function MenuSearch({
             }
           }
           const navigational =
-            event.key.length > 1 || event.metaKey || event.ctrlKey
+            // A keydown with no key, as autofill sends, counts as typing.
+            (event.key?.length ?? 0) > 1 || event.metaKey || event.ctrlKey
           if (!navigational) event.stopPropagation()
         }}
         className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
