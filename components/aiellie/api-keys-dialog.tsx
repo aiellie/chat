@@ -109,41 +109,44 @@ function ApiKeysForm({ onDone }: { onDone: () => void }) {
         </DialogDescription>
       </DialogHeader>
 
-      <KeyField
-        id="api-key-gateway"
-        label="Vercel AI Gateway"
-        hint="Used for every model. Leave it empty to use the server's key."
-        value={keys.gateway ?? ""}
-        onChange={(gateway) => setKeys((current) => ({ ...current, gateway }))}
-        placeholder="Gateway API key"
-      />
+      {/* Only the fields scroll; the header and footer stay put. Run out to
+          the dialog's edges, so the scrollbar sits at its side, with room
+          for the inputs' focus rings. */}
+      <div className="-mx-4 -my-1 flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-1">
+        <KeyField
+          id="api-key-gateway"
+          label="Vercel AI Gateway"
+          hint="Used for every model. Leave it empty to use the server's key."
+          value={keys.gateway ?? ""}
+          onChange={(gateway) =>
+            setKeys((current) => ({ ...current, gateway }))
+          }
+          placeholder="Gateway API key"
+        />
 
-      <section className="flex flex-col gap-3">
-        <div>
-          <h3 className="text-sm font-medium">Provider keys</h3>
-          <p className="text-xs text-muted-foreground">
-            Optional. The Gateway uses these for that provider&apos;s models in
-            place of its own credentials.
-          </p>
-        </div>
-        {PROVIDERS.map((provider) => (
-          <KeyField
-            key={provider.id}
-            id={`api-key-${provider.id}`}
-            label={provider.name}
-            value={keys.providers?.[provider.id] ?? ""}
-            onChange={(value) => setProvider(provider.id, value)}
-            placeholder={`${provider.name} API key`}
-          />
-        ))}
-      </section>
+        <section className="flex flex-col gap-3">
+          <div>
+            <h3 className="text-sm font-medium">Provider keys</h3>
+            <p className="text-xs text-muted-foreground">
+              Optional. The Gateway uses these for that provider&apos;s models
+              in place of its own credentials.
+            </p>
+          </div>
+          {PROVIDERS.map((provider) => (
+            <KeyField
+              key={provider.id}
+              id={`api-key-${provider.id}`}
+              label={provider.name}
+              value={keys.providers?.[provider.id] ?? ""}
+              onChange={(value) => setProvider(provider.id, value)}
+              placeholder={`${provider.name} API key`}
+            />
+          ))}
+        </section>
+      </div>
 
       <DialogFooter>
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={() => setKeys({})}
-        >
+        <Button type="button" variant="destructive" onClick={() => setKeys({})}>
           Clear all
         </Button>
         <Button type="submit">Save</Button>
@@ -162,7 +165,8 @@ function ApiKeysDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
+      {/* Header, fields and footer as rows; the fields take what's left. */}
+      <DialogContent className="max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-md">
         <ApiKeysForm onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
