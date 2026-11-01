@@ -87,6 +87,45 @@ function groupByProvider(models: ModelOption[]) {
   })
 }
 
+/**
+ * An effort as a meter: a rising bar for each level the model has, filled
+ * up to this one. Off fills none.
+ */
+function EffortBars({
+  effort,
+  efforts,
+  className,
+}: {
+  effort: Effort
+  efforts: Effort[]
+  className?: string
+}) {
+  const levels: Effort[] = efforts.filter((level) => level !== "none")
+  const filled = levels.indexOf(effort) + 1
+
+  return (
+    <span
+      aria-hidden
+      data-slot="effort-bars"
+      className={cn("inline-flex h-3 shrink-0 items-end gap-px", className)}
+    >
+      {levels.map((level, index) => (
+        <span
+          key={level}
+          className={cn(
+            "w-[3px] rounded-[1px] bg-current transition-opacity",
+            index < filled ? "opacity-100" : "opacity-25"
+          )}
+          // From a third of the height up to all of it.
+          style={{
+            height: `${33 + (67 * (index + 1)) / levels.length}%`,
+          }}
+        />
+      ))}
+    </span>
+  )
+}
+
 /** A submenu's current pick, muted at the end of its row. */
 function Current({ children }: { children: React.ReactNode }) {
   return (
@@ -152,21 +191,20 @@ function ModelSelector({
         }
       >
         <span className="sr-only">Model: </span>
-        <ModelIcon id={value} className="size-3.5" />
         <span className="truncate">{selected?.name ?? value}</span>
         {effort && efforts.length > 1 ? (
-          <span className="shrink-0 text-muted-foreground/70">
-            <span aria-hidden>· </span>
-            <span className="sr-only">, effort </span>
-            {EFFORT_LABELS[effort]}
-          </span>
+          <>
+            <EffortBars effort={effort} efforts={efforts} />
+            <span className="sr-only">, effort {EFFORT_LABELS[effort]}</span>
+          </>
         ) : null}
         {fast && selected?.fastId ? (
           <>
+            {/* Filled, as the bolt's outline is a closed shape: on reads as solid. */}
             <HugeiconsIcon
               aria-hidden
               icon={FlashIcon}
-              className="size-3 shrink-0"
+              className="size-3 shrink-0 [&_path]:fill-current"
             />
             <span className="sr-only">, fast</span>
           </>
@@ -220,9 +258,14 @@ function ModelSelector({
             <MenuSubTrigger>
               <HugeiconsIcon aria-hidden icon={AiBrain01Icon} />
               Effort
-              <Current>{EFFORT_LABELS[effort]}</Current>
+              <Current>
+                <span className="inline-flex items-center gap-1.5">
+                  {EFFORT_LABELS[effort]}
+                  <EffortBars effort={effort} efforts={efforts} />
+                </span>
+              </Current>
             </MenuSubTrigger>
-            <MenuSubContent className="w-44">
+            <MenuSubContent className="w-48">
               <MenuRadioGroup
                 value={effort}
                 onValueChange={(next: Effort) => onEffortChange(next)}
@@ -230,6 +273,7 @@ function ModelSelector({
                 <MenuGroupLabel>Reasoning effort</MenuGroupLabel>
                 {efforts.map((option) => (
                   <MenuRadioItem key={option} value={option} closeOnClick>
+                    <EffortBars effort={option} efforts={efforts} />
                     {EFFORT_LABELS[option]}
                   </MenuRadioItem>
                 ))}
@@ -279,7 +323,11 @@ function ModelSelector({
               closeOnClick={false}
               className="[&>[data-slot=menu-checkbox-item-indicator]]:hidden"
             >
-              <HugeiconsIcon aria-hidden icon={FlashIcon} />
+              <HugeiconsIcon
+                aria-hidden
+                icon={FlashIcon}
+                className={cn(fast && "[&_path]:fill-current")}
+              />
               Fast
               <Switch
                 checked={fast}
