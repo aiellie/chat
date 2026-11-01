@@ -1,6 +1,14 @@
 "use client"
 
-import { Cancel01Icon, File01Icon, Pdf01Icon } from "@hugeicons/core-free-icons"
+import {
+  Cancel01Icon,
+  Csv01Icon,
+  File01Icon,
+  FileCodeIcon,
+  Image01Icon,
+  Pdf01Icon,
+  Txt01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import {
@@ -37,6 +45,20 @@ function sizeOfDataUrl(url: string) {
   return (data.length * 3) / 4 - padding
 }
 
+// Text files are all sent as text/plain, so code is told apart by extension.
+const CODE =
+  /\.(c|cc|cpp|cs|css|go|h|hpp|html?|java|jsx?|json|kt|lua|mjs|php|py|rb|rs|scss|sh|sql|svelte|swift|toml|tsx?|vue|xml|ya?ml|zsh)$/i
+
+/** The icon for a file, by what it holds. */
+function iconFor(name: string, mediaType: string) {
+  if (mediaType.startsWith("image/")) return Image01Icon
+  if (mediaType === "application/pdf") return Pdf01Icon
+  if (/\.csv$/i.test(name) || mediaType === "text/csv") return Csv01Icon
+  if (CODE.test(name)) return FileCodeIcon
+  if (mediaType.startsWith("text/")) return Txt01Icon
+  return File01Icon
+}
+
 /** One file, named by its path when it came from a folder. */
 function FileAttachment({
   name,
@@ -49,7 +71,7 @@ function FileAttachment({
   mediaType: string
   /** In bytes. Read from `src` when it's a data URL and this is left out. */
   size?: number
-  /** Shown as a thumbnail when the file is a picture. */
+  /** The file's URL, used to work out its size. */
   src?: string
   onRemove?: () => void
 }) {
@@ -57,21 +79,11 @@ function FileAttachment({
   const title = name.slice(slash + 1)
   const folder = slash === -1 ? undefined : name.slice(0, slash)
   const bytes = size ?? (src ? sizeOfDataUrl(src) : undefined)
-  const thumbnail = mediaType.startsWith("image/") && src ? src : undefined
 
   return (
     <Attachment size="xs" title={name}>
-      <AttachmentMedia variant={thumbnail ? "image" : "icon"}>
-        {thumbnail ? (
-          // A blob or data URL, which next/image has nothing to optimise.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumbnail} alt="" />
-        ) : (
-          <HugeiconsIcon
-            aria-hidden
-            icon={mediaType === "application/pdf" ? Pdf01Icon : File01Icon}
-          />
-        )}
+      <AttachmentMedia>
+        <HugeiconsIcon aria-hidden icon={iconFor(name, mediaType)} />
       </AttachmentMedia>
       <AttachmentContent>
         <AttachmentTitle>{title}</AttachmentTitle>
