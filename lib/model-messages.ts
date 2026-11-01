@@ -41,7 +41,13 @@ type ReplyMetadata = {
  * as a reply starts; a reply gains the rest as it finishes. Messages from
  * before timestamps were kept have none.
  */
-type MessageMetadata = { createdAt?: number } & Partial<ReplyMetadata>
+type MessageMetadata = {
+  createdAt?: number
+  /** How the person rated a reply. */
+  rating?: "up" | "down"
+  /** Why the person reported a reply, kept with it. */
+  report?: { reason: string; details: string; at: number }
+} & Partial<ReplyMetadata>
 
 export { toModelMessages }
 export type { MessageMetadata, ReplyMetadata }

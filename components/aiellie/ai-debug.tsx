@@ -181,7 +181,7 @@ function ExchangeCard({
       onOpenChange={setOpen}
       className="rounded-xl border bg-card text-card-foreground"
     >
-      <CollapsibleTrigger className="text-sm group/exchange flex w-full items-center gap-2 px-3 py-2.5 text-start">
+      <CollapsibleTrigger className="group/exchange flex w-full items-center gap-2 px-3 py-2.5 text-start text-sm">
         <span className="font-medium tabular-nums">#{exchange.number}</span>
         <span className="min-w-0 truncate text-muted-foreground">
           {metadata?.model ?? exchange.request.model ?? "default model"}

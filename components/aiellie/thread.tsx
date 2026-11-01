@@ -16,6 +16,10 @@ import {
   MessageAction,
   MessageActions,
   MessageCopyAction,
+  MessageMoreActions,
+  MessageRateAction,
+  type Rating,
+  type Report,
 } from "@/components/aiellie/message-actions"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
 import { Message, MessageContent, MessageFooter } from "@/components/ui/message"
@@ -52,6 +56,9 @@ function Thread({
   error,
   onRetry,
   onRegenerate,
+  onRate,
+  onBranch,
+  onReport,
 }: {
   messages: UIMessage[]
   /** Whether the last message is a reply still coming in. */
@@ -59,8 +66,15 @@ function Thread({
   /** Shows a bubble that retries the last message when pressed. */
   error?: Error
   onRetry?: () => void
-  /** Asks for a reply again. Without it, replies have no regenerate action. */
+  // Each reply action is left out without its handler.
+  /** Asks for a reply again. */
   onRegenerate?: (messageId: string) => void
+  /** Rates a reply, or clears its rating. */
+  onRate?: (messageId: string, rating: Rating | undefined) => void
+  /** Starts a new chat from the conversation up to this reply. */
+  onBranch?: (messageId: string) => void
+  /** Reports a reply. */
+  onReport?: (messageId: string, report: Report) => void
 }) {
   const firsts = firstsOfDay(messages)
 
@@ -82,7 +96,8 @@ function Thread({
               const files = message.parts.filter((part) => part.type === "file")
               const mine = message.role === "user"
               const live = streaming && !mine && index === messages.length - 1
-              const sentAt = sentAtOf(message)
+              const metadata = message.metadata as MessageMetadata | undefined
+              const sentAt = metadata?.createdAt
               return (
                 <MessageScrollerItem
                   key={message.id}
@@ -129,13 +144,33 @@ function Thread({
                     </MessageContent>
                     {sentAt !== undefined || (!mine && !live) ? (
                       // Laid in the gap under the message, so showing it on
-                      // hover moves nothing. It takes clicks only while it
-                      // shows, and shows too when a button in it has focus.
-                      <MessageFooter className="pointer-events-none absolute start-0 top-full gap-2 opacity-0 transition-opacity duration-150 group-focus-within/message:pointer-events-auto group-focus-within/message:opacity-100 group-hover/message:pointer-events-auto group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0">
+                      // hover moves nothing. Hovering it counts as hovering
+                      // the message, so it shows as the pointer reaches it,
+                      // from above or below. It shows too while a button in
+                      // it has focus or its menu is open.
+                      <MessageFooter className="absolute start-0 top-full gap-2 opacity-0 transition-opacity duration-150 group-focus-within/message:opacity-100 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0 has-data-popup-open:opacity-100">
                         {/* A reply still being written has nothing to act on yet. */}
                         {!mine && !live ? (
                           <MessageActions>
                             <MessageCopyAction value={text} />
+                            {onRate ? (
+                              <>
+                                <MessageRateAction
+                                  value="up"
+                                  pressed={metadata?.rating === "up"}
+                                  onPressedChange={(on) =>
+                                    onRate(message.id, on ? "up" : undefined)
+                                  }
+                                />
+                                <MessageRateAction
+                                  value="down"
+                                  pressed={metadata?.rating === "down"}
+                                  onPressedChange={(on) =>
+                                    onRate(message.id, on ? "down" : undefined)
+                                  }
+                                />
+                              </>
+                            ) : null}
                             {onRegenerate ? (
                               <MessageAction
                                 tooltip="Regenerate"
@@ -145,6 +180,20 @@ function Thread({
                                 <HugeiconsIcon aria-hidden icon={RefreshIcon} />
                               </MessageAction>
                             ) : null}
+                            <MessageMoreActions
+                              text={text}
+                              onBranch={
+                                onBranch
+                                  ? () => onBranch(message.id)
+                                  : undefined
+                              }
+                              onReport={
+                                onReport
+                                  ? (report) => onReport(message.id, report)
+                                  : undefined
+                              }
+                              reported={metadata?.report !== undefined}
+                            />
                           </MessageActions>
                         ) : null}
                         {sentAt !== undefined ? (

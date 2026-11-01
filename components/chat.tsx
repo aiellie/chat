@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
+import { DefaultChatTransport, type UIMessage } from "ai"
 
 import {
   Composer,
@@ -48,16 +48,43 @@ const transport = new DefaultChatTransport({
 function Chat({
   id,
   onFirstMessage,
+  onBranch,
 }: {
   id: string
   /** Called as the first message goes out, to create the thread. */
   onFirstMessage?: (id: string, text: string) => void
+  /** Starts a new chat with these messages. Without it, replies can't branch. */
+  onBranch?: (messages: UIMessage[]) => void
 }) {
-  const { messages, sendMessage, status, stop, error, regenerate } = useChat({
+  const {
+    messages,
+    setMessages,
+    sendMessage,
+    status,
+    stop,
+    error,
+    regenerate,
+  } = useChat({
     id,
     messages: loadMessages(id),
     transport,
   })
+
+  // Ratings and reports live on the message, so they're saved with the chat.
+  const annotate = (messageId: string, patch: MessageMetadata) =>
+    setMessages((current) =>
+      current.map((message) =>
+        message.id === messageId
+          ? {
+              ...message,
+              metadata: {
+                ...(message.metadata as MessageMetadata | undefined),
+                ...patch,
+              },
+            }
+          : message
+      )
+    )
   const [model, setModel] = React.useState(defaultModel)
   const [models, setModels] = React.useState<ModelOption[]>([])
   const [pending, setPending] = React.useState<PendingFile[]>([])
@@ -116,6 +143,22 @@ function Chat({
         error={error}
         onRetry={() => regenerate({ body: { model } })}
         onRegenerate={(messageId) => regenerate({ messageId, body: { model } })}
+        onRate={(messageId, rating) => annotate(messageId, { rating })}
+        onReport={(messageId, report) =>
+          annotate(messageId, { report: { ...report, at: Date.now() } })
+        }
+        onBranch={
+          onBranch
+            ? (messageId) =>
+                onBranch(
+                  messages.slice(
+                    0,
+                    messages.findIndex((message) => message.id === messageId) +
+                      1
+                  )
+                )
+            : undefined
+        }
       />
       <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4">
         <ComposerHeader open={pending.length > 0}>

@@ -201,6 +201,17 @@ function ChatShell() {
               ])
               if (id === draftId) open(id)
             }}
+            // A new chat holding the conversation up to a reply, opened
+            // straight away, as forking a chat from the sidebar is.
+            onBranch={(messages) => {
+              const branch = {
+                id: crypto.randomUUID(),
+                title: `${active?.title ?? "New chat"} (branch)`,
+              }
+              saveMessages(branch.id, messages)
+              setThreads((current) => [branch, ...current])
+              open(branch.id)
+            }}
           />
         ) : null}
       </Panels>

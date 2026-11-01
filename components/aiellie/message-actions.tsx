@@ -1,9 +1,36 @@
 "use client"
 
 import * as React from "react"
-import { Copy01Icon, Tick02Icon } from "@hugeicons/core-free-icons"
+import {
+  Copy01Icon,
+  Flag02Icon,
+  GitBranchIcon,
+  MoreHorizontalIcon,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
+  Tick02Icon,
+  VolumeHighIcon,
+  VolumeOffIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+} from "@/components/ui/menu"
+import { Textarea } from "@/components/ui/textarea"
 import {
   TooltipIconButton,
   type TooltipIconButtonProps,
@@ -71,4 +98,217 @@ function MessageCopyAction({
   )
 }
 
-export { MessageAction, MessageActions, MessageCopyAction }
+type Rating = "up" | "down"
+
+/** A thumb up or down, held down while it's the message's rating. */
+function MessageRateAction({
+  value,
+  pressed = false,
+  onPressedChange,
+  className,
+  ...props
+}: Omit<TooltipIconButtonProps, "tooltip" | "onClick" | "children"> & {
+  value: Rating
+  pressed?: boolean
+  onPressedChange: (pressed: boolean) => void
+}) {
+  return (
+    <MessageAction
+      tooltip={value === "up" ? "Good response" : "Bad response"}
+      aria-pressed={pressed}
+      onClick={() => onPressedChange(!pressed)}
+      className={cn(pressed && "bg-muted [&_svg]:text-foreground", className)}
+      {...props}
+    >
+      <HugeiconsIcon
+        aria-hidden
+        icon={value === "up" ? ThumbsUpIcon : ThumbsDownIcon}
+      />
+    </MessageAction>
+  )
+}
+
+// Spoken, Markdown's marks would be read out, and code makes no sense aloud.
+function spokenText(markdown: string) {
+  return markdown
+    .replace(/```[\s\S]*?(```|$)/g, " Code block. ")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}(#{1,6}|>|[-+*]|\d+\.)\s+/gm, "")
+    .replace(/[*_~|]+/g, "")
+}
+
+/** Reads text aloud with the browser's voice, or stops it reading. */
+function useReadAloud(text: string) {
+  const [reading, setReading] = React.useState(false)
+
+  // Leaving the message stops what it was reading.
+  React.useEffect(() => {
+    if (!reading) return
+    return () => window.speechSynthesis.cancel()
+  }, [reading])
+
+  const toggle = () => {
+    // One voice at a time: this also ends another message's reading.
+    window.speechSynthesis.cancel()
+    if (reading) return
+    const utterance = new SpeechSynthesisUtterance(spokenText(text))
+    utterance.onend = () => setReading(false)
+    utterance.onerror = () => setReading(false)
+    window.speechSynthesis.speak(utterance)
+    setReading(true)
+  }
+
+  return { reading, toggle }
+}
+
+const REASONS = [
+  "Inaccurate",
+  "Harmful or offensive",
+  "Not helpful",
+  "Something else",
+] as const
+
+type Report = { reason: (typeof REASONS)[number]; details: string }
+
+function ReportDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (report: Report) => void
+}) {
+  const [reason, setReason] = React.useState<Report["reason"]>()
+  const [details, setDetails] = React.useState("")
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Report this response</DialogTitle>
+          <DialogDescription>What was wrong with it?</DialogDescription>
+        </DialogHeader>
+        <div role="radiogroup" className="flex flex-wrap gap-2">
+          {REASONS.map((option) => (
+            <Button
+              key={option}
+              role="radio"
+              aria-checked={reason === option}
+              variant={reason === option ? "default" : "outline"}
+              size="sm"
+              onClick={() => setReason(option)}
+            >
+              {option}
+            </Button>
+          ))}
+        </div>
+        <Textarea
+          value={details}
+          onChange={(event) => setDetails(event.target.value)}
+          placeholder="Anything else to add (optional)"
+          aria-label="Details"
+          rows={3}
+        />
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            disabled={!reason}
+            onClick={() => {
+              if (!reason) return
+              onSubmit({ reason, details: details.trim() })
+              onOpenChange(false)
+            }}
+          >
+            Report
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/**
+ * A more button whose menu reads the message aloud, branches the chat from
+ * it, or reports it. Branch and report are left out without their handlers.
+ */
+function MessageMoreActions({
+  text,
+  onBranch,
+  onReport,
+  reported = false,
+}: {
+  /** The message's text, as Markdown. */
+  text: string
+  onBranch?: () => void
+  onReport?: (report: Report) => void
+  /** Already reported, so it can't be again. */
+  reported?: boolean
+}) {
+  const { reading, toggle } = useReadAloud(text)
+  const [reporting, setReporting] = React.useState(false)
+
+  return (
+    <>
+      <Menu>
+        <MenuTrigger
+          render={
+            <MessageAction
+              tooltip="More"
+              className="data-popup-open:bg-muted data-popup-open:[&_svg]:text-foreground"
+            />
+          }
+        >
+          <HugeiconsIcon aria-hidden icon={MoreHorizontalIcon} />
+        </MenuTrigger>
+        <MenuContent side="bottom" align="start">
+          <MenuItem onClick={toggle}>
+            <HugeiconsIcon
+              aria-hidden
+              icon={reading ? VolumeOffIcon : VolumeHighIcon}
+            />
+            {reading ? "Stop reading" : "Read aloud"}
+          </MenuItem>
+          {onBranch ? (
+            <MenuItem onClick={onBranch}>
+              <HugeiconsIcon aria-hidden icon={GitBranchIcon} />
+              Branch in new chat
+            </MenuItem>
+          ) : null}
+          {onReport ? (
+            <>
+              <MenuSeparator />
+              <MenuItem
+                variant="destructive"
+                disabled={reported}
+                onClick={() => setReporting(true)}
+              >
+                <HugeiconsIcon aria-hidden icon={Flag02Icon} />
+                {reported ? "Reported" : "Report"}
+              </MenuItem>
+            </>
+          ) : null}
+        </MenuContent>
+      </Menu>
+      {onReport ? (
+        <ReportDialog
+          open={reporting}
+          onOpenChange={setReporting}
+          onSubmit={onReport}
+        />
+      ) : null}
+    </>
+  )
+}
+
+export {
+  MessageAction,
+  MessageActions,
+  MessageCopyAction,
+  MessageMoreActions,
+  MessageRateAction,
+}
+export type { Rating, Report }
