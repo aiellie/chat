@@ -6,15 +6,16 @@ import {
   type UIMessage,
 } from "ai"
 
-// A plain model id goes through the Vercel AI Gateway, which reads
-// AI_GATEWAY_API_KEY from the environment.
-const model = "anthropic/claude-opus-5.5"
+import { defaultModel } from "@/lib/models"
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json()
+  const { messages, model }: { messages: UIMessage[]; model?: unknown } =
+    await req.json()
 
   const result = streamText({
-    model,
+    // A plain model id goes through the Vercel AI Gateway, which reads
+    // AI_GATEWAY_API_KEY from the environment.
+    model: typeof model === "string" && model ? model : defaultModel,
     messages: await convertToModelMessages(messages),
   })
 
