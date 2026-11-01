@@ -5,7 +5,7 @@ import {
   Cancel01Icon,
   Copy01Icon,
   Csv01Icon,
-  Delete02Icon,
+  Delete01Icon,
   Download04Icon,
   File01Icon,
   FileCodeIcon,
@@ -339,7 +339,7 @@ function FileDialogBody({
             render={<Button variant="destructive" className="sm:me-auto" />}
             onClick={onRemove}
           >
-            <HugeiconsIcon icon={Delete02Icon} data-icon="inline-start" />
+            <HugeiconsIcon icon={Delete01Icon} data-icon="inline-start" />
             Remove
           </DialogClose>
         ) : null}
@@ -387,7 +387,12 @@ function FileAttachment({
 
   return (
     <Dialog>
-      <Attachment size="xs" title={name}>
+      {/* Opening it underlines the title rather than shading the whole chip. */}
+      <Attachment
+        size="xs"
+        title={name}
+        className="has-[>a,>button]:hover:bg-card"
+      >
         <DialogTrigger
           render={<AttachmentTrigger aria-label={`Open ${title}`} />}
         />
@@ -401,7 +406,9 @@ function FileAttachment({
           )}
         </AttachmentMedia>
         <AttachmentContent>
-          <AttachmentTitle>{title}</AttachmentTitle>
+          <AttachmentTitle className="underline-offset-2 group-has-[>button:focus-visible]/attachment:underline group-has-[>button:hover]/attachment:underline">
+            {title}
+          </AttachmentTitle>
           <AttachmentDescription>
             {folder ?? (bytes === undefined ? null : formatSize(bytes))}
           </AttachmentDescription>
