@@ -36,5 +36,12 @@ type ReplyMetadata = {
   usage: LanguageModelUsage
 }
 
+/**
+ * What every message carries. `createdAt` is stamped as a message is sent and
+ * as a reply starts; a reply gains the rest as it finishes. Messages from
+ * before timestamps were kept have none.
+ */
+type MessageMetadata = { createdAt?: number } & Partial<ReplyMetadata>
+
 export { toModelMessages }
-export type { ReplyMetadata }
+export type { MessageMetadata, ReplyMetadata }

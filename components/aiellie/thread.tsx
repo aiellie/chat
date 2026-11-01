@@ -3,10 +3,16 @@
 import type { UIMessage } from "ai"
 
 import { AttachmentGroup } from "@/components/aiellie/attachment"
+import {
+  DateDivider,
+  dayOf,
+  timeLabel,
+} from "@/components/aiellie/date-divider"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { Markdown } from "@/components/aiellie/markdown"
 import { Bubble, BubbleContent } from "@/components/ui/bubble"
-import { Message, MessageContent } from "@/components/ui/message"
+import { Message, MessageContent, MessageFooter } from "@/components/ui/message"
+import type { MessageMetadata } from "@/lib/model-messages"
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -15,6 +21,23 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller"
+
+const sentAtOf = (message: UIMessage) =>
+  (message.metadata as MessageMetadata | undefined)?.createdAt
+
+// The messages a date divider goes above: the first, and each that starts a
+// new day. Messages from before timestamps were kept start none.
+function firstsOfDay(messages: UIMessage[]) {
+  const firsts = new Set<string>()
+  let lastDay: number | undefined
+  for (const message of messages) {
+    const sentAt = sentAtOf(message)
+    if (sentAt === undefined) continue
+    if (dayOf(sentAt) !== lastDay) firsts.add(message.id)
+    lastDay = dayOf(sentAt)
+  }
+  return firsts
+}
 
 function Thread({
   messages,
@@ -29,6 +52,8 @@ function Thread({
   error?: Error
   onRetry?: () => void
 }) {
+  const firsts = firstsOfDay(messages)
+
   return (
     // The chat's header is glass over the top 40px, so the thread scrolls
     // under it: it starts below it, and a message brought to the top stops
@@ -36,7 +61,10 @@ function Thread({
     <MessageScrollerProvider autoScroll scrollMargin={40}>
       <MessageScroller>
         <MessageScrollerViewport>
-          <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 pt-16 pb-6">
+          {/* Items are spaced by their own bottom padding, not a gap: each
+              clips what it paints to its box, and a message's time sits in
+              that space. */}
+          <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-0 px-4 pt-16 pb-0">
             {messages.map((message, index) => {
               const text = message.parts
                 .map((part) => (part.type === "text" ? part.text : ""))
@@ -44,12 +72,17 @@ function Thread({
               const files = message.parts.filter((part) => part.type === "file")
               const mine = message.role === "user"
               const live = streaming && !mine && index === messages.length - 1
+              const sentAt = sentAtOf(message)
               return (
                 <MessageScrollerItem
                   key={message.id}
                   messageId={message.id}
                   scrollAnchor={mine}
+                  className="pb-6"
                 >
+                  {sentAt !== undefined && firsts.has(message.id) ? (
+                    <DateDivider at={sentAt} className="mb-6" />
+                  ) : null}
                   <Message align={mine ? "end" : "start"}>
                     <MessageContent>
                       {files.length > 0 ? (
@@ -84,12 +117,21 @@ function Thread({
                         </Bubble>
                       ) : null}
                     </MessageContent>
+                    {sentAt !== undefined ? (
+                      // Laid in the gap under the message, so showing it on
+                      // hover moves nothing.
+                      <MessageFooter className="pointer-events-none absolute start-0 top-full mt-1 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0">
+                        <time dateTime={new Date(sentAt).toISOString()}>
+                          {timeLabel(sentAt)}
+                        </time>
+                      </MessageFooter>
+                    ) : null}
                   </Message>
                 </MessageScrollerItem>
               )
             })}
             {error ? (
-              <MessageScrollerItem>
+              <MessageScrollerItem className="pb-6">
                 <Message>
                   <MessageContent>
                     <Bubble variant="destructive">

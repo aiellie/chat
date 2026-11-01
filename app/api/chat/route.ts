@@ -6,7 +6,7 @@ import {
 } from "ai"
 
 import { defaultModel } from "@/lib/models"
-import { toModelMessages, type ReplyMetadata } from "@/lib/model-messages"
+import { toModelMessages, type MessageMetadata } from "@/lib/model-messages"
 
 export async function POST(req: Request) {
   const { messages, model }: { messages: UIMessage[]; model?: unknown } =
@@ -30,16 +30,18 @@ export async function POST(req: Request) {
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({
       stream: result.stream,
-      // How the reply went, for the AI debug panel. Small, so it's fine to
-      // keep with the message.
-      messageMetadata: ({ part }): ReplyMetadata | undefined =>
-        part.type === "finish"
-          ? {
-              model: modelId,
-              finishReason: part.finishReason,
-              usage: part.totalUsage,
-            }
-          : undefined,
+      // When the reply started, for its timestamp, and how it went, for the
+      // AI debug panel and context meter. Small, so it's kept with the message.
+      messageMetadata: ({ part }): MessageMetadata | undefined =>
+        part.type === "start"
+          ? { createdAt: Date.now() }
+          : part.type === "finish"
+            ? {
+                model: modelId,
+                finishReason: part.finishReason,
+                usage: part.totalUsage,
+              }
+            : undefined,
     }),
   })
 }

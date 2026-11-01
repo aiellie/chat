@@ -29,6 +29,7 @@ import {
   readableFiles,
   toFileParts,
 } from "@/lib/attachments"
+import type { MessageMetadata } from "@/lib/model-messages"
 import { defaultModel, type ModelOption } from "@/lib/models"
 
 // A picked file waiting to go out with the next message. Its URL draws its
@@ -141,13 +142,15 @@ function Chat({
               onFirstMessage?.(id, text || sent[0].file.name)
             const files = await toFileParts(sent.map((item) => item.file))
             revoke(sent)
+            // When it was sent, for its timestamp in the thread.
+            const metadata: MessageMetadata = { createdAt: Date.now() }
             // An empty text part is refused by some providers, so files can go alone.
             sendMessage(
               files.length === 0
-                ? { text }
+                ? { text, metadata }
                 : text
-                  ? { text, files }
-                  : { files },
+                  ? { text, files, metadata }
+                  : { files, metadata },
               { body: { model } }
             )
           }}
