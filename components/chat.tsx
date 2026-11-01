@@ -3,7 +3,12 @@
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
 
-import { Composer } from "@/components/aiellie/composer"
+import {
+  Composer,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSubmit,
+} from "@/components/aiellie/composer"
 import { Thread } from "@/components/aiellie/thread"
 import { loadMessages, saveMessages } from "@/components/aiellie/thread-store"
 
@@ -30,14 +35,21 @@ function Chat({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <Thread messages={messages} error={error} onRetry={() => regenerate()} />
-      <Composer
-        busy={status === "submitted" || status === "streaming"}
-        onSend={(text) => {
-          if (messages.length === 0) onFirstMessage?.(id, text)
-          sendMessage({ text })
-        }}
-        onStop={() => stop()}
-      />
+      <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4">
+        <Composer
+          status={status}
+          onSubmit={(text) => {
+            if (messages.length === 0) onFirstMessage?.(id, text)
+            sendMessage({ text })
+          }}
+          onStop={() => stop()}
+        >
+          <ComposerInput />
+          <ComposerFooter>
+            <ComposerSubmit />
+          </ComposerFooter>
+        </Composer>
+      </div>
     </div>
   )
 }
