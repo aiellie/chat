@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { EditableTitle } from "@/components/editable-title"
+import { EditableTitle } from "@/components/ui/editable-title"
 import { cn } from "@/lib/utils"
 
 // The chat's bar, which sits in the main panel's header.

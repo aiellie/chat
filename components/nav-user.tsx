@@ -12,7 +12,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
-import { ApiKeysDialog } from "@/components/aiellie/api-keys-dialog"
+import { ApiKeysDialog } from "@/components/api-keys-dialog"
 import {
   Menu,
   MenuContent,

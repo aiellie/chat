@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { brandIcons, type IconProps } from "@/components/icons"
+import { brandIcons, type IconProps } from "@/components/ui/icons"
 
 type LoginValues = { email: string }
 

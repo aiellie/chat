@@ -19,7 +19,7 @@ import {
   ComposerSubmit,
   ComposerToggle,
 } from "@/components/aiellie/composer"
-import { recordingFetch } from "@/components/aiellie/ai-debug-store"
+import { recordingFetch } from "@/components/ai-debug-store"
 import { AttachmentGroup } from "@/components/aiellie/attachment"
 import {
   ChatEmpty,
@@ -30,14 +30,14 @@ import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { ContextMeter, contextOf } from "@/components/aiellie/context-meter"
 import { ModelSelector } from "@/components/aiellie/model-selector"
 import { Thread } from "@/components/aiellie/thread"
-import { VoiceChat } from "@/components/aiellie/voice-chat"
+import { VoiceChat } from "@/components/voice-chat"
 import {
   getReplies,
   loadMessages,
   saveMessages,
   setReplying,
   subscribeReplies,
-} from "@/components/aiellie/thread-store"
+} from "@/components/thread-store"
 import {
   mediaTypeOf,
   pathOf,

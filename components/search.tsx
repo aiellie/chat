@@ -6,7 +6,7 @@ import { Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { UIMessage } from "ai"
 
-import { loadMessages } from "@/components/aiellie/thread-store"
+import { loadMessages } from "@/components/thread-store"
 import type { ChatNavChat } from "@/components/nav-chats"
 import { usePanels } from "@/components/panels"
 import { Dialog, DialogContent } from "@/components/ui/dialog"

@@ -33,7 +33,7 @@ import {
 // Renamed, as this file also uses fetch's Response to pack the link.
 import { Response as Reply } from "@/components/aiellie/response"
 import { Thread } from "@/components/aiellie/thread"
-import { loadMessages } from "@/components/aiellie/thread-store"
+import { loadMessages } from "@/components/thread-store"
 import { citedFirst, searchesIn } from "@/components/aiellie/web-search"
 import type { ChatNavChat } from "@/components/nav-chats"
 import { Button, buttonVariants } from "@/components/ui/button"

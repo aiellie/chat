@@ -9,7 +9,7 @@ import {
   getExchanges,
   subscribeExchanges,
   type Exchange,
-} from "@/components/aiellie/ai-debug-store"
+} from "@/components/ai-debug-store"
 import {
   CodeBlock,
   CodeBlockActions,

@@ -10,7 +10,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { usePathname } from "next/navigation"
 
 import { Chat } from "@/components/chat"
-import { AiDebugButton, AiDebugPanel } from "@/components/aiellie/ai-debug"
+import { AiDebugButton, AiDebugPanel } from "@/components/ai-debug"
 import { ChatHeader, ChatHeaderTitle } from "@/components/aiellie/chat-header"
 import { HistoryButtons } from "@/components/aiellie/history-buttons"
 import {
@@ -25,7 +25,7 @@ import {
   subscribeReplies,
   subscribeThreads,
   titleOf,
-} from "@/components/aiellie/thread-store"
+} from "@/components/thread-store"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { ContentSummary } from "@/components/content-summary"
 import type { ChatMode } from "@/components/chat-switcher"

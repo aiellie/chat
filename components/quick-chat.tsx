@@ -16,7 +16,7 @@ import {
   setQuickChats,
   subscribeQuickChats,
   titleOf,
-} from "@/components/aiellie/thread-store"
+} from "@/components/thread-store"
 import { Chat } from "@/components/chat"
 import type { ChatNavChat } from "@/components/nav-chats"
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/menu"

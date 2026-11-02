@@ -12,7 +12,7 @@ import type { UIMessage } from "ai"
 
 import { FileIcon } from "@/components/aiellie/file-attachment"
 import { SiteIcon } from "@/components/aiellie/sources"
-import { loadMessages } from "@/components/aiellie/thread-store"
+import { loadMessages } from "@/components/thread-store"
 import { pageKey, searchesIn } from "@/components/aiellie/web-search"
 import {
   Popover,
