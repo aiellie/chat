@@ -284,7 +284,6 @@ function EmojiPanel({
             <HugeiconsIcon
               aria-hidden
               icon={ICONS[section.id]}
-              strokeWidth={2}
               className="size-4"
             />
           </button>
@@ -410,7 +409,7 @@ function EmojiSelector({
           />
         }
       >
-        <HugeiconsIcon aria-hidden icon={SmileIcon} strokeWidth={2} />
+        <HugeiconsIcon aria-hidden icon={SmileIcon} />
       </PopoverTrigger>
       <PopoverContent
         side={side}

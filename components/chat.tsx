@@ -21,6 +21,11 @@ import {
 } from "@/components/aiellie/composer"
 import { recordingFetch } from "@/components/aiellie/ai-debug-store"
 import { AttachmentGroup } from "@/components/aiellie/attachment"
+import {
+  ChatEmpty,
+  ChatEmptyDescription,
+  ChatEmptyTitle,
+} from "@/components/aiellie/chat-empty"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { ContextMeter, contextOf } from "@/components/aiellie/context-meter"
 import { ModelSelector } from "@/components/aiellie/model-selector"
@@ -204,32 +209,43 @@ function Chat({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Thread
-        messages={messages}
-        // A reply has begun before its first words, while the status still
-        // reads "submitted".
-        streaming={busy}
-        thinkingSince={thinkingSince}
-        error={error}
-        onRetry={() => regenerate({ body })}
-        onRegenerate={(messageId) => regenerate({ messageId, body })}
-        onRate={(messageId, rating) => annotate(messageId, { rating })}
-        onReport={(messageId, report) =>
-          annotate(messageId, { report: { ...report, at: Date.now() } })
-        }
-        onBranch={
-          onBranch
-            ? (messageId) =>
-                onBranch(
-                  messages.slice(
-                    0,
-                    messages.findIndex((message) => message.id === messageId) +
-                      1
+      {/* A new chat, on the home page, has no thread to show yet. */}
+      {messages.length === 0 ? (
+        <ChatEmpty>
+          <ChatEmptyTitle>How can I help?</ChatEmptyTitle>
+          <ChatEmptyDescription>
+            Ask Ellie anything, or add files to talk through.
+          </ChatEmptyDescription>
+        </ChatEmpty>
+      ) : (
+        <Thread
+          messages={messages}
+          // A reply has begun before its first words, while the status still
+          // reads "submitted".
+          streaming={busy}
+          thinkingSince={thinkingSince}
+          error={error}
+          onRetry={() => regenerate({ body })}
+          onRegenerate={(messageId) => regenerate({ messageId, body })}
+          onRate={(messageId, rating) => annotate(messageId, { rating })}
+          onReport={(messageId, report) =>
+            annotate(messageId, { report: { ...report, at: Date.now() } })
+          }
+          onBranch={
+            onBranch
+              ? (messageId) =>
+                  onBranch(
+                    messages.slice(
+                      0,
+                      messages.findIndex(
+                        (message) => message.id === messageId
+                      ) + 1
+                    )
                   )
-                )
-            : undefined
-        }
-      />
+              : undefined
+          }
+        />
+      )}
       <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4">
         <ComposerHeader open={pending.length > 0}>
           <AttachmentGroup>

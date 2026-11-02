@@ -16,8 +16,8 @@ function ChatHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-// The chat's name, renamed in place by clicking it. Without `onRename`, as
-// for a chat that hasn't been sent to yet, it's plain text.
+// The chat's name, renamed in place by clicking it. Without `onRename`, it's
+// plain text.
 function ChatHeaderTitle({
   title,
   onRename,

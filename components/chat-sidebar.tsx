@@ -95,6 +95,7 @@ function ChatSidebarHeader({
         <TooltipIconButton
           tooltip="Search"
           shortcut="⌘K"
+          aria-keyshortcuts="Meta+K"
           onClick={onSearch}
           className="size-7"
         >

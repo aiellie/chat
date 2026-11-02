@@ -26,6 +26,7 @@ import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
 import type { User } from "@/components/nav-user"
 import { Panels, usePanels } from "@/components/panels"
+import { ChatSearch } from "@/components/search"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button"
 import { useBrowserHistory } from "@/hooks/use-browser-history"
@@ -39,13 +40,13 @@ function titleOf(text: string) {
 }
 
 // The chat header, with a new chat button while the left panel, and the one in
-// its sidebar, is out of sight.
+// its sidebar, is out of sight. A new chat has no title to show yet.
 function MainHeader({
   title,
   onRename,
   onNewChat,
 }: {
-  title: string
+  title?: string
   onRename?: (title: string) => void
   onNewChat: () => void
 }) {
@@ -62,7 +63,9 @@ function MainHeader({
           <HugeiconsIcon icon={PencilEdit02Icon} />
         </TooltipIconButton>
       )}
-      <ChatHeaderTitle title={title} onRename={onRename} />
+      {title !== undefined ? (
+        <ChatHeaderTitle title={title} onRename={onRename} />
+      ) : null}
       <div className="ms-auto" />
       <AiDebugButton />
     </ChatHeader>
@@ -103,12 +106,17 @@ function ChatShell() {
   const [draftId, setDraftId] = React.useState(() => crypto.randomUUID())
   const [mode, setMode] = React.useState<ChatMode>("chat")
   const [activityOpen, setActivityOpen] = React.useState(false)
+  const [searchOpen, setSearchOpen] = React.useState(false)
   const [user, setUser] = React.useState<User>()
 
   const update = (id: string, change: Partial<ChatNavChat>) =>
     setThreads((current) =>
       current.map((chat) => (chat.id === id ? { ...chat, ...change } : chat))
     )
+  const select = (id: string) => {
+    open(id)
+    update(id, { unread: false })
+  }
   const remove = (id: string) => {
     setThreads((current) => current.filter((chat) => chat.id !== id))
     removeMessages(id)
@@ -137,10 +145,8 @@ function ChatShell() {
           <ChatSidebar
             chats={listed}
             activeId={activeId}
-            onSelect={(id) => {
-              open(id)
-              update(id, { unread: false })
-            }}
+            onSelect={select}
+            onSearch={() => setSearchOpen(true)}
             onRename={(id, title) => update(id, { title })}
             onTogglePin={(id) =>
               update(id, {
@@ -188,7 +194,7 @@ function ChatShell() {
             <MainHeader
               // Keyed so a rename left open doesn't follow you to another chat.
               key={active?.id ?? "new"}
-              title={active?.title ?? "New chat"}
+              title={active?.title}
               onRename={
                 active ? (title) => update(active.id, { title }) : undefined
               }
@@ -229,6 +235,14 @@ function ChatShell() {
             }}
           />
         ) : null}
+        {/* With the main panel, which is always there, so ⌘K works while the
+            sidebar is closed or tucked away in a sheet. */}
+        <ChatSearch
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+          chats={chats}
+          onSelect={select}
+        />
       </Panels>
     </SidebarProvider>
   )
