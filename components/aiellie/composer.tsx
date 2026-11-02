@@ -430,7 +430,7 @@ function ComposerToggle({
         className
       )}
     >
-      <HugeiconsIcon aria-hidden icon={icon} strokeWidth={2} />
+      <HugeiconsIcon aria-hidden icon={icon} />
       {pressed ? <span aria-hidden>{label}</span> : null}
     </TooltipIconButton>
   )
