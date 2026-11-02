@@ -12,6 +12,7 @@ import {
 } from "@/components/aiellie/date-divider"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { Markdown } from "@/components/aiellie/markdown"
+import { Reasoning } from "@/components/aiellie/reasoning"
 import {
   MessageAction,
   MessageActions,
@@ -22,7 +23,11 @@ import {
   type Report,
 } from "@/components/aiellie/message-actions"
 import { Bubble, BubbleContent } from "@/components/aiellie/bubble"
-import { Message, MessageContent, MessageFooter } from "@/components/aiellie/message"
+import {
+  Message,
+  MessageContent,
+  MessageFooter,
+} from "@/components/aiellie/message"
 import type { MessageMetadata } from "@/lib/model-messages"
 import {
   MessageScroller,
@@ -96,6 +101,15 @@ function Thread({
               const files = message.parts.filter((part) => part.type === "file")
               const mine = message.role === "user"
               const live = streaming && !mine && index === messages.length - 1
+              const thoughts = message.parts.filter(
+                (part) => part.type === "reasoning"
+              )
+              const reasoning = thoughts
+                .map((part) => part.text)
+                .filter(Boolean)
+                .join("\n\n")
+              const thinking =
+                live && thoughts.some((part) => part.state === "streaming")
               const metadata = message.metadata as MessageMetadata | undefined
               const sentAt = metadata?.createdAt
               return (
@@ -110,6 +124,10 @@ function Thread({
                   ) : null}
                   <Message align={mine ? "end" : "start"}>
                     <MessageContent>
+                      {/* Above the reply, as it came first. */}
+                      {!mine && (reasoning || thinking) ? (
+                        <Reasoning text={reasoning} streaming={thinking} />
+                      ) : null}
                       {files.length > 0 ? (
                         <AttachmentGroup className="max-w-full">
                           {files.map((file, index) => (

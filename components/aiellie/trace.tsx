@@ -120,7 +120,7 @@ function TraceCollapsibleTrigger({
     >
       {children}
       <TraceIcon className="transition-transform group-aria-expanded/trace-collapsible-trigger:rotate-90">
-        <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+        <HugeiconsIcon icon={ArrowRight01Icon} />
       </TraceIcon>
     </CollapsibleTrigger>
   )
