@@ -108,7 +108,7 @@ function MainHeader({
 }
 
 /** Pages of their own, which their routes draw in the chat's place. */
-const PAGES = ["/tools", "/models", "/projects"]
+const PAGES = ["/tools", "/models", "/projects", "/stashd"]
 
 /**
  * The app around every page, from the root layout: the sidebar, the header
@@ -156,6 +156,8 @@ function ChatShell({ children }: { children?: React.ReactNode }) {
   const openModels = () => router.push("/models")
   const projectsOpen = pathname === "/projects"
   const openProjects = () => router.push("/projects")
+  const stashdOpen = pathname === "/stashd"
+  const openStashd = () => router.push("/stashd")
   // The id a new chat gets once its first message is sent.
   const [draftId, setDraftId] = React.useState(() => crypto.randomUUID())
   const [mode, setMode] = React.useState<ChatMode>("chat")
@@ -247,6 +249,8 @@ function ChatShell({ children }: { children?: React.ReactNode }) {
             onModels={openModels}
             projectsOpen={projectsOpen}
             onProjects={openProjects}
+            stashdOpen={stashdOpen}
+            onStashd={openStashd}
             user={user}
             userMenu={{
               onSignIn: ({ email }) => setUser({ name: email.split("@")[0] }),

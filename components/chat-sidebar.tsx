@@ -128,6 +128,8 @@ function ChatSidebar({
   modelsOpen = false,
   onModels,
   projectsOpen = false,
+  stashdOpen = false,
+  onStashd,
   userMenu,
   header = true,
   ...chats
@@ -156,6 +158,10 @@ function ChatSidebar({
   onModels?: () => void
   /** Whether the Projects page is open, in place of a chat. */
   projectsOpen?: boolean
+  /** Whether the Stashd page is open, in place of a chat. */
+  stashdOpen?: boolean
+  /** Opens the Stashd page. */
+  onStashd?: () => void
   /** Off when the panel around it shows `ChatSidebarHeader` in its own header. */
   header?: boolean
 }) {
@@ -174,7 +180,11 @@ function ChatSidebar({
       ) : null}
       <ChatNavMain
         newChatOpen={
-          chats.activeId === null && !toolsOpen && !modelsOpen && !projectsOpen
+          chats.activeId === null &&
+          !toolsOpen &&
+          !modelsOpen &&
+          !projectsOpen &&
+          !stashdOpen
         }
         onNewChat={onNewChat}
         onQuickChat={onQuickChat}
@@ -184,6 +194,8 @@ function ChatSidebar({
         modelsOpen={modelsOpen}
         onModels={onModels}
         projectsOpen={projectsOpen}
+        stashdOpen={stashdOpen}
+        onStashd={onStashd}
       />
       <SidebarContent
         ref={listRef}

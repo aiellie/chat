@@ -42,6 +42,7 @@ function ChatNavMain({
   onModels,
   modelsOpen = false,
   projectsOpen = false,
+  stashdOpen = false,
 }: {
   newChatOpen: boolean
   onNewChat: () => void
@@ -67,6 +68,8 @@ function ChatNavMain({
   modelsOpen?: boolean
   /** Whether the Projects page is open, to mark its row. */
   projectsOpen?: boolean
+  /** Whether the Stashd page is open, to mark its row. */
+  stashdOpen?: boolean
 }) {
   const { closeSheet } = usePanels()
 
@@ -152,7 +155,14 @@ function ChatNavMain({
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton onClick={onStashd}>
+          <SidebarMenuButton
+            isActive={stashdOpen}
+            aria-current={stashdOpen ? "page" : undefined}
+            onClick={() => {
+              onStashd?.()
+              closeSheet()
+            }}
+          >
             <HugeiconsIcon icon={AiCloud02Icon} aria-hidden />
             <span>Stashd</span>
           </SidebarMenuButton>
