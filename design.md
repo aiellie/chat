@@ -190,6 +190,10 @@ A new keyframe is added to these tables with its job, in the same change, and sh
 
 An image shows as a square of itself, cropped with `object-cover`, its name kept for the accessible label. Anything else is a chip: its icon on a `muted` tile, its name, and its kind and size in caption ink. Squares and chips share one height so a mixed row lines up, and the row scrolls sideways with an edge fade rather than wrapping. The remove button shows on hover, on focus, and always on touch. `components/aiellie/file-attachment.tsx` is the reference.
 
+### Plans
+
+A plan the model proposes is a docked card in the reply: a hairline, no fill, `rounded-xl` and `p-4`. A caption row ("Plan · 4 steps") with its state at the end, the title, the numbered steps, then the answer. Until the person answers it, every line is a field that looks like text: its border shows `input` on hover and `ring` on focus, and its words line up with the plain text it becomes, so nothing shifts when it settles. A step's details field shows while the step is being worked on, or once it has words. Each step has a More menu (move up, move down, add below, remove) that shows on hover, on focus, and always on touch. Enter adds a step, Backspace in an empty one removes it, Alt+↑ and Alt+↓ move it, ⌘ or Ctrl+Enter approves. Approve sends the plan as left and the model carries it on; Dismiss doesn't. Once answered it's read-only, "Approved" with a tick or "Dismissed", and a dismissed or never-answered plan sits in `muted-foreground`. While it's written, the caption shimmers "Writing a plan" and its steps fill in. `components/aiellie/plan-review.tsx` is the reference.
+
 ### Secret fields
 
 A key the person pastes in is a password field in an `InputGroup`, with show and clear buttons at its end. Show flips it to plain text and back (`ViewIcon`, `ViewOffSlashIcon`). Clear stays disabled while the field is empty, so the field's end doesn't shift, and puts focus back in the field. The field is `font-mono`, since a key is an id, and carries `data-1p-ignore` and `data-lpignore` so password managers don't offer to save it as a login. Where to get a key is a quiet "Get a key" link with an up-right arrow at the end of the label row, never a button. `components/api-keys-dialog.tsx` is the reference.
@@ -219,15 +223,16 @@ A search field at the top of a menu is a row of the panel, not a field inside it
 
 The same meaning gets the same mark. A row is added once an icon is used for one meaning in two places.
 
-| meaning                                                                           | icon               |
-| --------------------------------------------------------------------------------- | ------------------ |
-| a voice chat: starting one, and a turn said aloud                                 | `AudioWave01Icon`  |
-| close or end: a dialog, a sheet, quick chat, a voice chat, removing an attachment | `Cancel01Icon`     |
-| copy to the clipboard                                                             | `Copy01Icon`       |
-| done: copied, or the choice in a menu                                             | `Tick02Icon`       |
-| search                                                                            | `Search01Icon`     |
-| opens a menu of choices                                                           | `ArrowDown01Icon`  |
-| a section or step that folds open                                                 | `ArrowRight01Icon` |
+| meaning                                                                           | icon                 |
+| --------------------------------------------------------------------------------- | -------------------- |
+| a voice chat: starting one, and a turn said aloud                                 | `AudioWave01Icon`    |
+| close or end: a dialog, a sheet, quick chat, a voice chat, removing an attachment | `Cancel01Icon`       |
+| copy to the clipboard                                                             | `Copy01Icon`         |
+| done: copied, a plan approved, or the choice in a menu                            | `Tick02Icon`         |
+| more actions for a message or a plan's step                                       | `MoreHorizontalIcon` |
+| search                                                                            | `Search01Icon`       |
+| opens a menu of choices                                                           | `ArrowDown01Icon`    |
+| a section or step that folds open                                                 | `ArrowRight01Icon`   |
 
 ## Copy
 

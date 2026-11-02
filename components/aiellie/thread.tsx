@@ -12,6 +12,13 @@ import {
   timeLabel,
 } from "@/components/aiellie/date-divider"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
+import {
+  planMarkdown,
+  PlanReview,
+  plansIn,
+  type PlanCall,
+  type PlanDecision,
+} from "@/components/aiellie/plan-review"
 import { Response } from "@/components/aiellie/response"
 import { Reasoning } from "@/components/aiellie/reasoning"
 import { Sources } from "@/components/aiellie/sources"
@@ -80,6 +87,22 @@ function firstsOfDay(messages: UIMessage[]) {
   return firsts
 }
 
+// A reply's words split around the plans it proposed: those before each
+// plan, then the rest after the last.
+function wordsAround(message: UIMessage, plans: PlanCall[]) {
+  let from = 0
+  return [...plans.map((call) => call.index), message.parts.length].map(
+    (at) => {
+      const words = message.parts
+        .slice(from, at)
+        .map((part) => (part.type === "text" ? part.text : ""))
+        .join("")
+      from = at + 1
+      return words
+    }
+  )
+}
+
 const spokenOf = (message: UIMessage) =>
   (message.metadata as MessageMetadata | undefined)?.spoken
 
@@ -122,6 +145,7 @@ function Thread({
   onRate,
   onBranch,
   onReport,
+  onPlanReview,
 }: {
   messages: UIMessage[]
   /** The voice chat going, by its id, which isn't marked as ended yet. */
@@ -148,6 +172,11 @@ function Thread({
   onBranch?: (messageId: string) => void
   /** Reports a reply. */
   onReport?: (messageId: string, report: Report) => void
+  /**
+   * Answers a plan the last reply proposed, by its tool call. Without it,
+   * plans are read-only.
+   */
+  onPlanReview?: (toolCallId: string, decision: PlanDecision) => void
 }) {
   const firsts = firstsOfDay(messages)
   const voice = voiceChatsIn(messages)
@@ -201,9 +230,28 @@ function Thread({
                 message.parts.some(
                   (part) => part.type === "text" && part.state === "streaming"
                 )
+              // The plans it proposed, each drawn where it was proposed, with
+              // the words written before it above it.
+              const plans = mine ? [] : plansIn(message)
+              const words = wordsAround(message, plans)
+              const reply = words[plans.length]
+              const planning = live && plans.some((call) => call.writing)
+              // What copying or reading the reply gives: its words with its
+              // plans in place, as Markdown.
+              const whole =
+                plans.length === 0
+                  ? text
+                  : words
+                      .flatMap((run, at) => [
+                        run,
+                        plans[at] ? planMarkdown(plans[at].plan) : "",
+                      ])
+                      .filter(Boolean)
+                      .join("\n\n")
               // At work with nothing coming in to show for it: before its
               // first words, or while it reads what a search found.
-              const waiting = live && !thinking && !searching && !writing
+              const waiting =
+                live && !thinking && !searching && !writing && !planning
               const spoken = spokenOf(message)
               // A voice chat's marks are live while it's going.
               const spokenLive = !!spoken && spoken.chat === voiceChat
@@ -271,9 +319,46 @@ function Thread({
                             ))}
                           </AttachmentGroup>
                         ) : null}
+                        {/* A plan waits on the person while it's the last
+                          thing in the thread. */}
+                        {!held
+                          ? plans.map((call, at) => (
+                              <React.Fragment key={call.toolCallId}>
+                                {words[at] ? (
+                                  <Bubble variant="ghost">
+                                    <BubbleContent>
+                                      <Response>{words[at]}</Response>
+                                    </BubbleContent>
+                                  </Bubble>
+                                ) : null}
+                                <PlanReview
+                                  plan={call.plan}
+                                  decision={call.decision}
+                                  writing={live && call.writing}
+                                  error={call.error}
+                                  disabled={streaming}
+                                  onReview={
+                                    onPlanReview &&
+                                    call.open &&
+                                    index === messages.length - 1
+                                      ? (decision) =>
+                                          onPlanReview(
+                                            call.toolCallId,
+                                            decision
+                                          )
+                                      : undefined
+                                  }
+                                />
+                              </React.Fragment>
+                            ))
+                          : null}
                         {/* A reply with no words yet, or none it may show yet,
                           shows it's thinking instead. */}
-                        {!held && (text || (files.length === 0 && !live)) ? (
+                        {!held &&
+                        (reply ||
+                          (files.length === 0 &&
+                            !live &&
+                            plans.length === 0)) ? (
                           <Bubble variant={mine ? "secondary" : "ghost"}>
                             {/* Markdown lays out its own lines, so only what
                               the person typed keeps theirs as written. */}
@@ -303,7 +388,7 @@ function Thread({
                                     description: page.snippet,
                                   }))}
                                 >
-                                  {text}
+                                  {reply}
                                 </Response>
                               )}
                             </BubbleContent>
@@ -335,7 +420,7 @@ function Thread({
                         <MessageFooter className="absolute start-0 top-full gap-2 pt-2 opacity-0 transition-opacity duration-150 group-focus-within/message:opacity-100 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0 has-data-popup-open:opacity-100">
                           {!mine ? (
                             <MessageActions>
-                              <MessageCopyAction value={text} />
+                              <MessageCopyAction value={whole} />
                               {onRate ? (
                                 <>
                                   <MessageRateAction
@@ -370,7 +455,7 @@ function Thread({
                                 </MessageAction>
                               ) : null}
                               <MessageMoreActions
-                                text={text}
+                                text={whole}
                                 onBranch={
                                   onBranch
                                     ? () => onBranch(message.id)

@@ -6,6 +6,8 @@ import {
   type UIMessage,
 } from "ai"
 
+import { PLAN_TOOL } from "@/lib/plan"
+
 // A thread reopened from storage keeps its files' names but not their
 // contents, so the model is told one was there instead.
 function withoutDroppedFiles(message: UIMessage): UIMessage {
@@ -22,12 +24,38 @@ function withoutDroppedFiles(message: UIMessage): UIMessage {
   }
 }
 
+type Part = UIMessage["parts"][number]
+
+// A model can't be sent a tool call without its result. A plan the person
+// wrote their next message over instead of answering is sent as skipped,
+// and one cut off while it was still being written is left out.
+function withPlansAnswered(message: UIMessage): UIMessage {
+  return {
+    ...message,
+    parts: message.parts.flatMap((part): Part[] => {
+      if (part.type !== `tool-${PLAN_TOOL}`) return [part]
+      const call = part as Part & { state: string }
+      if (call.state === "input-streaming") return []
+      if (call.state !== "input-available") return [part]
+      return [
+        {
+          ...call,
+          state: "output-available",
+          output: { decision: "skipped" },
+        } as Part,
+      ]
+    }),
+  }
+}
+
 /**
  * The chat as the model is given it. The chat route sends exactly this, and
  * the AI debug panel shows it.
  */
 function toModelMessages(messages: UIMessage[]) {
-  return convertToModelMessages(messages.map(withoutDroppedFiles))
+  return convertToModelMessages(
+    messages.map((message) => withPlansAnswered(withoutDroppedFiles(message)))
+  )
 }
 
 // A rough count, enough to keep a request under a size: about four

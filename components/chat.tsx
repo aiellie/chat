@@ -29,6 +29,7 @@ import {
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { ContextMeter, contextOf } from "@/components/aiellie/context-meter"
 import { ModelSelector } from "@/components/aiellie/model-selector"
+import { PLAN_TOOL, planApproved } from "@/components/aiellie/plan-review"
 import { Thread } from "@/components/aiellie/thread"
 import { VoiceChat } from "@/components/voice-chat"
 import {
@@ -124,10 +125,13 @@ function Chat({
     stop,
     error,
     regenerate,
+    addToolOutput,
   } = useChat({
     id,
     messages: loadMessages(id),
     transport,
+    // Approving a plan sends the chat on, for the model to carry it out.
+    sendAutomaticallyWhen: planApproved,
   })
 
   // Ratings and reports live on the message, so they're saved with the chat.
@@ -312,6 +316,16 @@ function Chat({
           thinkingSince={thinkingSince}
           error={error}
           onRetry={() => regenerate({ body })}
+          // The answer goes back as the plan's tool output, with the model
+          // as picked, in case it sends the chat on.
+          onPlanReview={(toolCallId, decision) =>
+            addToolOutput({
+              tool: PLAN_TOOL,
+              toolCallId,
+              output: decision,
+              options: { body },
+            })
+          }
           onRegenerate={(messageId) => regenerate({ messageId, body })}
           onRate={(messageId, rating) => annotate(messageId, { rating })}
           onReport={(messageId, report) =>

@@ -16,6 +16,7 @@ import {
   toModelMessages,
   type MessageMetadata,
 } from "@/lib/model-messages"
+import { PLAN_INSTRUCTIONS, PLAN_TOOL, planTool } from "@/lib/plan"
 import { resolveModel } from "@/lib/providers"
 
 // With search on, the model cites what it found where it uses it, in the form
@@ -73,13 +74,18 @@ export async function POST(req: Request) {
   // Straight to the provider when there's a key for it, from the API keys
   // dialog or the server's environment; otherwise through the AI Gateway.
   const resolved = resolveModel(modelId, apiKeysFrom(req))
-  const tools = search === true ? resolved.search : undefined
+  // The model can always propose a plan for the person to review, and with
+  // search on, look things up.
+  const searchTools = search === true ? resolved.search : undefined
+  const tools: ToolSet = { ...searchTools, [PLAN_TOOL]: planTool }
 
   const modelMessages = await toModelMessages(messages)
 
   const result = streamText({
     model: resolved.model,
-    instructions: tools ? CITE_SOURCES : undefined,
+    instructions: searchTools
+      ? `${PLAN_INSTRUCTIONS}\n\n${CITE_SOURCES}`
+      : PLAN_INSTRUCTIONS,
     // A smaller context size picked keeps the request under it, so it stays
     // at the model's standard rate: the oldest messages are left out.
     messages:
@@ -93,10 +99,11 @@ export async function POST(req: Request) {
     providerOptions: {
       google: { thinkingConfig: { includeThoughts: true } },
     },
-    // With search on, the model can look things up, then answer from what it
-    // found: a few steps in all.
+    // The model can look things up, then answer from what it found: a few
+    // steps in all. A plan ends the reply where it's proposed, as it waits on
+    // the person, and an approval sends the chat back here to carry it out.
     tools,
-    stopWhen: tools ? isStepCount(5) : undefined,
+    stopWhen: isStepCount(5),
   })
 
   const clock = reasoningClock()
