@@ -7,10 +7,14 @@ function getNavigation() {
   return (window as Window & { navigation?: Navigation }).navigation
 }
 
+// Next.js moves the history along from inside React's commit, and the entry
+// changes there, where React can't take an update. So the change is passed
+// on once the commit is done.
 function subscribe(onChange: () => void) {
   const navigation = getNavigation()
-  navigation?.addEventListener("currententrychange", onChange)
-  return () => navigation?.removeEventListener("currententrychange", onChange)
+  const later = () => queueMicrotask(onChange)
+  navigation?.addEventListener("currententrychange", later)
+  return () => navigation?.removeEventListener("currententrychange", later)
 }
 
 // Packed into one number so the snapshot compares by value. A browser without

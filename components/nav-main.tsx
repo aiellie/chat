@@ -43,6 +43,7 @@ function ChatNavMain({
   modelsOpen = false,
   projectsOpen = false,
   stashdOpen = false,
+  extensionsOpen = false,
 }: {
   newChatOpen: boolean
   onNewChat: () => void
@@ -70,6 +71,8 @@ function ChatNavMain({
   projectsOpen?: boolean
   /** Whether the Stashd page is open, to mark its row. */
   stashdOpen?: boolean
+  /** Whether the Extensions page is open, to mark its row. */
+  extensionsOpen?: boolean
 }) {
   const { closeSheet } = usePanels()
 
@@ -168,7 +171,14 @@ function ChatNavMain({
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton onClick={onExtensions}>
+          <SidebarMenuButton
+            isActive={extensionsOpen}
+            aria-current={extensionsOpen ? "page" : undefined}
+            onClick={() => {
+              onExtensions?.()
+              closeSheet()
+            }}
+          >
             <HugeiconsIcon icon={Plug02Icon} aria-hidden />
             <span>Extensions</span>
           </SidebarMenuButton>

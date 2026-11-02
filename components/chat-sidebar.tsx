@@ -130,6 +130,8 @@ function ChatSidebar({
   projectsOpen = false,
   stashdOpen = false,
   onStashd,
+  extensionsOpen = false,
+  onExtensions,
   userMenu,
   header = true,
   ...chats
@@ -162,6 +164,10 @@ function ChatSidebar({
   stashdOpen?: boolean
   /** Opens the Stashd page. */
   onStashd?: () => void
+  /** Whether the Extensions page is open, in place of a chat. */
+  extensionsOpen?: boolean
+  /** Opens the Extensions page. */
+  onExtensions?: () => void
   /** Off when the panel around it shows `ChatSidebarHeader` in its own header. */
   header?: boolean
 }) {
@@ -184,7 +190,8 @@ function ChatSidebar({
           !toolsOpen &&
           !modelsOpen &&
           !projectsOpen &&
-          !stashdOpen
+          !stashdOpen &&
+          !extensionsOpen
         }
         onNewChat={onNewChat}
         onQuickChat={onQuickChat}
@@ -196,6 +203,8 @@ function ChatSidebar({
         projectsOpen={projectsOpen}
         stashdOpen={stashdOpen}
         onStashd={onStashd}
+        extensionsOpen={extensionsOpen}
+        onExtensions={onExtensions}
       />
       <SidebarContent
         ref={listRef}
