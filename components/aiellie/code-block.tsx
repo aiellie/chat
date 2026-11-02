@@ -9,7 +9,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Tick02Icon, Copy01Icon } from "@hugeicons/core-free-icons"
 
 const codeBlockVariants = cva(
-  "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-lg text-sm has-[>[data-slot=code-block-content]:focus-visible]:ring-0 has-[>[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
+  "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-xs has-[>[data-slot=code-block-content]:focus-visible]:ring-0 has-[>[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
   {
     variants: {
       variant: {

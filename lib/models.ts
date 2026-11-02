@@ -34,6 +34,10 @@ type ModelOption = {
 // Used until the person picks another, and whenever a request names none.
 const defaultModel = "anthropic/claude-opus-5.5"
 
+// What a voice chat talks to: a gateway realtime model, which hears and
+// speaks itself rather than going through text.
+const voiceModel = "openai/gpt-realtime-2.1"
+
 /** Medium where a model has it, otherwise its lowest effort that reasons. */
 function defaultEffort(efforts: Effort[]) {
   return efforts.includes("medium")
@@ -44,5 +48,5 @@ function defaultEffort(efforts: Effort[]) {
 const isEffort = (value: unknown): value is Effort =>
   EFFORTS.includes(value as Effort)
 
-export { defaultEffort, defaultModel, EFFORTS, isEffort }
+export { defaultEffort, defaultModel, EFFORTS, isEffort, voiceModel }
 export type { Effort, ModelOption }

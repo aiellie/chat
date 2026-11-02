@@ -4,6 +4,8 @@ import * as React from "react"
 import {
   ArrowDown01Icon,
   ArrowUp02Icon,
+  AudioWave01Icon,
+  Cancel01Icon,
   ComputerScreenShareIcon,
   FileUploadIcon,
   FolderUploadIcon,
@@ -358,10 +360,50 @@ function ComposerFooter({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function ComposerSubmit({
+  voice = false,
+  onVoiceChange,
   className,
   ...props
-}: Omit<React.ComponentProps<typeof Button>, "type" | "children">) {
-  const { busy, canSubmit, stop } = useComposer()
+}: Omit<React.ComponentProps<typeof Button>, "type" | "children"> & {
+  /** Whether a voice chat is going. */
+  voice?: boolean
+  /**
+   * Starts or ends a voice chat. With it, the button does that while there's
+   * nothing to send, rather than sitting disabled; typing turns it back into
+   * send, and the voice chat carries on.
+   */
+  onVoiceChange?: (voice: boolean) => void
+}) {
+  const { busy, canSubmit, stop, disabled } = useComposer()
+
+  if (!busy && !canSubmit && onVoiceChange) {
+    const label = voice ? "End voice chat" : "Start voice chat"
+    return (
+      <TooltipIconButton
+        data-slot="composer-voice"
+        variant="default"
+        size="icon-sm"
+        type="button"
+        tooltip={label}
+        side="top"
+        aria-pressed={voice}
+        disabled={disabled}
+        onClick={() => onVoiceChange(!voice)}
+        // Drawn as send is, since it stands in its place.
+        className={cn(
+          "size-7 rounded-full p-0 [&_svg]:text-primary-foreground hover:[&_svg]:text-primary-foreground",
+          className
+        )}
+        {...props}
+      >
+        <HugeiconsIcon
+          aria-hidden
+          icon={voice ? Cancel01Icon : AudioWave01Icon}
+          strokeWidth={2}
+        />
+      </TooltipIconButton>
+    )
+  }
 
   return (
     <Button
@@ -792,7 +834,7 @@ function MicrophoneCheck({ microphone }: { microphone: string }) {
 
 const MICROPHONE_KEY = "aiellie:microphone"
 
-/** The microphone picked last time, or "" for the system's. */
+/** The microphone picked last time, or "" for the system's. A voice chat uses it too. */
 function savedMicrophone() {
   try {
     return localStorage.getItem(MICROPHONE_KEY) ?? ""
@@ -1031,6 +1073,7 @@ export {
   ComposerInput,
   ComposerSubmit,
   ComposerToggle,
+  savedMicrophone,
   useComposer,
 }
 export type { ComposerStatus }

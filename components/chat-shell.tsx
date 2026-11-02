@@ -1,7 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { PencilEdit02Icon } from "@hugeicons/core-free-icons"
+import {
+  BubbleChatAddIcon,
+  PencilEdit02Icon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { usePathname } from "next/navigation"
 
@@ -37,13 +41,16 @@ import { useBrowserHistory } from "@/hooks/use-browser-history"
 
 const noop = () => () => {}
 
-// The chat header, with a new chat button while the left panel, and the one in
-// its sidebar, is out of sight. A new chat has no title to show yet.
+// The chat header, with the new chat, quick chat and search buttons while the
+// left panel, and the ones in its sidebar, are out of sight. A new chat has no
+// title to show yet.
 function MainHeader({
   chatId,
   title,
   onRename,
   onNewChat,
+  onQuickChat,
+  onSearch,
   onShare,
 }: {
   /** The open chat. Left out for a new chat, which holds nothing to look at. */
@@ -51,6 +58,8 @@ function MainHeader({
   title?: string
   onRename?: (title: string) => void
   onNewChat: () => void
+  onQuickChat: () => void
+  onSearch: () => void
   /** Left out, there's no share button, as for a new chat. */
   onShare?: () => void
 }) {
@@ -58,14 +67,34 @@ function MainHeader({
   return (
     <ChatHeader>
       {isOpen("left") ? null : (
-        <TooltipIconButton
-          tooltip="New chat"
-          shortcut="⌘N"
-          onClick={onNewChat}
-          className="size-7"
-        >
-          <HugeiconsIcon icon={PencilEdit02Icon} />
-        </TooltipIconButton>
+        <div className="flex items-center gap-0.5">
+          <TooltipIconButton
+            tooltip="New chat"
+            shortcut="⌘N"
+            onClick={onNewChat}
+            className="size-7"
+          >
+            <HugeiconsIcon icon={PencilEdit02Icon} />
+          </TooltipIconButton>
+          <TooltipIconButton
+            tooltip="Quick chat"
+            shortcut="⌘⇧N"
+            aria-keyshortcuts="Meta+Shift+N"
+            onClick={onQuickChat}
+            className="size-7"
+          >
+            <HugeiconsIcon icon={BubbleChatAddIcon} />
+          </TooltipIconButton>
+          <TooltipIconButton
+            tooltip="Search"
+            shortcut="⌘K"
+            aria-keyshortcuts="Meta+K"
+            onClick={onSearch}
+            className="size-7"
+          >
+            <HugeiconsIcon icon={Search01Icon} />
+          </TooltipIconButton>
+        </div>
       )}
       {title !== undefined ? (
         <ChatHeaderTitle title={title} onRename={onRename} />
@@ -145,6 +174,7 @@ function ChatShell() {
   }
 
   const toggleActivity = () => setActivityOpen((open) => !open)
+  const toggleQuickChat = () => setQuickChatOpen((open) => !open)
 
   const active = chats.find((chat) => chat.id === activeId)
 
@@ -187,7 +217,7 @@ function ChatShell() {
             mode={mode}
             onModeChange={setMode}
             onNewChat={newChat}
-            onQuickChat={() => setQuickChatOpen((open) => !open)}
+            onQuickChat={toggleQuickChat}
             activityOpen={activityOpen}
             onActivity={toggleActivity}
             user={user}
@@ -217,6 +247,8 @@ function ChatShell() {
                 active ? (title) => update(active.id, { title }) : undefined
               }
               onNewChat={newChat}
+              onQuickChat={toggleQuickChat}
+              onSearch={() => setSearchOpen(true)}
               chatId={active?.id}
               onShare={active ? () => share(active.id) : undefined}
             />

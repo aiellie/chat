@@ -30,6 +30,7 @@ import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { ContextMeter, contextOf } from "@/components/aiellie/context-meter"
 import { ModelSelector } from "@/components/aiellie/model-selector"
 import { Thread } from "@/components/aiellie/thread"
+import { VoiceChat } from "@/components/aiellie/voice-chat"
 import {
   getReplies,
   loadMessages,
@@ -59,6 +60,30 @@ type PendingFile = { id: string; file: File; url: string }
 
 function revoke(files: PendingFile[]) {
   for (const { url } of files) URL.revokeObjectURL(url)
+}
+
+/**
+ * The thread with these spoken turns put in, each just before the next one
+ * said after it that's already there, or else at the end. A turn's words can
+ * be transcribed after the reply to them is in.
+ */
+function withSpoken(
+  thread: UIMessage[],
+  spoken: UIMessage[],
+  adding: Set<string>
+) {
+  const result = [...thread]
+  const has = (id: string) => result.some((message) => message.id === id)
+  spoken.forEach((message, index) => {
+    if (!adding.has(message.id) || has(message.id)) return
+    const next = spoken.slice(index + 1).find((later) => has(later.id))
+    result.splice(
+      next ? result.findIndex((other) => other.id === next.id) : result.length,
+      0,
+      message
+    )
+  })
+  return result
 }
 
 // In development every request and reply is recorded for the AI debug panel.
@@ -118,6 +143,12 @@ function Chat({
   const [contextPick, setContext] = React.useState<number>()
   const [fastPick, setFast] = React.useState(false)
   const [search, setSearch] = React.useState(false)
+  const [voice, setVoice] = React.useState(false)
+  // Every turn said in voice chats here, in the order said, and those of
+  // them already put in the thread, which aren't put in again even if
+  // they're later replaced, as by regenerating.
+  const [spoken, setSpoken] = React.useState<UIMessage[]>([])
+  const added = React.useRef(new Set<string>())
 
   // What's picked holds only where the model offers it; otherwise it takes
   // the model's default: medium effort, its full context, and not fast.
@@ -203,6 +234,27 @@ function Chat({
     () => undefined
   )
 
+  // Spoken turns join the thread as they finish. A typed message's reply
+  // writes itself onto the end while it streams, so they wait for it. The
+  // first of them starts the thread, as a first typed message does.
+  React.useEffect(() => {
+    if (busy) return
+    const adding = new Set(
+      spoken.flatMap((message) =>
+        added.current.has(message.id) ? [] : [message.id]
+      )
+    )
+    if (adding.size === 0) return
+    for (const messageId of adding) added.current.add(messageId)
+    if (messages.length === 0) {
+      const first =
+        spoken.find((message) => message.role === "user") ?? spoken[0]
+      const part = first.parts[0]
+      onFirstMessage?.(id, part?.type === "text" ? part.text : "Voice chat")
+    }
+    setMessages((current) => withSpoken(current, spoken, adding))
+  }, [busy, spoken, messages.length, id, onFirstMessage, setMessages])
+
   // Saved once a reply settles, not on every streamed token. A thread that
   // hasn't been sent to yet isn't saved at all.
   React.useEffect(() => {
@@ -258,6 +310,23 @@ function Chat({
             : "mx-auto w-full max-w-3xl shrink-0 px-4 pb-4"
         }
       >
+        {voice ? (
+          <VoiceChat
+            messages={messages}
+            busy={busy}
+            // A session reports all of its turns each time, which take the
+            // place of what it reported before.
+            onMessages={(turns) =>
+              setSpoken((current) => [
+                ...current.filter(
+                  (message) => !turns.some((turn) => turn.id === message.id)
+                ),
+                ...turns,
+              ])
+            }
+            className="pb-3"
+          />
+        ) : null}
         <ComposerHeader open={pending.length > 0}>
           <AttachmentGroup>
             {pending.map((item) => (
@@ -335,8 +404,9 @@ function Chat({
               {...contextOf(messages, models, model)}
               {...(context ? { limit: context } : {})}
             />
-            <ComposerDictate />
-            <ComposerSubmit />
+            {/* Talking is what the voice chat hears, so it isn't dictated too. */}
+            {voice ? null : <ComposerDictate />}
+            <ComposerSubmit voice={voice} onVoiceChange={setVoice} />
           </ComposerFooter>
         </Composer>
         {compact ? null : (
