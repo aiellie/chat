@@ -5,6 +5,11 @@ import { experimental_useRealtime as useRealtime } from "@ai-sdk/react"
 import { MicOff01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  Warp,
+  type PaperShaderElement,
+  type WarpProps,
+} from "@paper-design/shaders-react"
+import {
   experimental_decodeRealtimeAudio as decodeRealtimeAudio,
   gateway,
   type Experimental_RealtimeSessionConfig as RealtimeSessionConfig,
@@ -163,10 +168,45 @@ const LABELS: Record<VoiceState, string> = {
   failed: "Voice chat stopped",
 }
 
+// The orb's look: a Warp shader swirling three colours past a soft edge.
+const WARP = {
+  proportion: 0.35,
+  softness: 1,
+  distortion: 0.32,
+  swirl: 1,
+  swirlIterations: 0,
+  shape: "edge",
+  shapeScale: 0,
+  scale: 0.31,
+  rotation: 176,
+  offsetX: 0.65,
+  offsetY: 0.09,
+  // Drawn as if 240px across and shrunk to fit, so the orb shows the whole
+  // swirl rather than a pale corner of it.
+  fit: "cover",
+  worldWidth: 240,
+  worldHeight: 240,
+} satisfies WarpProps
+
+// Blue while it's live, and grey while it's muted or has stopped.
+const LIVE_COLORS = ["#ade7ff", "#ebf4ff", "#00bbff"]
+const QUIET_COLORS = ["#ffffff", "#bfbfbf", "#ffffff"]
+
+// How fast it swirls with a loud voice. It idles at a fraction of this.
+const SWIRL_SPEED = 12.2
+
+/** How fast the orb swirls, as a share of its top speed, at this loudness. */
+function paceOf(state: VoiceState, level: number) {
+  if (state === "listening" || state === "speaking") return 0.15 + level * 0.85
+  if (state === "connecting") return 0.1
+  if (state === "muted") return 0.04
+  return 0
+}
+
 /**
- * The orb: it swells with whoever is talking, the person or the voice, and
- * greys out while muted. `level` is read every frame, so it can follow audio
- * without rendering.
+ * The orb: it swells and swirls faster with whoever is talking, the person
+ * or the voice, and greys out while muted. `level` is read every frame, so
+ * it can follow audio without rendering.
  */
 function VoiceOrb({
   ref,
@@ -180,11 +220,15 @@ function VoiceOrb({
   level: () => number
 }) {
   const orb = React.useRef<HTMLButtonElement>(null)
-  const read = React.useRef(level)
+  const shader = React.useRef<PaperShaderElement>(null)
+  const read = React.useRef({ level, state })
   React.useEffect(() => {
-    read.current = level
+    read.current = { level, state }
   })
+  const quiet = state === "muted" || state === "failed"
 
+  // Held still where motion is unwanted: the shader starts at rest, and
+  // nothing sets it going.
   React.useEffect(() => {
     const element = orb.current
     if (!element || matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -194,9 +238,13 @@ function VoiceOrb({
       frame = requestAnimationFrame(draw)
       // Quick to swell and slow to settle, so it follows speech without
       // flickering between words.
-      const target = read.current()
+      const target = read.current.level()
       shown += (target - shown) * (target > shown ? 0.35 : 0.1)
       element.style.setProperty("--level", shown.toFixed(3))
+      // Only its pace, which doesn't draw a frame of its own.
+      shader.current?.paperShaderMount?.setSpeed(
+        SWIRL_SPEED * paceOf(read.current.state, shown)
+      )
     }
     let frame = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(frame)
@@ -214,7 +262,7 @@ function VoiceOrb({
       data-slot="voice-orb"
       data-state={state}
       className={cn(
-        "group/orb relative grid size-14 place-items-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default",
+        "group/orb relative grid size-20 place-items-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default",
         className
       )}
       style={{ "--level": 0, ...style } as React.CSSProperties}
@@ -223,30 +271,28 @@ function VoiceOrb({
       {/* A halo that grows with the voice, hidden until there is one. */}
       <span
         aria-hidden
-        className="absolute inset-0 rounded-full bg-live/40 opacity-70 blur-xl transition-opacity duration-500 group-data-[state=connecting]/orb:opacity-0 group-data-[state=failed]/orb:opacity-0 group-data-[state=muted]/orb:opacity-0"
+        className="absolute inset-0 rounded-full bg-[#00bbff]/35 opacity-80 blur-xl transition-opacity duration-500 group-data-[state=connecting]/orb:opacity-0 group-data-[state=failed]/orb:opacity-0 group-data-[state=muted]/orb:opacity-0"
         style={{ scale: "calc(0.9 + var(--level) * 0.9)" }}
       />
       <span
         aria-hidden
-        className="absolute inset-0 overflow-hidden rounded-full shadow-[inset_0_0_12px_rgb(255_255_255/0.35)] transition-[filter,opacity] duration-500 group-data-[state=connecting]/orb:animate-pulse group-data-[state=failed]/orb:opacity-40 group-data-[state=failed]/orb:grayscale group-data-[state=muted]/orb:grayscale"
-        style={{ scale: "calc(0.9 + var(--level) * 0.22)" }}
+        className="absolute inset-0 overflow-hidden rounded-full shadow-[0_1px_3px_rgb(0_0_0/0.12)] transition-opacity duration-500 group-data-[state=connecting]/orb:animate-pulse group-data-[state=failed]/orb:opacity-50"
+        style={{ scale: "calc(0.92 + var(--level) * 0.2)" }}
       >
-        {/* Colour that turns slowly, and faster while the voice talks. */}
-        <span
-          className="absolute -inset-1/3 animate-spin blur-md [animation-duration:7s] group-data-[state=speaking]/orb:[animation-duration:2.5s] motion-reduce:animate-none"
-          style={{
-            background:
-              "conic-gradient(from 0deg, var(--live), color-mix(in oklch, var(--live), oklch(0.82 0.13 210) 70%), color-mix(in oklch, var(--live), white 55%), color-mix(in oklch, var(--live), oklch(0.6 0.25 320) 60%), var(--live))",
-          }}
+        <Warp
+          ref={shader}
+          {...WARP}
+          colors={quiet ? QUIET_COLORS : LIVE_COLORS}
+          speed={0}
+          className="absolute inset-0"
         />
-        <span className="absolute inset-0 bg-[radial-gradient(circle_at_32%_26%,rgb(255_255_255/0.75),transparent_50%)]" />
       </span>
       {state === "muted" ? (
         <HugeiconsIcon
           aria-hidden
           icon={MicOff01Icon}
           strokeWidth={2}
-          className="relative size-5 text-white drop-shadow-sm"
+          className="relative size-6 text-neutral-700"
         />
       ) : null}
     </button>

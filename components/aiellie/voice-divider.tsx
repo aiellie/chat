@@ -4,7 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 
 import { cn } from "@/lib/utils"
 
-// Marks in the thread for a voice chat, in the orb's colour: where one starts
+// Marks in the thread for a voice chat, in the live colour: where one starts
 // and ends, and each turn in it that was said aloud rather than typed.
 
 /**
