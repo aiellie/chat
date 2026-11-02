@@ -44,7 +44,10 @@ function timeLabel(at: number, now = Date.now()) {
   return dayOf(at) === dayOf(now) ? clock : `${dayLabel(at, now)}, ${clock}`
 }
 
-/** A rule across the thread, with the day of what follows it in the middle. */
+/**
+ * The day of what follows it, as plain centred caption text: the messages
+ * already set the thread apart, so lines either side would only add weight.
+ */
 function DateDivider({
   at,
   className,
@@ -61,16 +64,12 @@ function DateDivider({
       aria-label={label}
       data-slot="date-divider"
       className={cn(
-        "flex items-center gap-3 text-xs text-muted-foreground",
+        "flex justify-center text-xs text-muted-foreground",
         className
       )}
       {...props}
     >
-      <span aria-hidden className="h-px flex-1 bg-border" />
-      <time dateTime={new Date(at).toISOString()} className="shrink-0">
-        {label}
-      </time>
-      <span aria-hidden className="h-px flex-1 bg-border" />
+      <time dateTime={new Date(at).toISOString()}>{label}</time>
     </div>
   )
 }

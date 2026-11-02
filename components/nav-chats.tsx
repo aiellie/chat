@@ -127,7 +127,7 @@ function ChatNavTitle({ title }: { title: string }) {
       }
       className="text-clip! transition-[mask-image] transition-discrete duration-0 group-hover/menu-item:delay-300 data-overflow:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent)] group-hover/menu-item:data-overflow:[mask-image:linear-gradient(to_right,transparent,#000_1.5rem)] motion-reduce:transition-none rtl:data-overflow:[mask-image:linear-gradient(to_left,#000_calc(100%-1.5rem),transparent)] rtl:group-hover/menu-item:data-overflow:[mask-image:linear-gradient(to_left,transparent,#000_1.5rem)]"
     >
-      <span className="inline-block transition-[translate] duration-150 ease-out group-hover/menu-item:translate-x-[calc(var(--overflow)*-1)] group-hover/menu-item:delay-300 group-hover/menu-item:duration-(--scroll-duration) group-hover/menu-item:ease-linear motion-reduce:transition-none rtl:group-hover/menu-item:translate-x-(--overflow)">
+      <span className="inline-block transition-[translate] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/menu-item:translate-x-[calc(var(--overflow)*-1)] group-hover/menu-item:delay-300 group-hover/menu-item:duration-(--scroll-duration) group-hover/menu-item:ease-linear motion-reduce:transition-none rtl:group-hover/menu-item:translate-x-(--overflow)">
         {title}
       </span>
     </span>

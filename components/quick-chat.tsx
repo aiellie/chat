@@ -135,7 +135,7 @@ function QuickChat({
           }
           // Glass, as the menus are. A heavier blur smears the page's text
           // away entirely, and the pane looks solid again.
-          className="fixed end-4 bottom-4 isolate z-50 flex h-[min(36rem,calc(100dvh-2rem))] w-[min(26rem,calc(100vw-2rem))] origin-bottom-right flex-col overflow-hidden rounded-2xl border border-border/40 bg-popover text-sm text-foreground shadow-xl backdrop-blur-xs transition-[opacity,scale,translate] duration-150 ease-out outline-none data-ending-style:translate-y-2 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:translate-y-2 data-starting-style:scale-95 data-starting-style:opacity-0 supports-[backdrop-filter]:bg-background/60 motion-reduce:transition-none rtl:origin-bottom-left dark:supports-[backdrop-filter]:bg-background/70"
+          className="fixed end-4 bottom-4 isolate z-50 flex h-[min(36rem,calc(100dvh-2rem))] w-[min(26rem,calc(100vw-2rem))] origin-bottom-right flex-col overflow-hidden rounded-2xl border border-border/40 bg-popover text-sm text-foreground shadow-lg backdrop-blur-xs transition-[opacity,scale,translate] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none data-ending-style:translate-y-2 data-ending-style:scale-95 data-ending-style:opacity-0 data-ending-style:ease-[cubic-bezier(0.4,0,1,1)] data-starting-style:translate-y-2 data-starting-style:scale-95 data-starting-style:opacity-0 supports-[backdrop-filter]:bg-background/60 motion-reduce:transition-none rtl:origin-bottom-left dark:supports-[backdrop-filter]:bg-background/70"
         >
           {/* Blurs the thread scrolling under it, which pads its top to start
               below. Untinted, so it's one pane of glass with the rest. */}

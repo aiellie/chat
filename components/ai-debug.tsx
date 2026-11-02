@@ -190,7 +190,7 @@ function ExchangeCard({
           className={cn(
             "ms-auto shrink-0 rounded-full px-2 py-0.5 text-xs",
             exchange.state === "failed"
-              ? "bg-destructive/10 text-destructive"
+              ? "bg-destructive/4 text-destructive"
               : exchange.state === "streaming"
                 ? "bg-muted text-foreground"
                 : "bg-muted text-muted-foreground"

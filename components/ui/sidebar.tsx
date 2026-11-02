@@ -429,7 +429,7 @@ function SidebarGroupAction({
     props: mergeProps<"button">(
       {
         className: cn(
-          "absolute end-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-sm border border-transparent p-0 text-sidebar-foreground transition-transform duration-80 ease-out outline-none group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:border-sidebar-ring active:scale-90 motion-reduce:transition-none md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0",
+          "absolute end-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-sm border border-transparent p-0 text-sidebar-foreground transition-transform duration-80 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:border-sidebar-ring active:scale-90 motion-reduce:transition-none md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0",
           className
         ),
       },
@@ -572,7 +572,7 @@ function SidebarMenuAction({
         // narrow window has one too, and its sheet should hover the same.
         // The bigger target and the always-on button are for a finger.
         className: cn(
-          "absolute end-1 top-1.25 flex aspect-square w-5 items-center justify-center rounded-sm border border-transparent p-0 text-sidebar-foreground transition-transform duration-80 ease-out outline-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.25 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:border-sidebar-ring active:scale-90 motion-reduce:transition-none pointer-fine:after:hidden [&>svg]:size-4 [&>svg]:shrink-0",
+          "absolute end-1 top-1.25 flex aspect-square w-5 items-center justify-center rounded-sm border border-transparent p-0 text-sidebar-foreground transition-transform duration-80 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[size=default]/menu-button:top-1.25 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:border-sidebar-ring active:scale-90 motion-reduce:transition-none pointer-fine:after:hidden [&>svg]:size-4 [&>svg]:shrink-0",
           showOnHover &&
             "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100 pointer-fine:opacity-0",
           className

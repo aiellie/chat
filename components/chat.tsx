@@ -153,11 +153,20 @@ function Chat({
   const [fastPick, setFast] = React.useState(false)
   const [search, setSearch] = React.useState(false)
   // The voice chat going, if one is, and the realtime model it's with: the
-  // one picked when it started, whatever's picked since.
+  // one picked when it started, whatever's picked since. One that's ending
+  // has hung up and stays only while its orb folds away.
   const [voice, setVoice] = React.useState<{
     id: string
     model: NonNullable<ModelOption["voice"]>
+    ending?: boolean
   }>()
+  const talking = voice && !voice.ending ? voice : undefined
+  // Gone once its row has folded shut, 280 ms.
+  React.useEffect(() => {
+    if (!voice?.ending) return
+    const timer = setTimeout(() => setVoice(undefined), 280)
+    return () => clearTimeout(timer)
+  }, [voice])
   // Every turn said in voice chats here, in the order said, and those of
   // them already put in the thread, which aren't put in again even if
   // they're later replaced, as by regenerating.
@@ -296,7 +305,7 @@ function Chat({
       ) : (
         <Thread
           messages={messages}
-          voiceChat={voice?.id}
+          voiceChat={talking?.id}
           // A reply has begun before its first words, while the status still
           // reads "submitted".
           streaming={busy}
@@ -330,26 +339,37 @@ function Chat({
             : "mx-auto w-full max-w-3xl shrink-0 px-4 pb-4"
         }
       >
-        {voice ? (
-          <VoiceChat
-            key={voice.id}
-            id={voice.id}
-            model={voice.model}
-            messages={messages}
-            busy={busy}
-            // A session reports all of its turns each time, which take the
-            // place of what it reported before.
-            onMessages={(turns) =>
-              setSpoken((current) => [
-                ...current.filter(
-                  (message) => !turns.some((turn) => turn.id === message.id)
-                ),
-                ...turns,
-              ])
-            }
-            className="pb-3"
-          />
-        ) : null}
+        {/* Folds open while a voice chat is going, as the attachment tray
+            does, and away once it ends. */}
+        <div
+          data-open={talking ? "" : undefined}
+          inert={!talking}
+          className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none data-open:grid-rows-[1fr] data-open:opacity-100"
+        >
+          <div className="min-h-0 overflow-hidden">
+            {voice ? (
+              <VoiceChat
+                key={voice.id}
+                id={voice.id}
+                model={voice.model}
+                messages={messages}
+                busy={busy}
+                ending={voice.ending}
+                // A session reports all of its turns each time, which take
+                // the place of what it reported before.
+                onMessages={(turns) =>
+                  setSpoken((current) => [
+                    ...current.filter(
+                      (message) => !turns.some((turn) => turn.id === message.id)
+                    ),
+                    ...turns,
+                  ])
+                }
+                className="pb-3"
+              />
+            ) : null}
+          </div>
+        </div>
         <ComposerHeader open={pending.length > 0}>
           <AttachmentGroup>
             {pending.map((item) => (
@@ -428,19 +448,25 @@ function Chat({
               {...(context ? { limit: context } : {})}
             />
             {/* Talking is what the voice chat hears, so it isn't dictated too. */}
-            {voice ? null : <ComposerDictate />}
+            {talking ? null : <ComposerDictate />}
             <ComposerSubmit
-              voice={voice !== undefined}
+              voice={talking !== undefined}
               // Only a model whose maker has a realtime model can be talked
               // with, but a chat going can always be ended.
               onVoiceChange={
-                voice || option?.voice
-                  ? (on) =>
-                      setVoice(
-                        on && option?.voice
-                          ? { id: crypto.randomUUID(), model: option.voice }
-                          : undefined
+                talking || option?.voice
+                  ? (on) => {
+                      if (on && option?.voice) {
+                        setVoice({
+                          id: crypto.randomUUID(),
+                          model: option.voice,
+                        })
+                        return
+                      }
+                      setVoice((current) =>
+                        current ? { ...current, ending: true } : current
                       )
+                    }
                   : undefined
               }
             />

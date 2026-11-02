@@ -128,7 +128,7 @@ const EmojiSections = React.memo(function EmojiSections({
             // Arrows move between emoji, so only the first is a Tab stop.
             tabIndex={sectionIndex === 0 && index === 0 ? 0 : -1}
             // Clear of the sticky heading when focus scrolls up to it.
-            className="flex aspect-square scroll-mt-8 items-center justify-center rounded-md text-xl leading-none outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="flex aspect-square scroll-mt-8 items-center justify-center rounded-md text-xl leading-none outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
           >
             {each.emoji}
           </button>
@@ -279,7 +279,7 @@ function EmojiPanel({
             aria-current={!searching && inView === section.id}
             disabled={searching}
             onClick={() => jumpTo(section.id)}
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40 aria-[current=true]:bg-accent aria-[current=true]:text-foreground motion-reduce:transition-none"
+            className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 aria-[current=true]:bg-accent aria-[current=true]:text-foreground motion-reduce:transition-none"
           >
             <HugeiconsIcon
               aria-hidden

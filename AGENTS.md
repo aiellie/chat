@@ -8,6 +8,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+# Design
+
+Read `design.md` before changing anything people see. It holds the rules for colour, focus, motion, surfaces and copy.
+
 # Where components go
 
 - `components/ui/`: generic building blocks, shadcn's and our own (`tooltip-icon-button`, `editable-title`, `icons`). They know nothing about chat.

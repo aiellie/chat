@@ -126,7 +126,10 @@ function Highlight({
   if (!pattern) return text
   return text.split(pattern).map((part, index) =>
     index % 2 === 1 ? (
-      <mark key={index} className="rounded-[0.2rem] bg-live/12 text-foreground">
+      <mark
+        key={index}
+        className="rounded-[0.2rem] bg-foreground/10 text-foreground"
+      >
         {part}
       </mark>
     ) : (

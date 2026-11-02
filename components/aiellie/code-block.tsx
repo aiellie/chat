@@ -9,14 +9,13 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Tick02Icon, Copy01Icon } from "@hugeicons/core-free-icons"
 
 const codeBlockVariants = cva(
-  "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-xs has-[>[data-slot=code-block-content]:focus-visible]:ring-0 has-[>[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
+  "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-xl text-xs has-[>[data-slot=code-block-content]:focus-visible]:border-ring has-[>[data-slot=code-block-content]:focus-visible]:ring-0 data-[size=sm]:text-xs",
   {
     variants: {
       variant: {
         default:
           "border border-input text-foreground has-[>[data-slot=code-block-content]:focus-visible]:border-ring dark:bg-input/30",
-        destructive:
-          "border border-destructive/30 text-destructive dark:border-destructive/40",
+        destructive: "border border-destructive/20 text-destructive",
       },
     },
     defaultVariants: {
@@ -186,7 +185,7 @@ const codeBlockLineVariants = cva(
       variant: {
         default: "",
         added: "bg-muted after:content-['+']",
-        removed: "bg-destructive/10 after:text-destructive after:content-['−']",
+        removed: "bg-destructive/4 after:text-destructive after:content-['−']",
         highlighted: "bg-muted",
       },
     },

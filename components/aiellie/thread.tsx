@@ -39,6 +39,8 @@ import {
   MessageFooter,
 } from "@/components/aiellie/message"
 import type { MessageMetadata } from "@/lib/model-messages"
+import { Button } from "@/components/ui/button"
+import { Status, StatusIndicator, StatusLabel } from "@/components/ui/status"
 import { cn } from "@/lib/utils"
 import {
   MessageScroller,
@@ -48,6 +50,18 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/aiellie/message-scroller"
+
+/**
+ * The reason a reply failed, from its error: the first line of the message.
+ * A request that never got an answer, or got a page of HTML back, has
+ * nothing worth reading, so it says that instead.
+ */
+function reasonOf(error: Error) {
+  if (error instanceof TypeError)
+    return "The chat couldn't be reached. Check the connection, then retry."
+  const line = error.message.trim().split("\n")[0]
+  return line && !line.startsWith("<") ? line : "The reply failed."
+}
 
 const sentAtOf = (message: UIMessage) =>
   (message.metadata as MessageMetadata | undefined)?.createdAt
@@ -88,10 +102,10 @@ function voiceChatsIn(messages: UIMessage[]) {
         model: spoken.model,
       })
   }
-  const starts = new Map<string, string>()
+  const starts = new Map<string, { chat: string; model: string }>()
   const ends = new Map<string, string>()
   for (const [chat, { first, last, model }] of chats) {
-    starts.set(first, model)
+    starts.set(first, { chat, model })
     ends.set(last, chat)
   }
   return { starts, ends }
@@ -119,7 +133,10 @@ function Thread({
    * something to show, the thread shows it's thinking.
    */
   thinkingSince?: number
-  /** Shows a bubble that retries the last message when pressed. */
+  /**
+   * Shows the reply failed, with the error's message as the reason, and a
+   * Retry button with `onRetry`.
+   */
   error?: Error
   onRetry?: () => void
   // Each reply action is left out without its handler.
@@ -187,7 +204,9 @@ function Thread({
               // At work with nothing coming in to show for it: before its
               // first words, or while it reads what a search found.
               const waiting = live && !thinking && !searching && !writing
-              const spoken = spokenOf(message) !== undefined
+              const spoken = spokenOf(message)
+              // A voice chat's marks are live while it's going.
+              const spokenLive = !!spoken && spoken.chat === voiceChat
               const voiceStart = voice.starts.get(message.id)
               const voiceEnd = voice.ends.get(message.id)
               return (
@@ -204,7 +223,8 @@ function Thread({
                     {voiceStart !== undefined ? (
                       <VoiceDivider
                         edge="start"
-                        model={voiceStart}
+                        model={voiceStart.model}
+                        live={voiceStart.chat === voiceChat}
                         className="mb-6"
                       />
                     ) : null}
@@ -265,7 +285,10 @@ function Thread({
                             >
                               {spoken ? (
                                 // On the first line, which runs about 23px.
-                                <SpokenMark className="mt-1 shrink-0" />
+                                <SpokenMark
+                                  live={spokenLive}
+                                  className="mt-1 shrink-0"
+                                />
                               ) : null}
                               {mine ? (
                                 text
@@ -390,18 +413,30 @@ function Thread({
                 </Message>
               </MessageScrollerItem>
             ) : null}
+            {/* "Failed" alone doesn't say what to do, so the reason goes
+                beside it, then a way to try again. */}
             {error ? (
               <MessageScrollerItem className="pb-6">
                 <Message>
                   <MessageContent>
-                    <Bubble variant="destructive">
-                      <BubbleContent
-                        render={<button type="button" />}
-                        onClick={onRetry}
-                      >
-                        Something went wrong. Try again.
-                      </BubbleContent>
-                    </Bubble>
+                    <div
+                      role="alert"
+                      data-slot="reply-failed"
+                      className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
+                    >
+                      <Status variant="destructive">
+                        <StatusIndicator />
+                        <StatusLabel>Failed</StatusLabel>
+                      </Status>
+                      <span className="text-muted-foreground">
+                        {reasonOf(error)}
+                      </span>
+                      {onRetry ? (
+                        <Button variant="ghost" size="xs" onClick={onRetry}>
+                          Retry
+                        </Button>
+                      ) : null}
+                    </div>
                   </MessageContent>
                 </Message>
               </MessageScrollerItem>

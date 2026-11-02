@@ -174,7 +174,7 @@ function SharePreview({ chat }: { chat: SharedChat }) {
           role="region"
           aria-label="Preview"
           tabIndex={0}
-          className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <MessageScrollerContent
             inert

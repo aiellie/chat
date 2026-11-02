@@ -14,7 +14,6 @@ import { VoiceStage, type VoiceState } from "@/components/aiellie/voice-orb"
 import { apiKeyHeaders } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
 import { voiceModelOf } from "@/lib/models"
-import { cn } from "@/lib/utils"
 
 // A voice chat runs beside the thread rather than through it: the realtime
 // model hears and answers aloud, what's said joins the thread as it's
@@ -152,6 +151,7 @@ const LABELS: Record<VoiceState, string> = {
   speaking: "Speaking",
   muted: "Muted",
   failed: "Voice chat stopped",
+  ended: "Voice chat ended",
 }
 
 /** Each step's text, joined, as the thread keeps it. */
@@ -161,8 +161,12 @@ const textOf = (message: UIMessage) =>
     .join("\n\n")
     .trim()
 
-// Once connected: the realtime session itself, the orb, and what's said
-// handed to the thread.
+/** What the orb shows, as the session sees it. */
+type Stage = { state: VoiceState; label: string; tooltip?: string }
+
+// Once set up: the realtime session itself, and what's said handed to the
+// thread. It draws nothing: the orb is the voice chat's, so it isn't built
+// again as the session connects, and the session tells it what to show.
 function VoiceSession({
   id,
   model,
@@ -170,7 +174,11 @@ function VoiceSession({
   setup,
   messages,
   busy,
+  ending,
   onMessages,
+  onStage,
+  levelRef,
+  pressRef,
 }: {
   id: string
   model: { id: string; name: string }
@@ -179,7 +187,14 @@ function VoiceSession({
   setup: string
   messages: UIMessage[]
   busy: boolean
+  /** The chat has ended: it hangs up at once, or never connects. */
+  ending: boolean
   onMessages: (messages: UIMessage[]) => void
+  onStage: (stage: Stage) => void
+  /** Set to how loud whoever is talking is, read as the orb draws. */
+  levelRef: React.RefObject<() => number>
+  /** Set to what pressing the orb does. */
+  pressRef: React.RefObject<() => void>
 }) {
   // What the voice is told of the thread: everything when it starts, and
   // from then on what's typed, as it says the rest itself.
@@ -224,6 +239,7 @@ function VoiceSession({
   const {
     status,
     connect,
+    disconnect,
     startAudioCapture,
     stopAudioCapture,
     sendEvent,
@@ -232,11 +248,17 @@ function VoiceSession({
   const microphone = useMicrophoneLevel(stream)
 
   React.useEffect(() => {
+    if (ending) return
     void connect()
     // The session stops the tracks it's given when it's done with them, so
     // it gets a copy, and the orb goes on hearing the microphone itself.
     startAudioCapture(stream.clone())
-  }, [connect, startAudioCapture, stream])
+  }, [ending, connect, startAudioCapture, stream])
+
+  // Ended while the orb folds away: it hangs up now, not once it's gone.
+  React.useEffect(() => {
+    if (ending) disconnect()
+  }, [ending, disconnect])
 
   // Something typed and answered meanwhile is passed on once the reply is in,
   // to a voice that takes it.
@@ -294,8 +316,9 @@ function VoiceSession({
   React.useEffect(() => report(false), [realtime.messages])
   React.useEffect(() => () => report(true), [])
 
-  const state: VoiceState =
-    status === "error"
+  const state: VoiceState = ending
+    ? "ended"
+    : status === "error"
       ? "failed"
       : status !== "connected"
         ? "connecting"
@@ -304,42 +327,45 @@ function VoiceSession({
           : isPlaying
             ? "speaking"
             : "listening"
+  const label =
+    state === "failed" && error ? error.split("\n")[0] : LABELS[state]
+  const tooltip = muted ? "Unmute microphone" : "Mute microphone"
+  React.useEffect(() => {
+    onStage({ state, label, tooltip })
+  }, [state, label, tooltip, onStage])
 
-  return (
-    <VoiceStage
-      state={state}
-      label={state === "failed" && error ? error.split("\n")[0] : LABELS[state]}
-      level={() =>
-        state === "speaking"
-          ? speech.level()
-          : state === "listening"
-            ? microphone.current()
-            : 0
-      }
-      disabled={state === "connecting" || state === "failed"}
-      tooltip={muted ? "Unmute microphone" : "Mute microphone"}
-      onClick={() => {
-        // The microphone goes quiet for the orb too, not only for the voice.
-        for (const track of stream.getAudioTracks()) track.enabled = muted
-        if (muted) startAudioCapture(stream.clone())
-        else stopAudioCapture()
-        setMuted(!muted)
-      }}
-    />
-  )
+  React.useEffect(() => {
+    levelRef.current = () =>
+      state === "speaking"
+        ? speech.level()
+        : state === "listening"
+          ? microphone.current()
+          : 0
+    pressRef.current = () => {
+      // The microphone goes quiet for the orb too, not only for the voice.
+      for (const track of stream.getAudioTracks()) track.enabled = muted
+      if (muted) startAudioCapture(stream.clone())
+      else stopAudioCapture()
+      setMuted(!muted)
+    }
+  })
+
+  return null
 }
 
 /**
- * A voice chat, from when it's started until it's ended by unmounting. It
- * opens the microphone the composer dictates with, then connects. Finished
- * turns go to `onMessages`, every one so far in the order said, each time
- * there's another, marked with the chat's `id`.
+ * A voice chat, from when it's started until it's unmounted, with its orb.
+ * It opens the microphone the composer dictates with, then connects.
+ * Finished turns go to `onMessages`, every one so far in the order said,
+ * each time there's another, marked with the chat's `id`. Once `ending`,
+ * it hangs up and the orb goes quiet, ready to be folded away.
  */
 function VoiceChat({
   id,
   model,
   messages,
   busy,
+  ending = false,
   onMessages,
   className,
 }: {
@@ -350,6 +376,7 @@ function VoiceChat({
   messages: UIMessage[]
   /** Whether a typed message's reply is on its way. */
   busy: boolean
+  ending?: boolean
   onMessages: (messages: UIMessage[]) => void
   className?: string
 }) {
@@ -358,6 +385,14 @@ function VoiceChat({
     setup: string
   }>()
   const [failure, setFailure] = React.useState<string>()
+  const [stage, setStage] = React.useState<Stage>()
+  const levelRef = React.useRef<() => number>(() => 0)
+  const pressRef = React.useRef<() => void>(() => {})
+
+  // Ended: the microphone is let go now, not once the orb has folded away.
+  React.useEffect(() => {
+    if (ending) ready?.stream.getTracks().forEach((track) => track.stop())
+  }, [ending, ready])
 
   React.useEffect(() => {
     let live = true
@@ -405,14 +440,17 @@ function VoiceChat({
     }
   }, [model.id])
 
+  const shown: Stage = ending
+    ? { state: "ended", label: LABELS.ended }
+    : ready && stage
+      ? stage
+      : {
+          state: failure ? "failed" : "connecting",
+          label: failure ?? LABELS.connecting,
+        }
+
   return (
-    <div
-      data-slot="voice-chat"
-      className={cn(
-        "animate-in duration-300 fade-in-0 zoom-in-90 motion-reduce:animate-none",
-        className
-      )}
-    >
+    <div data-slot="voice-chat" className={className}>
       {ready ? (
         <VoiceSession
           {...ready}
@@ -420,16 +458,23 @@ function VoiceChat({
           model={model}
           messages={messages}
           busy={busy}
+          ending={ending}
           onMessages={onMessages}
+          onStage={setStage}
+          levelRef={levelRef}
+          pressRef={pressRef}
         />
-      ) : (
-        <VoiceStage
-          state={failure ? "failed" : "connecting"}
-          label={failure ?? LABELS.connecting}
-          level={() => 0}
-          disabled
-        />
-      )}
+      ) : null}
+      <VoiceStage
+        {...shown}
+        level={() => levelRef.current()}
+        disabled={
+          shown.state === "connecting" ||
+          shown.state === "failed" ||
+          shown.state === "ended"
+        }
+        onClick={() => pressRef.current()}
+      />
     </div>
   )
 }

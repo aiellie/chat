@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils"
 export const paper = "bg-background border border-border/60 dark:bg-popover"
 
 export const glass =
-  "border border-border/60 bg-background/60 backdrop-blur-xs dark:bg-background/70"
+  "border border-border/60 bg-popover supports-[backdrop-filter]:bg-background/60 backdrop-blur-xs dark:supports-[backdrop-filter]:bg-background/70"
 
 export const floating =
-  "bg-background/60 border border-border/60 shadow-xl backdrop-blur-xs dark:bg-background/70"
+  "bg-popover supports-[backdrop-filter]:bg-background/60 border border-border/60 shadow-md backdrop-blur-xs dark:supports-[backdrop-filter]:bg-background/70"
 
 export const field = "bg-foreground/[0.04] dark:bg-foreground/[0.06]"
 
@@ -18,23 +18,23 @@ export const fieldInteractive =
   "bg-foreground/[0.04] transition-colors hover:bg-foreground/[0.07] dark:bg-foreground/[0.06] dark:hover:bg-foreground/[0.09]"
 
 export const pressable =
-  "transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.9] motion-reduce:transition-none"
+  "transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.9] motion-reduce:transition-none"
 
 export const ghostButton =
   "flex items-center justify-center rounded-full text-foreground/45 outline-none transition-[background-color,color,scale] duration-150 hover:bg-foreground/[0.06] hover:text-foreground/90 focus-visible:bg-foreground/[0.06] focus-visible:text-foreground/90 active:scale-[0.9] motion-reduce:transition-none dark:hover:bg-foreground/[0.09]"
 
 export const inkButton =
-  "bg-foreground text-background transition-[opacity,scale] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:opacity-90 active:scale-[0.9] motion-reduce:transition-none"
+  "bg-foreground text-background transition-[opacity,scale] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:opacity-90 active:scale-[0.9] motion-reduce:transition-none"
 
 export const iconSwap =
-  "[grid-area:1/1] transition-[opacity,scale,filter] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none"
+  "[grid-area:1/1] transition-[opacity,scale,filter] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
 
 export const iconSwapIn = "scale-100 opacity-100 blur-none"
 
 export const iconSwapOut = "scale-[0.25] opacity-0 blur-[4px]"
 
 export const labelSwap =
-  "col-start-1 row-start-1 flex w-max items-center gap-1.5 leading-none transition-[opacity,filter] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+  "col-start-1 row-start-1 flex w-max items-center gap-1.5 leading-none transition-[opacity,filter] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
 
 export const labelSwapIn = "opacity-100 blur-none"
 
@@ -42,12 +42,12 @@ export const labelSwapOut =
   "pointer-events-none select-none opacity-0 blur-[2px]"
 
 export const collapsePanel =
-  "h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] data-[ending-style]:h-0 data-[starting-style]:h-0 motion-reduce:transition-none"
+  "h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:h-0 data-[starting-style]:h-0 motion-reduce:transition-none"
 
 export const live =
   "text-accent dark:text-accent bg-accent/5 dark:bg-accent/10 rounded-full px-1.5 py-0.5"
 export const error =
-  "text-destructive dark:text-destructive bg-destructive/4 hover:bg-destructive/8 dark:bg-destructive/15 hover:dark:bg-destructive/25 rounded-full px-1.5 py-0.5"
+  "text-destructive dark:text-destructive bg-destructive/4 hover:bg-destructive/7 rounded-full px-1.5 py-0.5"
 
 export const mono = "font-mono text-xs tracking-tight"
 export const pixel = "font-pixel text-xs tracking-tight"
@@ -106,7 +106,7 @@ export function SwapLabel({
     <span
       style={width === null ? undefined : { width }}
       className={cn(
-        "grid overflow-x-clip transition-[width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+        "grid overflow-x-clip transition-[width] duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
         className
       )}
     >

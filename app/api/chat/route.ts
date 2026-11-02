@@ -9,6 +9,7 @@ import {
 } from "ai"
 
 import { apiKeysFrom } from "@/lib/api-keys"
+import { failureReason } from "@/lib/failures"
 import { defaultModel, isEffort } from "@/lib/models"
 import {
   fitToContext,
@@ -105,6 +106,8 @@ export async function POST(req: Request) {
       stream: result.stream.pipeThrough(clock.watch),
       // Pages a search turned up, for the reply to list.
       sendSources: true,
+      // Why it failed, for the thread to say beside "Failed".
+      onError: (error) => failureReason(error, resolved.route),
       // When the reply started, for its timestamp, and how it went, for the
       // AI debug panel, context meter and reasoning line. Small, so it's kept
       // with the message.

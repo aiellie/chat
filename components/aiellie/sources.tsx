@@ -64,7 +64,7 @@ function Source({ source }: { source: Found }) {
         rel="noreferrer"
         delay={300}
         data-slot="source"
-        className="inline-flex h-6 max-w-48 min-w-0 items-center gap-1.5 rounded-full border bg-card px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="inline-flex h-6 max-w-48 min-w-0 items-center gap-1.5 rounded-full border bg-card px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
       >
         <SiteIcon url={source.url} />
         <span className="min-w-0 truncate">{host}</span>
@@ -73,7 +73,7 @@ function Source({ source }: { source: Found }) {
       <HoverCardContent
         side="top"
         align="start"
-        className="flex w-80 flex-col gap-1.5 bg-background/60 p-3 backdrop-blur-xs dark:bg-background/70"
+        className="flex w-80 flex-col gap-1.5 bg-popover p-3 backdrop-blur-xs supports-[backdrop-filter]:bg-background/60 dark:supports-[backdrop-filter]:bg-background/70"
       >
         <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           <SiteIcon url={source.url} />
@@ -128,7 +128,7 @@ function Sources({
         <button
           type="button"
           onClick={() => setAll(true)}
-          className="inline-flex h-6 items-center rounded-full border bg-card px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="inline-flex h-6 items-center rounded-full border bg-card px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           +{hidden} more
         </button>

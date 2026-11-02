@@ -94,7 +94,7 @@ function Ring({ share }: { share: number }) {
         strokeDasharray={around}
         // A sliver stays, so a fresh chat still reads as a meter.
         strokeDashoffset={around * (1 - Math.max(share, 0.02))}
-        className="stroke-current transition-[stroke-dashoffset] duration-300"
+        className="stroke-current transition-[stroke-dashoffset] duration-280 motion-reduce:transition-none"
       />
     </svg>
   )
@@ -150,7 +150,7 @@ function ContextMeter({
               aria-label={label}
               data-slot="context-meter"
               className={cn(
-                "inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 data-popup-open:text-foreground",
+                "inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-popup-open:text-foreground",
                 share >= 0.75 && "text-foreground",
                 share >= 0.9 && "text-destructive hover:text-destructive",
                 className
@@ -187,7 +187,7 @@ function ContextMeter({
           <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <div
               className={cn(
-                "h-full rounded-full bg-foreground transition-[width] duration-300",
+                "h-full rounded-full bg-foreground transition-[width] duration-280 motion-reduce:transition-none",
                 share >= 0.9 && "bg-destructive"
               )}
               style={{ width: `${share * 100}%` }}

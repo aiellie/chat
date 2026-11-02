@@ -70,7 +70,7 @@ function KeyField({
             target="_blank"
             rel="noreferrer"
             aria-label={`Get ${/^[AEIOU]/.test(label) ? "an" : "a"} ${label} key`}
-            className="inline-flex items-center gap-0.5 rounded-sm text-xs text-muted-foreground underline-offset-2 outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="inline-flex items-center gap-0.5 rounded-sm text-xs text-muted-foreground underline-offset-2 outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring"
           >
             Get a key
             <HugeiconsIcon

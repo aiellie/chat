@@ -132,7 +132,7 @@ function LoginForm({
         <p
           role="alert"
           data-slot="login-form-error"
-          className="flex items-start gap-2 rounded-lg bg-destructive/4 px-3 py-2 text-xs text-destructive dark:bg-destructive/15"
+          className="flex items-start gap-2 rounded-lg bg-destructive/4 px-3 py-2 text-xs text-destructive"
         >
           <HugeiconsIcon
             icon={Alert02Icon}

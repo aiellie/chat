@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils"
 // The orb a voice chat shows above the composer. It only draws: what state
 // the chat is in and how loud it is come from whoever renders it.
 
-type VoiceState = "connecting" | "listening" | "speaking" | "muted" | "failed"
+type VoiceState =
+  "connecting" | "listening" | "speaking" | "muted" | "failed" | "ended"
 
 // The orb's look: a Warp shader swirling three colours past a soft edge.
 const WARP = {
@@ -42,9 +43,29 @@ const WARP = {
   worldHeight: 240,
 } satisfies WarpProps
 
-// Blue while it's live, and grey while it's muted or has stopped.
-const LIVE_COLORS = ["#ade7ff", "#ebf4ff", "#00bbff"]
+// Grey while it's muted, has stopped, or has ended: it isn't live then.
 const QUIET_COLORS = ["#ffffff", "#bfbfbf", "#ffffff"]
+
+/**
+ * Its colours while it's live, from the --live token: two pale tints of it
+ * and the ink itself. The shader can't read a variable or oklch, so the
+ * token is painted to a pixel and read back as rgb.
+ */
+function liveColors() {
+  if (typeof document === "undefined") return QUIET_COLORS
+  const canvas = document.createElement("canvas")
+  canvas.width = canvas.height = 1
+  const context = canvas.getContext("2d", { willReadFrequently: true })
+  if (!context) return QUIET_COLORS
+  context.fillStyle = getComputedStyle(document.documentElement)
+    .getPropertyValue("--live")
+    .trim()
+  context.fillRect(0, 0, 1, 1)
+  const [r, g, b] = context.getImageData(0, 0, 1, 1).data
+  const tint = (white: number) =>
+    `rgb(${[r, g, b].map((ink) => Math.round(ink + (255 - ink) * white)).join(", ")})`
+  return [tint(0.62), tint(0.9), tint(0)]
+}
 
 // How fast it swirls with a loud voice. It idles at a fraction of this.
 const SWIRL_SPEED = 12.2
@@ -79,7 +100,8 @@ function VoiceOrb({
   React.useEffect(() => {
     read.current = { level, state }
   })
-  const quiet = state === "muted" || state === "failed"
+  const quiet = state === "muted" || state === "failed" || state === "ended"
+  const [live] = React.useState(liveColors)
 
   // Held still where motion is unwanted: the shader starts at rest, and
   // nothing sets it going.
@@ -116,7 +138,7 @@ function VoiceOrb({
       data-slot="voice-orb"
       data-state={state}
       className={cn(
-        "group/orb relative grid size-20 place-items-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default",
+        "group/orb relative grid size-20 place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default",
         className
       )}
       style={{ "--level": 0, ...style } as React.CSSProperties}
@@ -125,18 +147,18 @@ function VoiceOrb({
       {/* A halo that grows with the voice, hidden until there is one. */}
       <span
         aria-hidden
-        className="absolute inset-0 rounded-full bg-[#00bbff]/35 opacity-80 blur-xl transition-opacity duration-500 group-data-[state=connecting]/orb:opacity-0 group-data-[state=failed]/orb:opacity-0 group-data-[state=muted]/orb:opacity-0"
+        className="absolute inset-0 rounded-full bg-live/35 opacity-80 blur-xl transition-opacity duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[state=connecting]/orb:opacity-0 group-data-[state=ended]/orb:opacity-0 group-data-[state=failed]/orb:opacity-0 group-data-[state=muted]/orb:opacity-0 motion-reduce:transition-none"
         style={{ scale: "calc(0.9 + var(--level) * 0.9)" }}
       />
       <span
         aria-hidden
-        className="absolute inset-0 overflow-hidden rounded-full shadow-[0_1px_3px_rgb(0_0_0/0.12)] transition-opacity duration-500 group-data-[state=connecting]/orb:animate-pulse group-data-[state=failed]/orb:opacity-50"
+        className="absolute inset-0 overflow-hidden rounded-full transition-opacity duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] group-data-[state=connecting]/orb:animate-pulse group-data-[state=failed]/orb:opacity-50 motion-reduce:animate-none motion-reduce:transition-none"
         style={{ scale: "calc(0.92 + var(--level) * 0.2)" }}
       >
         <Warp
           ref={shader}
           {...WARP}
-          colors={quiet ? QUIET_COLORS : LIVE_COLORS}
+          colors={quiet ? QUIET_COLORS : live}
           speed={0}
           className="absolute inset-0"
         />

@@ -214,7 +214,7 @@ function Composer({
           onFilesAdd(files)
         }}
         className={cn(
-          "flex w-full flex-col gap-1 rounded-xl border border-input bg-background p-2 shadow-md transition-colors has-[textarea:focus-visible]:border-ring/60 data-dragging:border-dashed data-dragging:border-ring motion-reduce:transition-none dark:bg-input/30",
+          "flex w-full flex-col gap-1 rounded-xl border border-input bg-background p-2 transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:shadow-sm data-dragging:border-dashed data-dragging:border-ring motion-reduce:transition-none dark:bg-input/30",
           className
         )}
         {...props}
@@ -508,7 +508,7 @@ function ComposerAddMenu({
             side={side}
             className={cn(
               "size-7 shrink-0 rounded-full p-1.5 data-popup-open:bg-accent data-popup-open:[&_svg]:text-foreground",
-              "[&>svg]:transition-transform [&>svg]:duration-150 [&>svg]:ease-out aria-expanded:[&>svg]:rotate-45 motion-reduce:[&>svg]:transition-none",
+              "[&>svg]:transition-transform [&>svg]:duration-150 [&>svg]:ease-[cubic-bezier(0.16,1,0.3,1)] aria-expanded:[&>svg]:rotate-45 motion-reduce:[&>svg]:transition-none",
               className
             )}
           />
@@ -987,7 +987,7 @@ function ComposerDictate({
         aria-label="Dictation"
         className={cn(
           "flex shrink-0 items-center rounded-full transition-colors",
-          listening && "bg-destructive/10"
+          listening && "bg-live/4"
         )}
       >
         <TooltipIconButton
@@ -1006,7 +1006,7 @@ function ComposerDictate({
           className={cn(
             "size-7 shrink-0 rounded-full p-1.5",
             listening &&
-              "hover:bg-destructive/15 [&_svg]:text-destructive hover:[&_svg]:text-destructive",
+              "hover:bg-live/7 [&_svg]:text-live hover:[&_svg]:text-live",
             className
           )}
           {...props}
@@ -1032,7 +1032,7 @@ function ComposerDictate({
                 className={cn(
                   "-ms-1 h-7 w-4 shrink-0 rounded-full p-0 data-popup-open:bg-accent [&_svg]:size-3! data-popup-open:[&_svg]:text-foreground",
                   listening &&
-                    "hover:bg-destructive/15 [&_svg]:text-destructive hover:[&_svg]:text-destructive"
+                    "hover:bg-live/7 [&_svg]:text-live hover:[&_svg]:text-live"
                 )}
               />
             }
