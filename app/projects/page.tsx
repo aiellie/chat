@@ -129,7 +129,7 @@ export default function ProjectsPage() {
             </div>
             <Button className="shrink-0" onClick={() => setCreating(true)}>
               <HugeiconsIcon aria-hidden icon={Add01Icon} />
-              Create
+              Add
             </Button>
           </div>
           {/* Only once there's something to search. */}

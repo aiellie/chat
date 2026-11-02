@@ -4,7 +4,7 @@ import {
   Folder01Icon,
   PencilEdit02Icon,
   BubbleChatAddIcon,
-  CloudIcon,
+  AiCloud02Icon,
   Plug02Icon,
   ShapeCollectionIcon,
   TimeScheduleIcon,
@@ -33,7 +33,7 @@ function ChatNavMain({
   onNewChat,
   onQuickChat,
   onProjects,
-  onSpaces,
+  onStashd,
   onExtensions,
   onTools,
   toolsOpen = false,
@@ -49,8 +49,8 @@ function ChatNavMain({
   onQuickChat?: () => void
   /** Where the projects live. Left out, the row is there but goes nowhere. */
   onProjects?: () => void
-  /** Where the spaces live. Left out, the row is there but goes nowhere. */
-  onSpaces?: () => void
+  /** Where the stashd live. Left out, the row is there but goes nowhere. */
+  onStashd?: () => void
   /** Where the extensions live. Left out, the row is there but goes nowhere. */
   onExtensions?: () => void
   /** Where the tools live. Left out, the row is there but goes nowhere. */
@@ -152,9 +152,9 @@ function ChatNavMain({
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton onClick={onSpaces}>
-            <HugeiconsIcon icon={CloudIcon} aria-hidden />
-            <span>Spaces</span>
+          <SidebarMenuButton onClick={onStashd}>
+            <HugeiconsIcon icon={AiCloud02Icon} aria-hidden />
+            <span>Stashd</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
