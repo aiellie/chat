@@ -34,7 +34,15 @@ function ToolDetails({ tool }: { tool: ToolEntry }) {
   return (
     <Dialog>
       <DialogTrigger
-        render={<TooltipIconButton tooltip="Details" side="left" />}
+        render={
+          <TooltipIconButton
+            tooltip="Details"
+            side="left"
+            // Shows as the row is hovered, and always on touch, where nothing
+            // hovers. It stays while focused or while its dialog is open.
+            className="opacity-0 transition-[opacity,scale] group-focus-within/item:opacity-100 group-hover/item:opacity-100 data-popup-open:opacity-100 motion-reduce:transition-none pointer-coarse:opacity-100"
+          />
+        }
       >
         <HugeiconsIcon aria-hidden icon={MoreHorizontalIcon} />
       </DialogTrigger>

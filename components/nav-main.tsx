@@ -34,12 +34,14 @@ function ChatNavMain({
   onQuickChat,
   onProjects,
   onSpaces,
-  onPlugins,
+  onExtensions,
   onTools,
   toolsOpen = false,
   onScheduled,
   onAgents,
   onModels,
+  modelsOpen = false,
+  projectsOpen = false,
 }: {
   newChatOpen: boolean
   onNewChat: () => void
@@ -49,8 +51,8 @@ function ChatNavMain({
   onProjects?: () => void
   /** Where the spaces live. Left out, the row is there but goes nowhere. */
   onSpaces?: () => void
-  /** Where the plugins live. Left out, the row is there but goes nowhere. */
-  onPlugins?: () => void
+  /** Where the extensions live. Left out, the row is there but goes nowhere. */
+  onExtensions?: () => void
   /** Where the tools live. Left out, the row is there but goes nowhere. */
   onTools?: () => void
   /** Whether the Tools page is open, to mark its row. */
@@ -61,6 +63,10 @@ function ChatNavMain({
   onAgents?: () => void
   /** Where the models live. Left out, the row is there but goes nowhere. */
   onModels?: () => void
+  /** Whether the Models page is open, to mark its row. */
+  modelsOpen?: boolean
+  /** Whether the Projects page is open, to mark its row. */
+  projectsOpen?: boolean
 }) {
   const { closeSheet } = usePanels()
 
@@ -107,17 +113,16 @@ function ChatNavMain({
           </TooltipIconButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton onClick={onProjects}>
-            <HugeiconsIcon icon={Folder01Icon} aria-hidden />
-            <span>Projects</span>
-          </SidebarMenuButton>
-          <SidebarMenuButton onClick={onSpaces}>
-            <HugeiconsIcon icon={CloudIcon} aria-hidden />
-            <span>Spaces</span>
-          </SidebarMenuButton>
-          <SidebarMenuButton onClick={onPlugins}>
-            <HugeiconsIcon icon={Plug02Icon} aria-hidden />
-            <span>Plugins</span>
+          <SidebarMenuButton
+            isActive={modelsOpen}
+            aria-current={modelsOpen ? "page" : undefined}
+            onClick={() => {
+              onModels?.()
+              closeSheet()
+            }}
+          >
+            <HugeiconsIcon icon={ChatBotIcon} aria-hidden />
+            <span>Models</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
@@ -134,9 +139,28 @@ function ChatNavMain({
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton onClick={onModels}>
-            <HugeiconsIcon icon={ChatBotIcon} aria-hidden />
-            <span>Models</span>
+          <SidebarMenuButton
+            isActive={projectsOpen}
+            aria-current={projectsOpen ? "page" : undefined}
+            onClick={() => {
+              onProjects?.()
+              closeSheet()
+            }}
+          >
+            <HugeiconsIcon icon={Folder01Icon} aria-hidden />
+            <span>Projects</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton onClick={onSpaces}>
+            <HugeiconsIcon icon={CloudIcon} aria-hidden />
+            <span>Spaces</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton onClick={onExtensions}>
+            <HugeiconsIcon icon={Plug02Icon} aria-hidden />
+            <span>Extensions</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>

@@ -57,6 +57,11 @@ function providerOf(id: string) {
   return id.split("/")[0] ?? id
 }
 
+/** Who makes a model, by its gateway id: "Anthropic", or the id's own prefix. */
+function providerLabel(id: string) {
+  return providers[providerOf(id)]?.label ?? providerOf(id)
+}
+
 function ModelIcon({ id, className }: { id: string; className?: string }) {
   const icon = providers[providerOf(id)]?.icon
   const Icon = icon ? modelIcons[icon] : undefined
@@ -344,4 +349,10 @@ function ModelSelector({
   )
 }
 
-export { ModelSelector }
+export {
+  EFFORT_LABELS,
+  groupByProvider,
+  ModelIcon,
+  ModelSelector,
+  providerLabel,
+}

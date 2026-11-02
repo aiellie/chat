@@ -125,6 +125,9 @@ function ChatSidebar({
   onActivity,
   toolsOpen = false,
   onTools,
+  modelsOpen = false,
+  onModels,
+  projectsOpen = false,
   userMenu,
   header = true,
   ...chats
@@ -147,6 +150,12 @@ function ChatSidebar({
   toolsOpen?: boolean
   /** Opens the Tools page. */
   onTools?: () => void
+  /** Whether the Models page is open, in place of a chat. */
+  modelsOpen?: boolean
+  /** Opens the Models page. */
+  onModels?: () => void
+  /** Whether the Projects page is open, in place of a chat. */
+  projectsOpen?: boolean
   /** Off when the panel around it shows `ChatSidebarHeader` in its own header. */
   header?: boolean
 }) {
@@ -164,12 +173,17 @@ function ChatSidebar({
         />
       ) : null}
       <ChatNavMain
-        newChatOpen={chats.activeId === null && !toolsOpen}
+        newChatOpen={
+          chats.activeId === null && !toolsOpen && !modelsOpen && !projectsOpen
+        }
         onNewChat={onNewChat}
         onQuickChat={onQuickChat}
         onProjects={onProjects}
         toolsOpen={toolsOpen}
         onTools={onTools}
+        modelsOpen={modelsOpen}
+        onModels={onModels}
+        projectsOpen={projectsOpen}
       />
       <SidebarContent
         ref={listRef}
