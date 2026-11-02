@@ -30,6 +30,7 @@ import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { ContextMeter, contextOf } from "@/components/aiellie/context-meter"
 import { ModelSelector } from "@/components/aiellie/model-selector"
 import { PLAN_TOOL, planApproved } from "@/components/aiellie/plan-review"
+import { Suggestion, Suggestions } from "@/components/aiellie/suggestions"
 import { Thread } from "@/components/aiellie/thread"
 import { VoiceChat } from "@/components/voice-chat"
 import {
@@ -48,6 +49,7 @@ import {
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
 import { asksToSearch } from "@/lib/search-intent"
+import { TOOL_SUGGESTIONS } from "@/lib/suggestions"
 import {
   defaultEffort,
   defaultModel,
@@ -95,6 +97,9 @@ function withSpoken(
   })
   return result
 }
+
+// When a message was sent, for its timestamp in the thread.
+const sentNow = (): MessageMetadata => ({ createdAt: Date.now() })
 
 // In development every request and reply is recorded for the AI debug panel.
 // API keys from the dialog go with every request, read fresh each time.
@@ -211,6 +216,30 @@ function Chat({
         url: URL.createObjectURL(file),
       })),
     ])
+  }
+
+  // Sends a message with the files waiting to go, as the composer does and a
+  // suggestion does.
+  const send = async (text: string, { search: wanted = false } = {}) => {
+    const sent = pending
+    setPending([])
+    if (messages.length === 0) onFirstMessage?.(id, text || sent[0].file.name)
+    const files = await toFileParts(sent.map((item) => item.file))
+    revoke(sent)
+    const metadata = sentNow()
+    // Asking to search turns search on, for this message and those after it,
+    // as the toggle would.
+    const searching = search || wanted || asksToSearch(text)
+    if (searching !== search) setSearch(true)
+    // An empty text part is refused by some providers, so files can go alone.
+    sendMessage(
+      files.length === 0
+        ? { text, metadata }
+        : text
+          ? { text, files, metadata }
+          : { files, metadata },
+      { body: { ...body, search: searching } }
+    )
   }
 
   const removeFile = (id: string) => {
@@ -353,6 +382,23 @@ function Chat({
             : "mx-auto w-full max-w-3xl shrink-0 px-4 pb-4"
         }
       >
+        {/* Each tool a click away in a new chat, in one row that scrolls
+            sideways. Padded so the scroller doesn't clip a focus ring or the
+            rise they arrive with. */}
+        {messages.length === 0 ? (
+          <Suggestions scroll className="-mx-0.5 px-0.5 pt-0.5 pb-3">
+            {TOOL_SUGGESTIONS.map((suggestion) => (
+              <Suggestion
+                key={suggestion.prompt}
+                onClick={() =>
+                  send(suggestion.prompt, { search: suggestion.search })
+                }
+              >
+                {suggestion.prompt}
+              </Suggestion>
+            ))}
+          </Suggestions>
+        ) : null}
         {/* Folds open while a voice chat is going, as the attachment tray
             does, and away once it ends. */}
         <div
@@ -402,29 +448,7 @@ function Chat({
           status={status}
           hasAttachments={pending.length > 0}
           onFilesAdd={addFiles}
-          onSubmit={async (text) => {
-            const sent = pending
-            setPending([])
-            if (messages.length === 0)
-              onFirstMessage?.(id, text || sent[0].file.name)
-            const files = await toFileParts(sent.map((item) => item.file))
-            revoke(sent)
-            // When it was sent, for its timestamp in the thread.
-            const metadata: MessageMetadata = { createdAt: Date.now() }
-            // Asking to search turns search on, for this message and those
-            // after it, as the toggle would.
-            const searching = search || asksToSearch(text)
-            if (searching !== search) setSearch(true)
-            // An empty text part is refused by some providers, so files can go alone.
-            sendMessage(
-              files.length === 0
-                ? { text, metadata }
-                : text
-                  ? { text, files, metadata }
-                  : { files, metadata },
-              { body: { ...body, search: searching } }
-            )
-          }}
+          onSubmit={(text) => send(text)}
           onStop={() => stop()}
         >
           <ComposerInput />
