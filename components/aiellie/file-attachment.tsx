@@ -439,4 +439,4 @@ function FileAttachment({
   )
 }
 
-export { FileAttachment }
+export { FileAttachment, FileIcon }

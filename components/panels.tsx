@@ -350,6 +350,7 @@ function Panels({
   headerBorder = {},
   glassHeader = false,
   toggleAt = {},
+  toggles = {},
   defaultOpen = { left: true, right: false, bottom: false },
   className,
   children,
@@ -365,6 +366,11 @@ function Panels({
   glassHeader?: boolean
   /** "end" by default, or "start", ahead of whatever `headers` gives it. */
   toggleAt?: Partial<Record<Side, "start" | "end">>
+  /**
+   * Which panels' show buttons the other headers leave off. Each has one by
+   * default. Its shortcut still opens it, and once open it keeps its own.
+   */
+  toggles?: Partial<Record<Side, boolean>>
   defaultOpen?: Partial<Record<Side, boolean>>
   className?: string
   children: React.ReactNode
@@ -454,7 +460,8 @@ function Panels({
 
   const leftOpen = open.left && !isMobile
   const rightOpen = open.right && !isMobile
-  const bottomToggle = has.bottom ? <PanelToggle side="bottom" /> : null
+  const shows = (side: Side) => has[side] && toggles[side] !== false
+  const bottomToggle = shows("bottom") ? <PanelToggle side="bottom" /> : null
 
   return (
     <PanelsContext.Provider value={value}>
@@ -493,13 +500,15 @@ function Panels({
                 border={headerBorder.main}
                 glass={glassHeader}
                 start={
-                  has.left && !leftOpen ? <PanelToggle side="left" /> : null
+                  shows("left") && !leftOpen ? (
+                    <PanelToggle side="left" />
+                  ) : null
                 }
                 end={
                   rightOpen ? null : (
                     <>
                       {bottomToggle}
-                      {has.right ? <PanelToggle side="right" /> : null}
+                      {shows("right") ? <PanelToggle side="right" /> : null}
                     </>
                   )
                 }

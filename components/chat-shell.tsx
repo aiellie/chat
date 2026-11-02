@@ -23,6 +23,7 @@ import {
   titleOf,
 } from "@/components/aiellie/thread-store"
 import { ChatSidebar } from "@/components/chat-sidebar"
+import { ContentSummary } from "@/components/content-summary"
 import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
 import type { User } from "@/components/nav-user"
@@ -39,11 +40,14 @@ const noop = () => () => {}
 // The chat header, with a new chat button while the left panel, and the one in
 // its sidebar, is out of sight. A new chat has no title to show yet.
 function MainHeader({
+  chatId,
   title,
   onRename,
   onNewChat,
   onShare,
 }: {
+  /** The open chat. Left out for a new chat, which holds nothing to look at. */
+  chatId?: string
   title?: string
   onRename?: (title: string) => void
   onNewChat: () => void
@@ -69,6 +73,7 @@ function MainHeader({
       <div className="ms-auto" />
       {onShare ? <ShareButton onClick={onShare} /> : null}
       <AiDebugButton />
+      {chatId ? <ContentSummary chatId={chatId} /> : null}
     </ChatHeader>
   )
 }
@@ -150,6 +155,9 @@ function ChatShell() {
       <Panels
         // The thread pads its own top to start below it.
         glassHeader
+        // Hidden for now: the AI requests button opens the right panel, and
+        // ⌘J still opens the bottom one.
+        toggles={{ right: false, bottom: false }}
         left={
           <ChatSidebar
             chats={listed}
@@ -209,6 +217,7 @@ function ChatShell() {
                 active ? (title) => update(active.id, { title }) : undefined
               }
               onNewChat={newChat}
+              chatId={active?.id}
               onShare={active ? () => share(active.id) : undefined}
             />
           ),

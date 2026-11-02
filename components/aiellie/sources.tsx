@@ -137,4 +137,4 @@ function Sources({
   )
 }
 
-export { Sources }
+export { SiteIcon, Sources }
