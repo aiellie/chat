@@ -44,6 +44,44 @@ function matches(project: Project, query: string) {
     .every((word) => text.includes(word))
 }
 
+// The title opens the project to edit, and stretches over the whole row so the
+// row opens it too. The row's own buttons sit above it.
+const rowTrigger =
+  "text-start outline-none after:absolute after:-inset-px after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring"
+const row = "relative hover:bg-muted/50"
+
+function ProjectRow({ project }: { project: Project }) {
+  const [editing, setEditing] = React.useState(false)
+  return (
+    <Item role="listitem" variant="outline" className={row}>
+      <ItemMedia variant="icon">
+        <ProjectTile icon={project.icon} color={project.color} />
+      </ItemMedia>
+      <ItemContent className="min-w-0">
+        <ItemTitle>
+          <button
+            type="button"
+            className={rowTrigger}
+            onClick={() => setEditing(true)}
+          >
+            {project.name}
+          </button>
+        </ItemTitle>
+        <ItemDescription>
+          {project.description ?? `Created ${day.format(project.createdAt)}`}
+        </ItemDescription>
+      </ItemContent>
+      <ItemActions className="relative z-10">
+        <ProjectActions
+          project={project}
+          editing={editing}
+          onEditingChange={setEditing}
+        />
+      </ItemActions>
+    </Item>
+  )
+}
+
 // The person's projects, from components/projects-store.ts. It sits in the
 // shell from the layout, in the chat's place.
 export default function ProjectsPage() {
@@ -142,21 +180,7 @@ export default function ProjectsPage() {
             className="grid gap-x-6 sm:grid-cols-2"
           >
             {shown.map((project) => (
-              <Item key={project.id} role="listitem" variant="outline">
-                <ItemMedia variant="icon">
-                  <ProjectTile icon={project.icon} color={project.color} />
-                </ItemMedia>
-                <ItemContent className="min-w-0">
-                  <ItemTitle>{project.name}</ItemTitle>
-                  <ItemDescription>
-                    {project.description ??
-                      `Created ${day.format(project.createdAt)}`}
-                  </ItemDescription>
-                </ItemContent>
-                <ItemActions>
-                  <ProjectActions project={project} />
-                </ItemActions>
-              </Item>
+              <ProjectRow key={project.id} project={project} />
             ))}
           </ItemGroup>
         ) : (

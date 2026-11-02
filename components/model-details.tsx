@@ -51,14 +51,23 @@ function contextOf(model: ModelOption) {
  * context, reasoning, fast variant and voice, then what it costs. Only what
  * the Gateway reported for it is shown.
  */
-function ModelDetails({ model }: { model: ModelOption }) {
+function ModelDetails({
+  model,
+  open,
+  onOpenChange,
+}: {
+  model: ModelOption
+  /** Open, to open it from elsewhere on the row too, like its title. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
   const efforts = model.efforts
     ?.filter((effort) => effort !== "none")
     .map((effort) => EFFORT_LABELS[effort])
   const pricing = model.pricing
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger
         render={
           <TooltipIconButton

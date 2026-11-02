@@ -42,6 +42,42 @@ function matches(model: ModelOption, query: string) {
     .every((word) => text.includes(word))
 }
 
+// The title opens the row's dialog, and stretches over the whole row so the
+// row opens it too. The row's own buttons sit above it.
+const rowTrigger =
+  "text-start outline-none after:absolute after:-inset-px after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring"
+const row = "relative hover:bg-muted/50"
+
+function ModelRow({ model }: { model: ModelOption }) {
+  const [open, setOpen] = React.useState(false)
+  return (
+    <Item role="listitem" variant="outline" className={row}>
+      <ItemMedia
+        variant="icon"
+        className="size-9 rounded-lg border border-border/60"
+      >
+        <ModelIcon id={model.id} className="size-5" />
+      </ItemMedia>
+      <ItemContent className="min-w-0">
+        <ItemTitle>
+          <button
+            type="button"
+            className={rowTrigger}
+            onClick={() => setOpen(true)}
+          >
+            {model.name}
+          </button>
+        </ItemTitle>
+        {/* The section names the provider already. */}
+        <ItemDescription>{contextOf(model) ?? model.id}</ItemDescription>
+      </ItemContent>
+      <ItemActions className="relative z-10">
+        <ModelDetails model={model} open={open} onOpenChange={setOpen} />
+      </ItemActions>
+    </Item>
+  )
+}
+
 // The models the chat can talk to, as the Gateway and the API keys offer
 // them, to keep track of. It sits in the shell from the layout, in the chat's
 // place.
@@ -160,24 +196,7 @@ export default function ModelsPage() {
                 className="grid gap-x-6 sm:grid-cols-2"
               >
                 {group.map((model) => (
-                  <Item key={model.id} role="listitem" variant="outline">
-                    <ItemMedia
-                      variant="icon"
-                      className="size-9 rounded-lg border border-border/60"
-                    >
-                      <ModelIcon id={model.id} className="size-5" />
-                    </ItemMedia>
-                    <ItemContent className="min-w-0">
-                      <ItemTitle>{model.name}</ItemTitle>
-                      {/* The section names the provider already. */}
-                      <ItemDescription>
-                        {contextOf(model) ?? model.id}
-                      </ItemDescription>
-                    </ItemContent>
-                    <ItemActions>
-                      <ModelDetails model={model} />
-                    </ItemActions>
-                  </Item>
+                  <ModelRow key={model.id} model={model} />
                 ))}
               </ItemGroup>
             </section>

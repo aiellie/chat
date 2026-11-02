@@ -153,10 +153,18 @@ function ProjectDialog({
 
 /**
  * A project's more button, on its row: edit it, or delete it once the person
- * confirms, since that can't be undone.
+ * confirms, since that can't be undone. Editing is open while `editing`, so
+ * the row can open it from its title too.
  */
-function ProjectActions({ project }: { project: Project }) {
-  const [editing, setEditing] = React.useState(false)
+function ProjectActions({
+  project,
+  editing,
+  onEditingChange: setEditing,
+}: {
+  project: Project
+  editing: boolean
+  onEditingChange: (editing: boolean) => void
+}) {
   const [deleting, setDeleting] = React.useState(false)
 
   return (

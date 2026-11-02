@@ -52,6 +52,48 @@ function matches(tool: ToolEntry, query: string) {
     .every((word) => text.includes(word))
 }
 
+// The title opens the row's dialog, and stretches over the whole row so the
+// row opens it too. The row's own buttons sit above it.
+const rowTrigger =
+  "text-start outline-none after:absolute after:-inset-px after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring"
+const row = "relative hover:bg-muted/50"
+
+function ToolRow({ tool }: { tool: ToolEntry }) {
+  const [open, setOpen] = React.useState(false)
+  return (
+    <Item role="listitem" variant="outline" className={row}>
+      <ItemMedia
+        variant="icon"
+        className={cn(
+          "size-9 rounded-lg",
+          COLORS[tool.id] ?? "border border-border/60"
+        )}
+      >
+        <HugeiconsIcon
+          aria-hidden
+          icon={ICONS[tool.id] ?? Wrench01Icon}
+          className="size-5"
+        />
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>
+          <button
+            type="button"
+            className={rowTrigger}
+            onClick={() => setOpen(true)}
+          >
+            {tool.name}
+          </button>
+        </ItemTitle>
+        <ItemDescription>{tool.summary}</ItemDescription>
+      </ItemContent>
+      <ItemActions className="relative z-10">
+        <ToolDetails tool={tool} open={open} onOpenChange={setOpen} />
+      </ItemActions>
+    </Item>
+  )
+}
+
 // The tools the model can use, from lib/tools/catalog.ts, to keep track of.
 // It sits in the shell from the layout, in the chat's place.
 export default function ToolsPage() {
@@ -116,28 +158,7 @@ export default function ToolsPage() {
         {shown.length > 0 ? (
           <ItemGroup aria-label="Tools" className="grid gap-x-6 sm:grid-cols-2">
             {shown.map((tool) => (
-              <Item key={tool.id} role="listitem" variant="outline">
-                <ItemMedia
-                  variant="icon"
-                  className={cn(
-                    "size-9 rounded-lg",
-                    COLORS[tool.id] ?? "border border-border/60"
-                  )}
-                >
-                  <HugeiconsIcon
-                    aria-hidden
-                    icon={ICONS[tool.id] ?? Wrench01Icon}
-                    className="size-5"
-                  />
-                </ItemMedia>
-                <ItemContent>
-                  <ItemTitle>{tool.name}</ItemTitle>
-                  <ItemDescription>{tool.summary}</ItemDescription>
-                </ItemContent>
-                <ItemActions>
-                  <ToolDetails tool={tool} />
-                </ItemActions>
-              </Item>
+              <ToolRow key={tool.id} tool={tool} />
             ))}
           </ItemGroup>
         ) : (

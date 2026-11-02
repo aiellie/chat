@@ -30,9 +30,18 @@ const code = "font-mono"
  * A tool's details, from its row on the Tools page: what calls it and runs
  * it, which models get it, its files, and its suggestion.
  */
-function ToolDetails({ tool }: { tool: ToolEntry }) {
+function ToolDetails({
+  tool,
+  open,
+  onOpenChange,
+}: {
+  tool: ToolEntry
+  /** Open, to open it from elsewhere on the row too, like its title. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger
         render={
           <TooltipIconButton
