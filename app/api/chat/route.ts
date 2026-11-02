@@ -16,13 +16,8 @@ import {
   toModelMessages,
   type MessageMetadata,
 } from "@/lib/model-messages"
-import { PLAN_INSTRUCTIONS, PLAN_TOOL, planTool } from "@/lib/plan"
 import { resolveModel } from "@/lib/providers"
-
-// With search on, the model cites what it found where it uses it, in the form
-// a reply draws as a numbered citation that previews the page.
-const CITE_SOURCES =
-  "When you use something a web search found, cite the page right after the sentence that uses it, as a markdown link with a number for its text and the page's address, like [1](https://example.com/page). Cite only pages your searches returned, and don't list them again at the end: the chat shows them under your reply."
+import { chatTools } from "@/lib/tools"
 
 /**
  * Times the reasoning as it streams past, block by block, so a reply keeps
@@ -58,7 +53,6 @@ export async function POST(req: Request) {
     model,
     effort,
     context,
-    search,
   }: {
     messages: UIMessage[]
     /** The model picked, or its fast variant with Fast on. */
@@ -67,25 +61,21 @@ export async function POST(req: Request) {
     effort?: unknown
     /** The context size picked, in tokens, for a model with a choice. */
     context?: unknown
-    /** Whether the model may search the web for this reply. */
-    search?: unknown
   } = await req.json()
   const modelId = typeof model === "string" && model ? model : defaultModel
   // Straight to the provider when there's a key for it, from the API keys
   // dialog or the server's environment; otherwise through the AI Gateway.
-  const resolved = resolveModel(modelId, apiKeysFrom(req))
-  // The model can always propose a plan for the person to review, and with
-  // search on, look things up.
-  const searchTools = search === true ? resolved.search : undefined
-  const tools: ToolSet = { ...searchTools, [PLAN_TOOL]: planTool }
+  const keys = apiKeysFrom(req)
+  const resolved = resolveModel(modelId, keys)
+  // Every tool the model may use for this reply, from lib/tools, and how to
+  // use them. It uses one only when the reply needs it.
+  const { tools, instructions } = chatTools(modelId, keys)
 
   const modelMessages = await toModelMessages(messages)
 
   const result = streamText({
     model: resolved.model,
-    instructions: searchTools
-      ? `${PLAN_INSTRUCTIONS}\n\n${CITE_SOURCES}`
-      : PLAN_INSTRUCTIONS,
+    instructions,
     // A smaller context size picked keeps the request under it, so it stays
     // at the model's standard rate: the oldest messages are left out.
     messages:

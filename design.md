@@ -60,6 +60,7 @@ bg-popover supports-[backdrop-filter]:bg-background/60 dark:supports-[backdrop-f
 - The opaque `bg-popover` comes first, so a browser without `backdrop-filter` gets a solid surface.
 - One layer of glass at a time. A menu opened inside a dialog is solid.
 - A panel over a scrim (a dialog, a sheet) is solid, never glass.
+- A floating panel whose own content scrolls under sticky labels is solid, since a label has to hide what passes under it. The emoji picker is the one today. Making a glass surface solid means replacing its `supports-[backdrop-filter]:` fills as well as `bg-popover`, or the glass fill still wins wherever blur is supported.
 - Glass keeps its `border` hairline, since the fill alone doesn't say where the surface ends.
 - A header that content scrolls under is glass laid over the content, not stacked above it. The chat's main header is the reference: `Panels` with `glassHeader` lays it over the main panel, and the thread pads its own top by the header's height.
 

@@ -1,6 +1,6 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
@@ -27,3 +27,15 @@ What follows from that:
 - An aiellie file imports only from `components/ui/`, `components/aiellie/`, `hooks/`, and `lib/` utilities and types. It never imports the app's own `components/*.tsx`, never calls `fetch("/api/…")`, and never reads the app's data or behaviour from `lib/` (`apiKeyHeaders`, the voice model list). Imports go one way: the app uses aiellie, never the reverse.
 - A part may remember its own preferences, like the composer's microphone or the emoji picker's recents. Data the app owns isn't its to keep.
 - When something is both, split it: the reusable view goes in `aiellie/` and takes what it needs as props, and the wiring stays in the app. For example, `components/voice-chat.tsx` (the realtime session, the `/api/realtime` call, the voice models) renders `components/aiellie/voice-orb.tsx` (the orb).
+
+# Where tools go
+
+The model's tools live in `lib/tools/`, one file each, and `index.ts` puts them together for the chat route. They all go to the one `streamText` call in `app/api/chat/route.ts`, since the model picks among them as it replies, so a tool never gets a route of its own.
+
+A new tool:
+
+- gets a file in `lib/tools/` with its definition and what the model is told about it, and a place in `chatTools` in `index.ts`;
+- gets a suggestion in `lib/suggestions.ts`, so a new chat offers it;
+- if it shows in the thread, gets its part in `components/aiellie/`, which `thread.tsx` draws, as `web-search.tsx` and `plan-review.tsx` are.
+
+`lib/tools/` is server code. Browser code imports a tool's file only when it has no provider SDK in it, as `lib/model-messages.ts` imports `plan.ts`, and never `index.ts`.

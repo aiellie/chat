@@ -6,7 +6,7 @@ import {
   type UIMessage,
 } from "ai"
 
-import { PLAN_TOOL } from "@/lib/plan"
+import { PLAN_TOOL } from "@/lib/tools/plan"
 
 // A thread reopened from storage keeps its files' names but not their
 // contents, so the model is told one was there instead.

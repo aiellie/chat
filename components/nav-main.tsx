@@ -6,6 +6,7 @@ import {
   BubbleChatAddIcon,
   CloudIcon,
   Plug02Icon,
+  ShapeCollectionIcon,
   TimeScheduleIcon,
   ChatBotIcon
 } from "@hugeicons/core-free-icons"
@@ -34,6 +35,7 @@ function ChatNavMain({
   onProjects,
   onSpaces,
   onPlugins,
+  onTools,
   onScheduled,
   onAgents,
 }: {
@@ -47,6 +49,8 @@ function ChatNavMain({
   onSpaces?: () => void
   /** Where the plugins live. Left out, the row is there but goes nowhere. */
   onPlugins?: () => void
+  /** Where the tools live. Left out, the row is there but goes nowhere. */
+  onTools?: () => void
   /** Where the scheduled tasks live. Left out, the row is there but goes nowhere. */
   onScheduled?: () => void
   /** Where the agents live. Left out, the row is there but goes nowhere. */
@@ -108,6 +112,12 @@ function ChatNavMain({
           <SidebarMenuButton onClick={onPlugins}>
             <HugeiconsIcon icon={Plug02Icon} aria-hidden />
             <span>Plugins</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem> 
+          <SidebarMenuButton onClick={onTools}> 
+            <HugeiconsIcon icon={ShapeCollectionIcon} aria-hidden />
+            <span>Tools</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
        

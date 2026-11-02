@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
-import { GlobalSearchIcon } from "@hugeicons/core-free-icons"
 import { DefaultChatTransport, type UIMessage } from "ai"
 
 import {
@@ -17,7 +16,6 @@ import {
   ComposerHeader,
   ComposerInput,
   ComposerSubmit,
-  ComposerToggle,
 } from "@/components/aiellie/composer"
 import { recordingFetch } from "@/components/ai-debug-store"
 import { AttachmentGroup } from "@/components/aiellie/attachment"
@@ -48,7 +46,6 @@ import {
 } from "@/lib/attachments"
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
-import { asksToSearch } from "@/lib/search-intent"
 import { TOOL_SUGGESTIONS } from "@/lib/suggestions"
 import {
   defaultEffort,
@@ -160,7 +157,6 @@ function Chat({
   const [effortPick, setEffort] = React.useState<Effort>()
   const [contextPick, setContext] = React.useState<number>()
   const [fastPick, setFast] = React.useState(false)
-  const [search, setSearch] = React.useState(false)
   // The voice chat going, if one is, and the realtime model it's with: the
   // one picked when it started, whatever's picked since. One that's ending
   // has hung up and stays only while its orb folds away.
@@ -203,7 +199,6 @@ function Chat({
     model: fast ? option?.fastId : model,
     effort,
     context,
-    search,
   }
 
   const addFiles = async (files: File[]) => {
@@ -220,17 +215,13 @@ function Chat({
 
   // Sends a message with the files waiting to go, as the composer does and a
   // suggestion does.
-  const send = async (text: string, { search: wanted = false } = {}) => {
+  const send = async (text: string) => {
     const sent = pending
     setPending([])
     if (messages.length === 0) onFirstMessage?.(id, text || sent[0].file.name)
     const files = await toFileParts(sent.map((item) => item.file))
     revoke(sent)
     const metadata = sentNow()
-    // Asking to search turns search on, for this message and those after it,
-    // as the toggle would.
-    const searching = search || wanted || asksToSearch(text)
-    if (searching !== search) setSearch(true)
     // An empty text part is refused by some providers, so files can go alone.
     sendMessage(
       files.length === 0
@@ -238,7 +229,7 @@ function Chat({
         : text
           ? { text, files, metadata }
           : { files, metadata },
-      { body: { ...body, search: searching } }
+      { body }
     )
   }
 
@@ -390,9 +381,7 @@ function Chat({
             {TOOL_SUGGESTIONS.map((suggestion) => (
               <Suggestion
                 key={suggestion.prompt}
-                onClick={() =>
-                  send(suggestion.prompt, { search: suggestion.search })
-                }
+                onClick={() => send(suggestion.prompt)}
               >
                 {suggestion.prompt}
               </Suggestion>
@@ -459,13 +448,6 @@ function Chat({
               <ComposerAddScreenshot />
             </ComposerAddMenu>
             <ComposerEmoji />
-            <ComposerToggle
-              pressed={search}
-              onPressedChange={setSearch}
-              icon={GlobalSearchIcon}
-              label="Search"
-              tooltip="Search the web"
-            />
             {models.length > 0 ? (
               <ModelSelector
                 models={models}

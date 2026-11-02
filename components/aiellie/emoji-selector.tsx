@@ -416,7 +416,11 @@ function EmojiSelector({
         align={align}
         sideOffset={6}
         finalFocus={() => (picked.current && returnFocus?.current) || true}
-        className="w-80 max-w-[calc(100vw-2rem)] gap-0 overflow-hidden bg-popover p-0 backdrop-blur-none dark:bg-popover"
+        // Solid, not glass: its sticky section labels have to hide the emojis
+        // scrolling under them, and the grid reads poorly over blurred text.
+        // The popover's glass fill sits behind `supports-[backdrop-filter]:`,
+        // so it's replaced there too, or it wins wherever blur is supported.
+        className="w-80 max-w-[calc(100vw-2rem)] gap-0 overflow-hidden p-0 backdrop-blur-none supports-[backdrop-filter]:bg-popover dark:supports-[backdrop-filter]:bg-popover"
       >
         <EmojiPanel
           onPick={(emoji, more) => {
