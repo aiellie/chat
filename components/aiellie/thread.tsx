@@ -3,7 +3,12 @@
 import * as React from "react"
 import { RefreshIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import type { UIMessage } from "ai"
+import {
+  isToolUIPart,
+  type DynamicToolUIPart,
+  type ToolUIPart,
+  type UIMessage,
+} from "ai"
 
 import { AttachmentGroup } from "@/components/aiellie/attachment"
 import {
@@ -111,6 +116,8 @@ function voiceChatsIn(messages: UIMessage[]) {
   return { starts, ends }
 }
 
+type ToolPart = ToolUIPart | DynamicToolUIPart
+
 function Thread({
   messages,
   voiceChat,
@@ -122,6 +129,7 @@ function Thread({
   onRate,
   onBranch,
   onReport,
+  renderTool,
 }: {
   messages: UIMessage[]
   /** The voice chat going, by its id, which isn't marked as ended yet. */
@@ -148,6 +156,15 @@ function Thread({
   onBranch?: (messageId: string) => void
   /** Reports a reply. */
   onReport?: (messageId: string, report: Report) => void
+  /**
+   * Draws a tool call the app shows itself, like a plan to approve, above the
+   * reply's words. Return null to leave a part out.
+   */
+  renderTool?: (
+    part: ToolPart,
+    message: UIMessage,
+    live: boolean
+  ) => React.ReactNode
 }) {
   const firsts = firstsOfDay(messages)
   const voice = voiceChatsIn(messages)
@@ -201,9 +218,28 @@ function Thread({
                 message.parts.some(
                   (part) => part.type === "text" && part.state === "streaming"
                 )
+              const tools = renderTool
+                ? message.parts.filter(isToolUIPart).flatMap((part) => {
+                    const node = renderTool(part, message, live)
+                    return node == null
+                      ? []
+                      : [
+                          {
+                            id: part.toolCallId,
+                            node,
+                            streaming: part.state === "input-streaming",
+                          },
+                        ]
+                  })
+                : []
               // At work with nothing coming in to show for it: before its
               // first words, or while it reads what a search found.
-              const waiting = live && !thinking && !searching && !writing
+              const waiting =
+                live &&
+                !thinking &&
+                !searching &&
+                !writing &&
+                !tools.some((tool) => tool.streaming)
               const spoken = spokenOf(message)
               // A voice chat's marks are live while it's going.
               const spokenLive = !!spoken && spoken.chat === voiceChat
@@ -259,6 +295,14 @@ function Thread({
                             }
                           />
                         ) : null}
+                        {/* Ahead of the words, which carry on from what was decided. */}
+                        {held
+                          ? null
+                          : tools.map((tool) => (
+                              <React.Fragment key={tool.id}>
+                                {tool.node}
+                              </React.Fragment>
+                            ))}
                         {files.length > 0 ? (
                           <AttachmentGroup className="max-w-full">
                             {files.map((file, index) => (
@@ -273,7 +317,9 @@ function Thread({
                         ) : null}
                         {/* A reply with no words yet, or none it may show yet,
                           shows it's thinking instead. */}
-                        {!held && (text || (files.length === 0 && !live)) ? (
+                        {!held &&
+                        (text ||
+                          (files.length === 0 && tools.length === 0 && !live)) ? (
                           <Bubble variant={mine ? "secondary" : "ghost"}>
                             {/* Markdown lays out its own lines, so only what
                               the person typed keeps theirs as written. */}
@@ -451,3 +497,4 @@ function Thread({
 }
 
 export { Thread }
+export type { ToolPart }
