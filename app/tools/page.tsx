@@ -9,6 +9,7 @@ import {
   Wrench01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
+import { cn } from "cn"
 
 import { ToolDetails } from "@/components/tool-details"
 import {
@@ -32,6 +33,12 @@ import { TOOLS, type ToolEntry } from "@/lib/tools/catalog"
 const ICONS: Record<string, IconSvgElement> = {
   "web-search": GlobalSearchIcon,
   plan: LeftToRightListNumberIcon,
+}
+
+// The tile behind that mark: a pale fill, and the icon's ink.
+const COLORS: Record<string, string> = {
+  "web-search": "bg-blue-50 text-blue-500",
+  plan: "bg-amber-50 text-amber-500",
 }
 
 // Whether a tool has every word searched for, in its name, what it does, or
@@ -112,7 +119,10 @@ export default function ToolsPage() {
               <Item key={tool.id} role="listitem" variant="outline">
                 <ItemMedia
                   variant="icon"
-                  className="size-9 rounded-lg border border-border/60"
+                  className={cn(
+                    "size-9 rounded-lg",
+                    COLORS[tool.id] ?? "border border-border/60"
+                  )}
                 >
                   <HugeiconsIcon
                     aria-hidden

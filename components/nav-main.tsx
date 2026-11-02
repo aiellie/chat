@@ -39,6 +39,7 @@ function ChatNavMain({
   toolsOpen = false,
   onScheduled,
   onAgents,
+  onModels,
 }: {
   newChatOpen: boolean
   onNewChat: () => void
@@ -58,6 +59,8 @@ function ChatNavMain({
   onScheduled?: () => void
   /** Where the agents live. Left out, the row is there but goes nowhere. */
   onAgents?: () => void
+  /** Where the models live. Left out, the row is there but goes nowhere. */
+  onModels?: () => void
 }) {
   const { closeSheet } = usePanels()
 
@@ -130,7 +133,12 @@ function ChatNavMain({
             <span>Tools</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
-       
+        <SidebarMenuItem>
+          <SidebarMenuButton onClick={onModels}>
+            <HugeiconsIcon icon={ChatBotIcon} aria-hidden />
+            <span>Models</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
   )

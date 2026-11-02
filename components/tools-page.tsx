@@ -7,6 +7,7 @@ import {
   Wrench01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
+import { cn } from "cn"
 
 import {
   Item,
@@ -22,6 +23,12 @@ import { TOOLS, type ToolEntry } from "@/lib/tools/catalog"
 const ICONS: Record<string, IconSvgElement> = {
   "web-search": GlobalSearchIcon,
   plan: LeftToRightListNumberIcon,
+}
+
+// The tile behind that mark: a pale fill, and the icon's ink.
+const COLORS: Record<string, string> = {
+  "web-search": "bg-blue-50 text-blue-500",
+  plan: "bg-amber-50 text-amber-500",
 }
 
 const code = "font-mono text-xs"
@@ -45,8 +52,18 @@ function Detail({
 function Tool({ tool }: { tool: ToolEntry }) {
   return (
     <Item variant="outline" role="listitem">
-      <ItemMedia variant="icon">
-        <HugeiconsIcon aria-hidden icon={ICONS[tool.id] ?? Wrench01Icon} />
+      <ItemMedia
+        variant="icon"
+        className={cn(
+          "size-9 rounded-lg",
+          COLORS[tool.id] ?? "border border-border/60"
+        )}
+      >
+        <HugeiconsIcon
+          aria-hidden
+          icon={ICONS[tool.id] ?? Wrench01Icon}
+          className="size-5"
+        />
       </ItemMedia>
       {/* The details sit under the description, lined up with the title. */}
       <ItemContent className="min-w-0 gap-3">
