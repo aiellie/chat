@@ -12,7 +12,7 @@ import {
   Hamburger01Icon,
   Leaf01Icon,
   Search01Icon,
-  SmileIcon,
+  SmilePlusIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
@@ -39,7 +39,7 @@ const ICONS: Record<
   React.ComponentProps<typeof HugeiconsIcon>["icon"]
 > = {
   recent: Clock01Icon,
-  people: SmileIcon,
+  people: SmilePlusIcon,
   nature: Leaf01Icon,
   food: Hamburger01Icon,
   activities: FootballIcon,
@@ -409,7 +409,7 @@ function EmojiSelector({
           />
         }
       >
-        <HugeiconsIcon aria-hidden icon={SmileIcon} />
+        <HugeiconsIcon aria-hidden icon={SmilePlusIcon} />
       </PopoverTrigger>
       <PopoverContent
         side={side}

@@ -27,6 +27,7 @@ import type { ChatNavChat } from "@/components/nav-chats"
 import type { User } from "@/components/nav-user"
 import { Panels, usePanels } from "@/components/panels"
 import { ChatSearch } from "@/components/search"
+import { ShareButton, ShareDialog } from "@/components/share"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button"
 import { useBrowserHistory } from "@/hooks/use-browser-history"
@@ -45,10 +46,13 @@ function MainHeader({
   title,
   onRename,
   onNewChat,
+  onShare,
 }: {
   title?: string
   onRename?: (title: string) => void
   onNewChat: () => void
+  /** Left out, there's no share button, as for a new chat. */
+  onShare?: () => void
 }) {
   const { isOpen } = usePanels()
   return (
@@ -67,6 +71,7 @@ function MainHeader({
         <ChatHeaderTitle title={title} onRename={onRename} />
       ) : null}
       <div className="ms-auto" />
+      {onShare ? <ShareButton onClick={onShare} /> : null}
       <AiDebugButton />
     </ChatHeader>
   )
@@ -107,6 +112,9 @@ function ChatShell() {
   const [mode, setMode] = React.useState<ChatMode>("chat")
   const [activityOpen, setActivityOpen] = React.useState(false)
   const [searchOpen, setSearchOpen] = React.useState(false)
+  // The chat being shared stays set as the dialog closes, so it doesn't empty.
+  const [sharingId, setSharingId] = React.useState<string>()
+  const [shareOpen, setShareOpen] = React.useState(false)
   const [user, setUser] = React.useState<User>()
 
   const update = (id: string, change: Partial<ChatNavChat>) =>
@@ -116,6 +124,10 @@ function ChatShell() {
   const select = (id: string) => {
     open(id)
     update(id, { unread: false })
+  }
+  const share = (id: string) => {
+    setSharingId(id)
+    setShareOpen(true)
   }
   const remove = (id: string) => {
     setThreads((current) => current.filter((chat) => chat.id !== id))
@@ -155,7 +167,7 @@ function ChatShell() {
             }
             onArchive={remove}
             onDelete={remove}
-            onShare={() => {}}
+            onShare={share}
             onFork={(id) => {
               const chat = chats.find((chat) => chat.id === id)
               if (!chat) return
@@ -199,6 +211,7 @@ function ChatShell() {
                 active ? (title) => update(active.id, { title }) : undefined
               }
               onNewChat={newChat}
+              onShare={active ? () => share(active.id) : undefined}
             />
           ),
           right: "AI requests",
@@ -242,6 +255,11 @@ function ChatShell() {
           onOpenChange={setSearchOpen}
           chats={chats}
           onSelect={select}
+        />
+        <ShareDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          chat={chats.find((chat) => chat.id === sharingId)}
         />
       </Panels>
     </SidebarProvider>

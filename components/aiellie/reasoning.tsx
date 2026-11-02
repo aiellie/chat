@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { AiBrain01Icon } from "@hugeicons/core-free-icons"
+import { Brain02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { Markdown } from "@/components/aiellie/markdown"
@@ -101,7 +101,7 @@ function Reasoning({
         <TraceCollapsibleTrigger>
           <TraceLine status={thinking ? "running" : undefined}>
             <TraceIcon>
-              <HugeiconsIcon icon={AiBrain01Icon} />
+              <HugeiconsIcon icon={Brain02Icon} />
             </TraceIcon>
             <TraceTitle>{thinking ? "Thinking" : "Thought"}</TraceTitle>
             {seconds !== undefined ? (
