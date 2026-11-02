@@ -12,10 +12,11 @@ import {
   timeLabel,
 } from "@/components/aiellie/date-divider"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
-import { Markdown } from "@/components/aiellie/markdown"
+import { Response } from "@/components/aiellie/response"
 import { Reasoning } from "@/components/aiellie/reasoning"
 import { Sources } from "@/components/aiellie/sources"
 import { ThinkingIndicator } from "@/components/aiellie/thinking-indicator"
+import { ThreadTranscript } from "@/components/aiellie/thread-transcript"
 import {
   citedFirst,
   searchesIn,
@@ -99,19 +100,15 @@ function Thread({
   // The reply whose thinking is still being written out. Its words wait for
   // that, so the two aren't written at once.
   const [thinkingId, setThinkingId] = React.useState<string>()
-  // The reply that came in while the thread was open. It writes itself out
-  // even when all of it has arrived by the time it's shown.
-  const last = messages.at(-1)
-  const liveId = streaming && last?.role === "assistant" ? last.id : undefined
-  const [freshId, setFreshId] = React.useState(liveId)
-  if (liveId !== undefined && liveId !== freshId) setFreshId(liveId)
 
   return (
     // The chat's header is glass over the top 40px, so the thread scrolls
     // under it: it starts below it, and a message brought to the top stops
     // clear of it.
     <MessageScrollerProvider autoScroll scrollMargin={40}>
-      <MessageScroller>
+      {/* A container, so the transcript shows by the thread's own width:
+          only where it has a gutter beside the messages to sit in. */}
+      <MessageScroller className="@container">
         <MessageScrollerViewport>
           {/* Items are spaced by their own bottom padding, not a gap: each
               clips what it paints to its box, and a message's time sits in
@@ -219,12 +216,10 @@ function Thread({
                             {mine ? (
                               text
                             ) : (
-                              // Replies loaded from history show at once; one
-                              // that came in now is written out from its first
-                              // word, even after waiting on its thinking.
-                              <Markdown
+                              // Each word fades in as it arrives; replies
+                              // loaded from history show at once.
+                              <Response
                                 streaming={live}
-                                revealInitial={message.id === freshId}
                                 citations={sources.map((page) => ({
                                   url: page.url,
                                   title: page.title,
@@ -232,7 +227,7 @@ function Thread({
                                 }))}
                               >
                                 {text}
-                              </Markdown>
+                              </Response>
                             )}
                           </BubbleContent>
                         </Bubble>
@@ -347,6 +342,7 @@ function Thread({
           </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton />
+        <ThreadTranscript messages={messages} />
       </MessageScroller>
     </MessageScrollerProvider>
   )

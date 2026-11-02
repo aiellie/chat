@@ -20,7 +20,7 @@ import {
   ChatEmptyTitle,
 } from "@/components/aiellie/chat-empty"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
-import { Markdown } from "@/components/aiellie/markdown"
+
 import { Message, MessageContent } from "@/components/aiellie/message"
 import {
   MessageScroller,
@@ -30,6 +30,8 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/aiellie/message-scroller"
+// Renamed, as this file also uses fetch's Response to pack the link.
+import { Response as Reply } from "@/components/aiellie/response"
 import { Thread } from "@/components/aiellie/thread"
 import { loadMessages } from "@/components/aiellie/thread-store"
 import { citedFirst, searchesIn } from "@/components/aiellie/web-search"
@@ -210,14 +212,14 @@ function SharePreview({ chat }: { chat: SharedChat }) {
                             {mine ? (
                               text
                             ) : (
-                              <Markdown
+                              <Reply
                                 citations={sources.map((page) => ({
                                   url: page.url,
                                   title: page.title,
                                 }))}
                               >
                                 {text}
-                              </Markdown>
+                              </Reply>
                             )}
                           </BubbleContent>
                         </Bubble>

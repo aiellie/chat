@@ -4,7 +4,7 @@ import * as React from "react"
 import {
   Copy01Icon,
   FileCodeIcon,
-  Layers01Icon,
+  LeftToRightListStarIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -264,7 +264,7 @@ function ContentSummary({ chatId }: { chatId: string }) {
           />
         }
       >
-        <HugeiconsIcon icon={Layers01Icon} />
+        <HugeiconsIcon icon={LeftToRightListStarIcon} />
       </PopoverTrigger>
       <PopoverContent
         align="end"
