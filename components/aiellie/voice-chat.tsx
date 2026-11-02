@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/tooltip"
 import { apiKeyHeaders } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
-import { voiceModel } from "@/lib/models"
+import { voiceModelOf } from "@/lib/models"
 import { cn } from "@/lib/utils"
 
 // A voice chat runs beside the thread rather than through it: the realtime
@@ -28,13 +28,9 @@ import { cn } from "@/lib/utils"
 // finished, and messages typed meanwhile still go to the chat's own model,
 // which the voice is told about.
 
-// Made once, as the hook replaces its session whenever the model changes.
-const model = gateway.experimental_realtime(voiceModel)
-
-const INSTRUCTIONS = `You are Ellie, talking with the person out loud. Speak naturally and keep replies short, the way people talk: don't read out lists, markdown, links or code. The person can also type in the chat while you talk. Typed messages are answered there in writing, not by you, and you're told of them below as they're sent.`
+const INSTRUCTIONS = `You are Ellie, talking with the person out loud. Speak naturally and keep replies short, the way people talk: don't read out lists, markdown, links or code. The person can also type in the chat while you talk. Typed messages are answered there in writing, not by you; what you know of them is below.`
 
 const SESSION = {
-  voice: "marin",
   // Transcribed, so what the person says joins the thread too.
   inputAudioTranscription: {},
   turnDetection: { type: "server-vad" },
@@ -267,12 +263,16 @@ const textOf = (message: UIMessage) =>
 // Once connected: the realtime session itself, the orb, and what's said
 // handed to the thread.
 function VoiceSession({
+  id,
+  model,
   stream,
   setup,
   messages,
   busy,
   onMessages,
 }: {
+  id: string
+  model: { id: string; name: string }
   stream: MediaStream
   /** Where the session fetches its setup from, already fetched. */
   setup: string
@@ -280,20 +280,27 @@ function VoiceSession({
   busy: boolean
   onMessages: (messages: UIMessage[]) => void
 }) {
-  // What this session says goes into the thread under ids that start with
-  // this, which keeps them apart from the rest of the thread.
-  const [prefix] = React.useState(() => `voice-${crypto.randomUUID()}-`)
   // What the voice is told of the thread: everything when it starts, and
   // from then on what's typed, as it says the rest itself.
   const context = React.useMemo(
     () =>
       transcriptOf(
-        messages.filter((message) => !message.id.startsWith(prefix))
+        messages.filter(
+          (message) =>
+            (message.metadata as MessageMetadata | undefined)?.spoken?.chat !==
+            id
+        )
       ),
-    [messages, prefix]
+    [messages, id]
+  )
+  const settings = voiceModelOf(model.id)
+  // Both made once, as the hook replaces its session when either changes.
+  const [realtimeModel] = React.useState(() =>
+    gateway.experimental_realtime(model.id)
   )
   const [sessionConfig] = React.useState(() => ({
     ...SESSION,
+    ...(settings?.voice ? { voice: settings.voice } : {}),
     instructions: instructionsWith(context),
   }))
   const told = React.useRef(context)
@@ -302,7 +309,7 @@ function VoiceSession({
   const [muted, setMuted] = React.useState(false)
 
   const realtime = useRealtime({
-    model,
+    model: realtimeModel,
     api: { token: setup },
     sessionConfig,
     onEvent: (event) => {
@@ -330,15 +337,18 @@ function VoiceSession({
     startAudioCapture(stream.clone())
   }, [connect, startAudioCapture, stream])
 
-  // Something typed and answered meanwhile is passed on once the reply is in.
+  // Something typed and answered meanwhile is passed on once the reply is in,
+  // to a voice that takes it.
+  const setOnce = settings?.setOnce
   React.useEffect(() => {
-    if (busy || status !== "connected" || context === told.current) return
+    if (setOnce || busy || status !== "connected" || context === told.current)
+      return
     told.current = context
     sendEvent({
       type: "session-update",
       config: { ...sessionConfig, instructions: instructionsWith(context) },
     }).catch(() => {})
-  }, [busy, context, sendEvent, sessionConfig, status])
+  }, [setOnce, busy, context, sendEvent, sessionConfig, status])
 
   // What's said goes to the thread once it's finished: the person's words
   // when they're transcribed, and a reply when its transcript is done or the
@@ -360,19 +370,22 @@ function VoiceSession({
       if (!finished || !text) return []
       const metadata: MessageMetadata = {
         createdAt: firstSeen.current.get(message.id),
-        spoken: true,
+        spoken: { chat: id, model: model.name },
       }
       return [
         {
-          id: prefix + message.id,
+          id: `voice-${id}-${message.id}`,
           role: message.role,
           parts: [{ type: "text" as const, text }],
           metadata,
         },
       ]
     })
-    // Only when it's changed, not for every word of a reply.
-    const key = list.map((message) => message.id).join()
+    // Only when it's changed, not for every word of a reply. Some voices
+    // transcribe the person bit by bit, so a turn already sent can grow.
+    const key = list
+      .map((message) => `${message.id}:${textOf(message).length}`)
+      .join()
     if (key === reported.current) return
     reported.current = key
     onMessages(list)
@@ -452,14 +465,19 @@ function VoiceStage({
  * A voice chat, from when it's started until it's ended by unmounting. It
  * opens the microphone the composer dictates with, then connects. Finished
  * turns go to `onMessages`, every one so far in the order said, each time
- * there's another.
+ * there's another, marked with the chat's `id`.
  */
 function VoiceChat({
+  id,
+  model,
   messages,
   busy,
   onMessages,
   className,
 }: {
+  id: string
+  /** The realtime model to talk with. */
+  model: { id: string; name: string }
   /** The thread, which the voice is told about. */
   messages: UIMessage[]
   /** Whether a typed message's reply is on its way. */
@@ -493,7 +511,8 @@ function VoiceChat({
       // without the API keys' headers, so it's handed what came back.
       const response = await fetch("/api/realtime", {
         method: "POST",
-        headers: apiKeyHeaders(),
+        headers: { "Content-Type": "application/json", ...apiKeyHeaders() },
+        body: JSON.stringify({ model: model.id }),
       }).catch(() => undefined)
       const body = await response?.json().catch(() => undefined)
       if (!live) return
@@ -516,7 +535,7 @@ function VoiceChat({
       live = false
       media?.getTracks().forEach((track) => track.stop())
     }
-  }, [])
+  }, [model.id])
 
   return (
     <div
@@ -529,6 +548,8 @@ function VoiceChat({
       {ready ? (
         <VoiceSession
           {...ready}
+          id={id}
+          model={model}
           messages={messages}
           busy={busy}
           onMessages={onMessages}

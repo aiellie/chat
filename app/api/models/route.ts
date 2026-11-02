@@ -1,7 +1,13 @@
 import { createGateway, gateway } from "ai"
 
 import { apiKeysFrom } from "@/lib/api-keys"
-import { EFFORTS, isEffort, type Effort, type ModelOption } from "@/lib/models"
+import {
+  EFFORTS,
+  isEffort,
+  voiceModelOf,
+  type Effort,
+  type ModelOption,
+} from "@/lib/models"
 import { routeOf } from "@/lib/providers"
 
 // The Gateway's public catalogue, which also gives each model's context
@@ -28,6 +34,43 @@ const price = (value?: string) => (value ? Number(value) : undefined)
 // Variants of another model rather than models of their own: fast is the
 // Fast switch, and batch can't stream a chat reply.
 const VARIANT = /-(fast|batch)$/
+
+// Makers whose models aren't offered, for now, by the provider half of a
+// gateway id.
+const HIDDEN = new Set([
+  "alibaba",
+  "amazon",
+  "bytedance",
+  "callstack",
+  "cohere",
+  "elorian",
+  "fireworks",
+  "inception",
+  "inclusionai",
+  "inference-net",
+  "interfaze",
+  "liquid",
+  "meituan",
+  "meta",
+  "minimax",
+  "mixedbread",
+  "moonshotai",
+  "morph",
+  "nvidia",
+  "particle",
+  "perplexity",
+  "poolside",
+  "quiverai",
+  "reflection",
+  "sakana",
+  "scaledown",
+  "stealth",
+  "stepfun",
+  "tencent",
+  "thinkingmachines",
+  "xiaomi",
+  "zai",
+])
 
 /** The efforts a model takes, lowest first, or none if it doesn't reason. */
 function effortsOf(entry?: CatalogueEntry): Effort[] | undefined {
@@ -74,15 +117,22 @@ async function catalogue() {
 // models whose provider there's a key for, as those are called directly.
 export async function GET(req: Request) {
   const keys = apiKeysFrom(req)
-  const [listed, details] = await Promise.all([
+  const [available, details] = await Promise.all([
     (keys.gateway ? createGateway({ apiKey: keys.gateway }) : gateway)
       .getAvailableModels()
-      .then(({ models }) =>
-        models.filter((model) => (model.modelType ?? "language") === "language")
-      )
+      .then(({ models }) => models)
       .catch(() => undefined),
     catalogue(),
   ])
+  const listed = available?.filter(
+    (model) => (model.modelType ?? "language") === "language"
+  )
+  // Voice chats go through the Gateway, so only with a key it takes.
+  const realtime = new Map(
+    (available ?? []).flatMap((model) =>
+      model.modelType === "realtime" ? [[model.id, model.name]] : []
+    )
+  )
 
   const models = (
     listed ??
@@ -91,7 +141,10 @@ export async function GET(req: Request) {
         entry.type === "language" &&
         routeOf(entry.id, keys.providers).via === "provider"
     )
-  ).filter((model) => !VARIANT.test(model.id))
+  ).filter(
+    (model) =>
+      !VARIANT.test(model.id) && !HIDDEN.has(model.id.split("/")[0] ?? "")
+  )
   if (models.length === 0) return Response.json([], { status: 502 })
   const ids = new Set([
     ...(listed ?? []).map((model) => model.id),
@@ -104,6 +157,8 @@ export async function GET(req: Request) {
     const input = price(entry?.pricing?.input ?? gatewayPricing?.input)
     const output = price(entry?.pricing?.output ?? gatewayPricing?.output)
     const fastId = `${model.id}-fast`
+    const voice = voiceModelOf(model.id)
+    const voiceName = voice && realtime.get(voice.id)
     return {
       id: model.id,
       name: model.name ?? entry?.name ?? model.id,
@@ -111,6 +166,7 @@ export async function GET(req: Request) {
       efforts: effortsOf(entry),
       contexts: contextsOf(entry),
       fastId: ids.has(fastId) ? fastId : undefined,
+      voice: voiceName ? { id: voice.id, name: voiceName } : undefined,
       pricing:
         input !== undefined && output !== undefined
           ? {

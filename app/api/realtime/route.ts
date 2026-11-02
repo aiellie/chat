@@ -1,17 +1,24 @@
 import { createGateway, gateway } from "ai"
 
 import { apiKeysFrom } from "@/lib/api-keys"
-import { voiceModel } from "@/lib/models"
+import { isVoiceModel } from "@/lib/models"
 
-// Starts a voice chat: a short-lived secret the browser opens its realtime
-// connection to the AI Gateway with, so it never holds the Gateway key. The
-// key is the API keys dialog's, or else the server's AI_GATEWAY_API_KEY.
+// Starts a voice chat with one of the app's realtime models: a short-lived
+// secret the browser opens its realtime connection to the AI Gateway with,
+// so it never holds the Gateway key. The key is the API keys dialog's, or
+// else the server's AI_GATEWAY_API_KEY.
 export async function POST(req: Request) {
+  const { model }: { model?: unknown } = await req.json().catch(() => ({}))
+  if (!isVoiceModel(model) || typeof model !== "string")
+    return Response.json(
+      { error: "That model can't be talked with." },
+      { status: 400 }
+    )
   const { gateway: apiKey } = apiKeysFrom(req)
   const provider = apiKey ? createGateway({ apiKey }) : gateway
   try {
     const setup = await provider.experimental_realtime.getToken({
-      model: voiceModel,
+      model,
       // Only needed to open the connection, which stays open after.
       expiresAfterSeconds: 60,
     })

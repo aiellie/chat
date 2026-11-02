@@ -62,10 +62,14 @@ function revoke(files: PendingFile[]) {
   for (const { url } of files) URL.revokeObjectURL(url)
 }
 
+const wordsOf = (message: UIMessage) =>
+  message.parts.map((part) => (part.type === "text" ? part.text : "")).join("")
+
 /**
  * The thread with these spoken turns put in, each just before the next one
  * said after it that's already there, or else at the end. A turn's words can
- * be transcribed after the reply to them is in.
+ * be transcribed after the reply to them is in. Those already there take
+ * any words transcribed since, keeping the rest, like a rating.
  */
 function withSpoken(
   thread: UIMessage[],
@@ -75,7 +79,12 @@ function withSpoken(
   const result = [...thread]
   const has = (id: string) => result.some((message) => message.id === id)
   spoken.forEach((message, index) => {
-    if (!adding.has(message.id) || has(message.id)) return
+    const there = result.findIndex((other) => other.id === message.id)
+    if (there !== -1) {
+      result[there] = { ...result[there], parts: message.parts }
+      return
+    }
+    if (!adding.has(message.id)) return
     const next = spoken.slice(index + 1).find((later) => has(later.id))
     result.splice(
       next ? result.findIndex((other) => other.id === next.id) : result.length,
@@ -143,7 +152,12 @@ function Chat({
   const [contextPick, setContext] = React.useState<number>()
   const [fastPick, setFast] = React.useState(false)
   const [search, setSearch] = React.useState(false)
-  const [voice, setVoice] = React.useState(false)
+  // The voice chat going, if one is, and the realtime model it's with: the
+  // one picked when it started, whatever's picked since.
+  const [voice, setVoice] = React.useState<{
+    id: string
+    model: NonNullable<ModelOption["voice"]>
+  }>()
   // Every turn said in voice chats here, in the order said, and those of
   // them already put in the thread, which aren't put in again even if
   // they're later replaced, as by regenerating.
@@ -234,9 +248,10 @@ function Chat({
     () => undefined
   )
 
-  // Spoken turns join the thread as they finish. A typed message's reply
-  // writes itself onto the end while it streams, so they wait for it. The
-  // first of them starts the thread, as a first typed message does.
+  // Spoken turns join the thread as they finish, and take words transcribed
+  // later. A typed message's reply writes itself onto the end while it
+  // streams, so they wait for it. The first of them starts the thread, as a
+  // first typed message does.
   React.useEffect(() => {
     if (busy) return
     const adding = new Set(
@@ -244,7 +259,11 @@ function Chat({
         added.current.has(message.id) ? [] : [message.id]
       )
     )
-    if (adding.size === 0) return
+    const grown = spoken.some((message) => {
+      const there = messages.find((other) => other.id === message.id)
+      return there !== undefined && wordsOf(there) !== wordsOf(message)
+    })
+    if (adding.size === 0 && !grown) return
     for (const messageId of adding) added.current.add(messageId)
     if (messages.length === 0) {
       const first =
@@ -253,7 +272,7 @@ function Chat({
       onFirstMessage?.(id, part?.type === "text" ? part.text : "Voice chat")
     }
     setMessages((current) => withSpoken(current, spoken, adding))
-  }, [busy, spoken, messages.length, id, onFirstMessage, setMessages])
+  }, [busy, spoken, messages, id, onFirstMessage, setMessages])
 
   // Saved once a reply settles, not on every streamed token. A thread that
   // hasn't been sent to yet isn't saved at all.
@@ -277,6 +296,7 @@ function Chat({
       ) : (
         <Thread
           messages={messages}
+          voiceChat={voice?.id}
           // A reply has begun before its first words, while the status still
           // reads "submitted".
           streaming={busy}
@@ -312,6 +332,9 @@ function Chat({
       >
         {voice ? (
           <VoiceChat
+            key={voice.id}
+            id={voice.id}
+            model={voice.model}
             messages={messages}
             busy={busy}
             // A session reports all of its turns each time, which take the
@@ -406,7 +429,21 @@ function Chat({
             />
             {/* Talking is what the voice chat hears, so it isn't dictated too. */}
             {voice ? null : <ComposerDictate />}
-            <ComposerSubmit voice={voice} onVoiceChange={setVoice} />
+            <ComposerSubmit
+              voice={voice !== undefined}
+              // Only a model whose maker has a realtime model can be talked
+              // with, but a chat going can always be ended.
+              onVoiceChange={
+                voice || option?.voice
+                  ? (on) =>
+                      setVoice(
+                        on && option?.voice
+                          ? { id: crypto.randomUUID(), model: option.voice }
+                          : undefined
+                      )
+                  : undefined
+              }
+            />
           </ComposerFooter>
         </Composer>
         {compact ? null : (

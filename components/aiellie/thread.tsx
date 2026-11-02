@@ -17,6 +17,7 @@ import { Reasoning } from "@/components/aiellie/reasoning"
 import { Sources } from "@/components/aiellie/sources"
 import { ThinkingIndicator } from "@/components/aiellie/thinking-indicator"
 import { ThreadTranscript } from "@/components/aiellie/thread-transcript"
+import { SpokenMark, VoiceDivider } from "@/components/aiellie/voice-divider"
 import {
   citedFirst,
   searchesIn,
@@ -38,6 +39,7 @@ import {
   MessageFooter,
 } from "@/components/aiellie/message"
 import type { MessageMetadata } from "@/lib/model-messages"
+import { cn } from "@/lib/utils"
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -64,8 +66,40 @@ function firstsOfDay(messages: UIMessage[]) {
   return firsts
 }
 
+const spokenOf = (message: UIMessage) =>
+  (message.metadata as MessageMetadata | undefined)?.spoken
+
+// Where each voice chat starts and ends: the first and last of its turns
+// said aloud, with the chat's id and the model it was with.
+function voiceChatsIn(messages: UIMessage[]) {
+  const chats = new Map<
+    string,
+    { first: string; last: string; model: string }
+  >()
+  for (const message of messages) {
+    const spoken = spokenOf(message)
+    if (!spoken) continue
+    const chat = chats.get(spoken.chat)
+    if (chat) chat.last = message.id
+    else
+      chats.set(spoken.chat, {
+        first: message.id,
+        last: message.id,
+        model: spoken.model,
+      })
+  }
+  const starts = new Map<string, string>()
+  const ends = new Map<string, string>()
+  for (const [chat, { first, last, model }] of chats) {
+    starts.set(first, model)
+    ends.set(last, chat)
+  }
+  return { starts, ends }
+}
+
 function Thread({
   messages,
+  voiceChat,
   streaming = false,
   thinkingSince,
   error,
@@ -76,6 +110,8 @@ function Thread({
   onReport,
 }: {
   messages: UIMessage[]
+  /** The voice chat going, by its id, which isn't marked as ended yet. */
+  voiceChat?: string
   /** Whether a reply is on its way. Once it has begun, it's the last message. */
   streaming?: boolean
   /**
@@ -97,6 +133,7 @@ function Thread({
   onReport?: (messageId: string, report: Report) => void
 }) {
   const firsts = firstsOfDay(messages)
+  const voice = voiceChatsIn(messages)
   // The reply whose thinking is still being written out. Its words wait for
   // that, so the two aren't written at once.
   const [thinkingId, setThinkingId] = React.useState<string>()
@@ -150,167 +187,197 @@ function Thread({
               // At work with nothing coming in to show for it: before its
               // first words, or while it reads what a search found.
               const waiting = live && !thinking && !searching && !writing
+              const spoken = spokenOf(message) !== undefined
+              const voiceStart = voice.starts.get(message.id)
+              const voiceEnd = voice.ends.get(message.id)
               return (
-                <MessageScrollerItem
-                  key={message.id}
-                  messageId={message.id}
-                  scrollAnchor={mine}
-                  // A reply's footer holds its actions, so it needs the room.
-                  className={mine ? "pb-6" : "pb-8"}
-                >
-                  {sentAt !== undefined && firsts.has(message.id) ? (
-                    <DateDivider at={sentAt} className="mb-6" />
-                  ) : null}
-                  <Message align={mine ? "end" : "start"}>
-                    <MessageContent>
-                      {/* Above the reply, as it came first. */}
-                      {!mine && (reasoning || thinking) ? (
-                        <Reasoning
-                          text={reasoning}
-                          streaming={thinking}
-                          duration={metadata?.reasoningSeconds}
-                          onThinkingChange={(on) =>
-                            setThinkingId((current) =>
-                              on
-                                ? message.id
-                                : current === message.id
-                                  ? undefined
-                                  : current
-                            )
-                          }
-                        />
-                      ) : null}
-                      {web &&
-                      (web.searches.length > 0 || web.found.length > 0) ? (
-                        <WebSearch
-                          queries={web.queries}
-                          found={web.found}
-                          searching={searching}
-                          typing={
-                            live &&
-                            web.searches.at(-1)?.state === "input-streaming"
-                          }
-                        />
-                      ) : null}
-                      {files.length > 0 ? (
-                        <AttachmentGroup className="max-w-full">
-                          {files.map((file, index) => (
-                            <FileAttachment
-                              key={index}
-                              name={file.filename ?? "File"}
-                              mediaType={file.mediaType}
-                              src={file.url || undefined}
-                            />
-                          ))}
-                        </AttachmentGroup>
-                      ) : null}
-                      {/* A reply with no words yet, or none it may show yet,
-                          shows it's thinking instead. */}
-                      {!held && (text || (files.length === 0 && !live)) ? (
-                        <Bubble variant={mine ? "secondary" : "ghost"}>
-                          {/* Markdown lays out its own lines, so only what
-                              the person typed keeps theirs as written. */}
-                          <BubbleContent
-                            className={mine ? "whitespace-pre-wrap" : undefined}
-                          >
-                            {mine ? (
-                              text
-                            ) : (
-                              // Each word fades in as it arrives; replies
-                              // loaded from history show at once.
-                              <Response
-                                streaming={live}
-                                citations={sources.map((page) => ({
-                                  url: page.url,
-                                  title: page.title,
-                                  description: page.snippet,
-                                }))}
-                              >
-                                {text}
-                              </Response>
-                            )}
-                          </BubbleContent>
-                        </Bubble>
-                      ) : null}
-                      {waiting ? (
-                        // Gives way to a trace line above it that's still at
-                        // work, like thinking still being written out.
-                        <ThinkingIndicator
-                          startedAt={thinkingSince}
-                          className="in-[[data-slot=message-content]:has([data-status=running])]:hidden"
-                        />
-                      ) : null}
-                      {/* The pages the reply drew on, once it's written. */}
-                      {sources.length > 0 && !live && !held ? (
-                        <Sources sources={sources} />
-                      ) : null}
-                    </MessageContent>
-                    {/* A reply's footer, time and all, waits until it's
-                        written: before then there's nothing to act on. */}
-                    {(mine ? sentAt !== undefined : !live && !held) ? (
-                      // Laid in the gap under the message, so showing it on
-                      // hover moves nothing, and padded rather than spaced
-                      // clear of it, so the pointer crossing to it never
-                      // leaves the message. Hovering it counts as hovering
-                      // the message, so it shows as the pointer reaches it,
-                      // from above or below. It shows too while a button in
-                      // it has focus or its menu is open.
-                      <MessageFooter className="absolute start-0 top-full gap-2 pt-2 opacity-0 transition-opacity duration-150 group-focus-within/message:opacity-100 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0 has-data-popup-open:opacity-100">
-                        {!mine ? (
-                          <MessageActions>
-                            <MessageCopyAction value={text} />
-                            {onRate ? (
-                              <>
-                                <MessageRateAction
-                                  value="up"
-                                  pressed={metadata?.rating === "up"}
-                                  onPressedChange={(on) =>
-                                    onRate(message.id, on ? "up" : undefined)
-                                  }
-                                />
-                                <MessageRateAction
-                                  value="down"
-                                  pressed={metadata?.rating === "down"}
-                                  onPressedChange={(on) =>
-                                    onRate(message.id, on ? "down" : undefined)
-                                  }
-                                />
-                              </>
-                            ) : null}
-                            {onRegenerate ? (
-                              <MessageAction
-                                tooltip="Regenerate"
-                                disabled={streaming}
-                                onClick={() => onRegenerate(message.id)}
-                              >
-                                <HugeiconsIcon aria-hidden icon={RefreshIcon} />
-                              </MessageAction>
-                            ) : null}
-                            <MessageMoreActions
-                              text={text}
-                              onBranch={
-                                onBranch
-                                  ? () => onBranch(message.id)
-                                  : undefined
-                              }
-                              onReport={
-                                onReport
-                                  ? (report) => onReport(message.id, report)
-                                  : undefined
-                              }
-                              reported={metadata?.report !== undefined}
-                            />
-                          </MessageActions>
-                        ) : null}
-                        {sentAt !== undefined ? (
-                          <time dateTime={new Date(sentAt).toISOString()}>
-                            {timeLabel(sentAt)}
-                          </time>
-                        ) : null}
-                      </MessageFooter>
+                <React.Fragment key={message.id}>
+                  <MessageScrollerItem
+                    messageId={message.id}
+                    scrollAnchor={mine}
+                    // A reply's footer holds its actions, so it needs the room.
+                    className={mine ? "pb-6" : "pb-8"}
+                  >
+                    {sentAt !== undefined && firsts.has(message.id) ? (
+                      <DateDivider at={sentAt} className="mb-6" />
                     ) : null}
-                  </Message>
-                </MessageScrollerItem>
+                    {voiceStart !== undefined ? (
+                      <VoiceDivider
+                        edge="start"
+                        model={voiceStart}
+                        className="mb-6"
+                      />
+                    ) : null}
+                    <Message align={mine ? "end" : "start"}>
+                      <MessageContent>
+                        {/* Above the reply, as it came first. */}
+                        {!mine && (reasoning || thinking) ? (
+                          <Reasoning
+                            text={reasoning}
+                            streaming={thinking}
+                            duration={metadata?.reasoningSeconds}
+                            onThinkingChange={(on) =>
+                              setThinkingId((current) =>
+                                on
+                                  ? message.id
+                                  : current === message.id
+                                    ? undefined
+                                    : current
+                              )
+                            }
+                          />
+                        ) : null}
+                        {web &&
+                        (web.searches.length > 0 || web.found.length > 0) ? (
+                          <WebSearch
+                            queries={web.queries}
+                            found={web.found}
+                            searching={searching}
+                            typing={
+                              live &&
+                              web.searches.at(-1)?.state === "input-streaming"
+                            }
+                          />
+                        ) : null}
+                        {files.length > 0 ? (
+                          <AttachmentGroup className="max-w-full">
+                            {files.map((file, index) => (
+                              <FileAttachment
+                                key={index}
+                                name={file.filename ?? "File"}
+                                mediaType={file.mediaType}
+                                src={file.url || undefined}
+                              />
+                            ))}
+                          </AttachmentGroup>
+                        ) : null}
+                        {/* A reply with no words yet, or none it may show yet,
+                          shows it's thinking instead. */}
+                        {!held && (text || (files.length === 0 && !live)) ? (
+                          <Bubble variant={mine ? "secondary" : "ghost"}>
+                            {/* Markdown lays out its own lines, so only what
+                              the person typed keeps theirs as written. */}
+                            <BubbleContent
+                              className={cn(
+                                mine && "whitespace-pre-wrap",
+                                spoken && "flex items-start gap-2"
+                              )}
+                            >
+                              {spoken ? (
+                                // On the first line, which runs about 23px.
+                                <SpokenMark className="mt-1 shrink-0" />
+                              ) : null}
+                              {mine ? (
+                                text
+                              ) : (
+                                // Each word fades in as it arrives; replies
+                                // loaded from history show at once.
+                                <Response
+                                  streaming={live}
+                                  citations={sources.map((page) => ({
+                                    url: page.url,
+                                    title: page.title,
+                                    description: page.snippet,
+                                  }))}
+                                >
+                                  {text}
+                                </Response>
+                              )}
+                            </BubbleContent>
+                          </Bubble>
+                        ) : null}
+                        {waiting ? (
+                          // Gives way to a trace line above it that's still at
+                          // work, like thinking still being written out.
+                          <ThinkingIndicator
+                            startedAt={thinkingSince}
+                            className="in-[[data-slot=message-content]:has([data-status=running])]:hidden"
+                          />
+                        ) : null}
+                        {/* The pages the reply drew on, once it's written. */}
+                        {sources.length > 0 && !live && !held ? (
+                          <Sources sources={sources} />
+                        ) : null}
+                      </MessageContent>
+                      {/* A reply's footer, time and all, waits until it's
+                        written: before then there's nothing to act on. */}
+                      {(mine ? sentAt !== undefined : !live && !held) ? (
+                        // Laid in the gap under the message, so showing it on
+                        // hover moves nothing, and padded rather than spaced
+                        // clear of it, so the pointer crossing to it never
+                        // leaves the message. Hovering it counts as hovering
+                        // the message, so it shows as the pointer reaches it,
+                        // from above or below. It shows too while a button in
+                        // it has focus or its menu is open.
+                        <MessageFooter className="absolute start-0 top-full gap-2 pt-2 opacity-0 transition-opacity duration-150 group-focus-within/message:opacity-100 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0 has-data-popup-open:opacity-100">
+                          {!mine ? (
+                            <MessageActions>
+                              <MessageCopyAction value={text} />
+                              {onRate ? (
+                                <>
+                                  <MessageRateAction
+                                    value="up"
+                                    pressed={metadata?.rating === "up"}
+                                    onPressedChange={(on) =>
+                                      onRate(message.id, on ? "up" : undefined)
+                                    }
+                                  />
+                                  <MessageRateAction
+                                    value="down"
+                                    pressed={metadata?.rating === "down"}
+                                    onPressedChange={(on) =>
+                                      onRate(
+                                        message.id,
+                                        on ? "down" : undefined
+                                      )
+                                    }
+                                  />
+                                </>
+                              ) : null}
+                              {onRegenerate ? (
+                                <MessageAction
+                                  tooltip="Regenerate"
+                                  disabled={streaming}
+                                  onClick={() => onRegenerate(message.id)}
+                                >
+                                  <HugeiconsIcon
+                                    aria-hidden
+                                    icon={RefreshIcon}
+                                  />
+                                </MessageAction>
+                              ) : null}
+                              <MessageMoreActions
+                                text={text}
+                                onBranch={
+                                  onBranch
+                                    ? () => onBranch(message.id)
+                                    : undefined
+                                }
+                                onReport={
+                                  onReport
+                                    ? (report) => onReport(message.id, report)
+                                    : undefined
+                                }
+                                reported={metadata?.report !== undefined}
+                              />
+                            </MessageActions>
+                          ) : null}
+                          {sentAt !== undefined ? (
+                            <time dateTime={new Date(sentAt).toISOString()}>
+                              {timeLabel(sentAt)}
+                            </time>
+                          ) : null}
+                        </MessageFooter>
+                      ) : null}
+                    </Message>
+                  </MessageScrollerItem>
+                  {/* After its last turn said aloud, once it's over. */}
+                  {voiceEnd !== undefined && voiceEnd !== voiceChat ? (
+                    <MessageScrollerItem className="pb-8">
+                      <VoiceDivider edge="end" />
+                    </MessageScrollerItem>
+                  ) : null}
+                </React.Fragment>
               )
             })}
             {/* Asked, and nothing back yet. */}

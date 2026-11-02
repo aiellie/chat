@@ -87,8 +87,11 @@ type MessageMetadata = {
   rating?: "up" | "down"
   /** Why the person reported a reply, kept with it. */
   report?: { reason: string; details: string; at: number }
-  /** Said aloud in a voice chat, so its text is what was transcribed. */
-  spoken?: boolean
+  /**
+   * Said aloud in a voice chat, so its text is what was transcribed: which
+   * chat that was, and the name of the realtime model it was with.
+   */
+  spoken?: { chat: string; model: string }
 } & Partial<ReplyMetadata>
 
 export { fitToContext, toModelMessages }
