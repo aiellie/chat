@@ -4,12 +4,9 @@ import type { ChatNavChat } from "@/components/nav-chats"
 
 // Threads are kept in this browser's localStorage, so they survive a reload
 // without an account. They don't follow the person to another browser.
-const THREADS_KEY = "aiellie:threads"
 const messagesKey = (id: string) => `aiellie:thread:${id}`
 
 const NO_THREADS: ChatNavChat[] = []
-let threads: ChatNavChat[] | null = null
-const listeners = new Set<() => void>()
 
 function read<T>(key: string): T | undefined {
   try {
@@ -28,31 +25,59 @@ function write(key: string, value: unknown) {
   }
 }
 
-function getThreads() {
-  threads ??= read<ChatNavChat[]>(THREADS_KEY) ?? NO_THREADS
-  return threads
+// A list of chats under one key, read once and kept in step with other tabs.
+function listStore(key: string) {
+  let list: ChatNavChat[] | null = null
+  const listeners = new Set<() => void>()
+
+  const get = () => {
+    list ??= read<ChatNavChat[]>(key) ?? NO_THREADS
+    return list
+  }
+
+  const set = (update: (current: ChatNavChat[]) => ChatNavChat[]) => {
+    list = update(get())
+    write(key, list)
+    listeners.forEach((listener) => listener())
+  }
+
+  const subscribe = (listener: () => void) => {
+    listeners.add(listener)
+    // Another tab changed the list.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== key) return
+      list = null
+      listener()
+    }
+    window.addEventListener("storage", onStorage)
+    return () => {
+      listeners.delete(listener)
+      window.removeEventListener("storage", onStorage)
+    }
+  }
+
+  return { get, set, subscribe }
 }
 
-function setThreads(update: (current: ChatNavChat[]) => ChatNavChat[]) {
-  threads = update(getThreads())
-  write(THREADS_KEY, threads)
-  listeners.forEach((listener) => listener())
+// A chat's name before it's given one: the first line of its first message,
+// cut to fit a sidebar row.
+function titleOf(text: string) {
+  const line = text.trim().split("\n")[0]
+  return line.length > 80 ? `${line.slice(0, 80)}…` : line
 }
 
-function subscribeThreads(listener: () => void) {
-  listeners.add(listener)
-  // Another tab changed the list.
-  const onStorage = (event: StorageEvent) => {
-    if (event.key !== THREADS_KEY) return
-    threads = null
-    listener()
-  }
-  window.addEventListener("storage", onStorage)
-  return () => {
-    listeners.delete(listener)
-    window.removeEventListener("storage", onStorage)
-  }
-}
+// The sidebar's chats.
+const threads = listStore("aiellie:threads")
+const getThreads = threads.get
+const setThreads = threads.set
+const subscribeThreads = threads.subscribe
+
+// Quick chats are listed apart, in their own history, so asides don't crowd
+// the sidebar. Their messages are kept the same way as a thread's.
+const quickChats = listStore("aiellie:quick-chats")
+const getQuickChats = quickChats.get
+const setQuickChats = quickChats.set
+const subscribeQuickChats = quickChats.subscribe
 
 // The threads with a reply on its way, and when each was asked for. Kept in
 // memory only: a reply doesn't outlive the page that asked for it.
@@ -102,13 +127,17 @@ const removeMessages = (id: string) => {
 export {
   NO_REPLIES,
   NO_THREADS,
+  getQuickChats,
   getReplies,
   getThreads,
   loadMessages,
   removeMessages,
   saveMessages,
+  setQuickChats,
   setReplying,
   setThreads,
+  subscribeQuickChats,
   subscribeReplies,
   subscribeThreads,
+  titleOf,
 }

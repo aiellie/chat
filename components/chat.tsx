@@ -72,12 +72,15 @@ function Chat({
   id,
   onFirstMessage,
   onBranch,
+  compact = false,
 }: {
   id: string
   /** Called as the first message goes out, to create the thread. */
   onFirstMessage?: (id: string, text: string) => void
   /** Starts a new chat with these messages. Without it, replies can't branch. */
   onBranch?: (messages: UIMessage[]) => void
+  /** Laid out for a small window, as quick chat's: tighter, without the footnote. */
+  compact?: boolean
 }) {
   const {
     messages,
@@ -212,7 +215,9 @@ function Chat({
       {/* A new chat, on the home page, has no thread to show yet. */}
       {messages.length === 0 ? (
         <ChatEmpty>
-          <ChatEmptyTitle>How can I help?</ChatEmptyTitle>
+          <ChatEmptyTitle className={compact ? "text-lg" : undefined}>
+            How can I help?
+          </ChatEmptyTitle>
           <ChatEmptyDescription>
             Ask Ellie anything, or add files to talk through.
           </ChatEmptyDescription>
@@ -246,7 +251,13 @@ function Chat({
           }
         />
       )}
-      <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4">
+      <div
+        className={
+          compact
+            ? "w-full shrink-0 px-3 pb-3"
+            : "mx-auto w-full max-w-3xl shrink-0 px-4 pb-4"
+        }
+      >
         <ComposerHeader open={pending.length > 0}>
           <AttachmentGroup>
             {pending.map((item) => (
@@ -328,9 +339,11 @@ function Chat({
             <ComposerSubmit />
           </ComposerFooter>
         </Composer>
-        <p className="pt-2 text-center text-xs text-muted-foreground">
-          Ellie is an AI and can make mistakes.
-        </p>
+        {compact ? null : (
+          <p className="pt-2 text-center text-xs text-muted-foreground">
+            Ellie is an AI and can make mistakes.
+          </p>
+        )}
       </div>
     </div>
   )

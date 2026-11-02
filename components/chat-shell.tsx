@@ -20,12 +20,14 @@ import {
   setThreads,
   subscribeReplies,
   subscribeThreads,
+  titleOf,
 } from "@/components/aiellie/thread-store"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import type { ChatMode } from "@/components/chat-switcher"
 import type { ChatNavChat } from "@/components/nav-chats"
 import type { User } from "@/components/nav-user"
 import { Panels, usePanels } from "@/components/panels"
+import { QuickChat } from "@/components/quick-chat"
 import { ChatSearch } from "@/components/search"
 import { ShareButton, ShareDialog } from "@/components/share"
 import { SidebarProvider } from "@/components/ui/sidebar"
@@ -33,12 +35,6 @@ import { TooltipIconButton } from "@/components/ui/tooltip-icon-button"
 import { useBrowserHistory } from "@/hooks/use-browser-history"
 
 const noop = () => () => {}
-
-// The first line of the first message, cut to fit the sidebar.
-function titleOf(text: string) {
-  const line = text.trim().split("\n")[0]
-  return line.length > 80 ? `${line.slice(0, 80)}…` : line
-}
 
 // The chat header, with a new chat button while the left panel, and the one in
 // its sidebar, is out of sight. A new chat has no title to show yet.
@@ -112,6 +108,7 @@ function ChatShell() {
   const [mode, setMode] = React.useState<ChatMode>("chat")
   const [activityOpen, setActivityOpen] = React.useState(false)
   const [searchOpen, setSearchOpen] = React.useState(false)
+  const [quickChatOpen, setQuickChatOpen] = React.useState(false)
   // The chat being shared stays set as the dialog closes, so it doesn't empty.
   const [sharingId, setSharingId] = React.useState<string>()
   const [shareOpen, setShareOpen] = React.useState(false)
@@ -182,6 +179,7 @@ function ChatShell() {
             mode={mode}
             onModeChange={setMode}
             onNewChat={newChat}
+            onQuickChat={() => setQuickChatOpen((open) => !open)}
             activityOpen={activityOpen}
             onActivity={toggleActivity}
             user={user}
@@ -261,6 +259,11 @@ function ChatShell() {
           onOpenChange={setShareOpen}
           chat={chats.find((chat) => chat.id === sharingId)}
         />
+        {/* Its chats are in the browser too, so it waits for it as the
+            main chat does. */}
+        {hydrated ? (
+          <QuickChat open={quickChatOpen} onOpenChange={setQuickChatOpen} />
+        ) : null}
       </Panels>
     </SidebarProvider>
   )
