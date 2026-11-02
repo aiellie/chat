@@ -21,8 +21,8 @@ import {
   type Rating,
   type Report,
 } from "@/components/aiellie/message-actions"
-import { Bubble, BubbleContent } from "@/components/ui/bubble"
-import { Message, MessageContent, MessageFooter } from "@/components/ui/message"
+import { Bubble, BubbleContent } from "@/components/aiellie/bubble"
+import { Message, MessageContent, MessageFooter } from "@/components/aiellie/message"
 import type { MessageMetadata } from "@/lib/model-messages"
 import {
   MessageScroller,
@@ -31,7 +31,7 @@ import {
   MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
-} from "@/components/ui/message-scroller"
+} from "@/components/aiellie/message-scroller"
 
 const sentAtOf = (message: UIMessage) =>
   (message.metadata as MessageMetadata | undefined)?.createdAt
