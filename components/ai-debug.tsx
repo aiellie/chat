@@ -27,7 +27,7 @@ import {
 import { usePanels } from "@/components/panels"
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button"
 import { useHighlightedCode } from "@/hooks/use-highlighted-code"
-import { toModelMessages, type ReplyMetadata } from "@/lib/model-messages"
+import { toModelMessages, type ReplyMetadata } from "@/lib/messages"
 import { cn } from "@/lib/utils"
 
 const NO_EXCHANGES: Exchange[] = []

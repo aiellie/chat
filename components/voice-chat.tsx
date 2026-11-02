@@ -12,7 +12,7 @@ import {
 import { savedMicrophone } from "@/components/aiellie/composer"
 import { VoiceStage, type VoiceState } from "@/components/aiellie/voice-orb"
 import { apiKeyHeaders } from "@/lib/api-keys"
-import type { MessageMetadata } from "@/lib/model-messages"
+import type { MessageMetadata } from "@/lib/messages"
 import { voiceModelOf } from "@/lib/models"
 
 // A voice chat runs beside the thread rather than through it: the realtime

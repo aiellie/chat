@@ -64,7 +64,7 @@ function Source({ source }: { source: Found }) {
         rel="noreferrer"
         delay={300}
         data-slot="source"
-        className="inline-flex h-6 max-w-48 min-w-0 items-center gap-1.5 rounded-full border bg-card px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex h-6 max-w-48 min-w-0 items-center gap-1.5 rounded-full border bg-card px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:border-ring"
       >
         <SiteIcon url={source.url} />
         <span className="min-w-0 truncate">{host}</span>
@@ -128,7 +128,7 @@ function Sources({
         <button
           type="button"
           onClick={() => setAll(true)}
-          className="inline-flex h-6 items-center rounded-full border bg-card px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex h-6 items-center rounded-full border bg-card px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:border-ring"
         >
           +{hidden} more
         </button>

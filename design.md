@@ -208,7 +208,7 @@ A search field at the top of a menu is a row of the panel, not a field inside it
 
 ## Icons
 
-- Hugeicons only, stroke-rounded (`@hugeicons/react` with `@hugeicons/core-free-icons`). One family: an icon from another pack is a bug. The brand and model logos in `components/ui/icons.tsx` are marks being quoted, not iconography, and are the one exception.
+- Hugeicons only, stroke-rounded (`@hugeicons/react` with `@hugeicons/core-free-icons`). One family: an icon from another pack is a bug. The brand and model logos in `components/aiellie/icons.tsx` are marks being quoted, not iconography, and are the one exception.
 - 16px inside text and controls (14px beside caption text); 20px for a standalone icon button or a list's leading icon; 24px only in an empty state.
 - Ink follows the text it sits with: `foreground` beside body copy, `muted-foreground` in secondary rows, the status ink for a status mark.
 - An icon carries meaning alongside a word. Where the icon is the control, in a dense toolbar, it has a tooltip and an `aria-label`.

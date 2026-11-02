@@ -38,7 +38,7 @@ import {
   MessageContent,
   MessageFooter,
 } from "@/components/aiellie/message"
-import type { MessageMetadata } from "@/lib/model-messages"
+import type { MessageMetadata } from "@/lib/messages"
 import { Button } from "@/components/ui/button"
 import { Status, StatusIndicator, StatusLabel } from "@/components/ui/status"
 import { cn } from "@/lib/utils"

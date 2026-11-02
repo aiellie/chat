@@ -22,10 +22,7 @@ function withoutDroppedFiles(message: UIMessage): UIMessage {
   }
 }
 
-/**
- * The chat as the model is given it. The chat route sends exactly this, and
- * the AI debug panel shows it.
- */
+/** The chat as the model is given it. The chat route sends exactly this. */
 function toModelMessages(messages: UIMessage[]) {
   return convertToModelMessages(messages.map(withoutDroppedFiles))
 }
