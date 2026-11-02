@@ -72,6 +72,8 @@ type ReplyMetadata = {
   via?: "provider" | "gateway"
   finishReason: FinishReason
   usage: LanguageModelUsage
+  /** How long the model spent thinking, if it did, in whole seconds. */
+  reasoningSeconds?: number
 }
 
 /**

@@ -1,7 +1,10 @@
 import {
   createUIMessageStreamResponse,
+  isStepCount,
   streamText,
   toUIMessageStream,
+  type TextStreamPart,
+  type ToolSet,
   type UIMessage,
 } from "ai"
 
@@ -14,12 +17,41 @@ import {
 } from "@/lib/model-messages"
 import { resolveModel } from "@/lib/providers"
 
+/**
+ * Times the reasoning as it streams past, block by block, so a reply keeps
+ * how long the model thought for. `seconds()` is the total so far.
+ */
+function reasoningClock() {
+  const started = new Map<string, number>()
+  let total = 0
+  const watch = new TransformStream<
+    TextStreamPart<ToolSet>,
+    TextStreamPart<ToolSet>
+  >({
+    transform(part, controller) {
+      if (part.type === "reasoning-start") started.set(part.id, Date.now())
+      if (part.type === "reasoning-end") {
+        const at = started.get(part.id)
+        if (at !== undefined) total += Date.now() - at
+        started.delete(part.id)
+      }
+      controller.enqueue(part)
+    },
+  })
+  return {
+    watch,
+    seconds: () =>
+      total > 0 ? Math.max(1, Math.round(total / 1000)) : undefined,
+  }
+}
+
 export async function POST(req: Request) {
   const {
     messages,
     model,
     effort,
     context,
+    search,
   }: {
     messages: UIMessage[]
     /** The model picked, or its fast variant with Fast on. */
@@ -28,19 +60,19 @@ export async function POST(req: Request) {
     effort?: unknown
     /** The context size picked, in tokens, for a model with a choice. */
     context?: unknown
+    /** Whether the model may search the web for this reply. */
+    search?: unknown
   } = await req.json()
   const modelId = typeof model === "string" && model ? model : defaultModel
   // Straight to the provider when there's a key for it, from the API keys
   // dialog or the server's environment; otherwise through the AI Gateway.
-  const { model: languageModel, route } = resolveModel(
-    modelId,
-    apiKeysFrom(req)
-  )
+  const resolved = resolveModel(modelId, apiKeysFrom(req))
+  const tools = search === true ? resolved.search : undefined
 
   const modelMessages = await toModelMessages(messages)
 
   const result = streamText({
-    model: languageModel,
+    model: resolved.model,
     // A smaller context size picked keeps the request under it, so it stays
     // at the model's standard rate: the oldest messages are left out.
     messages:
@@ -54,22 +86,32 @@ export async function POST(req: Request) {
     providerOptions: {
       google: { thinkingConfig: { includeThoughts: true } },
     },
+    // With search on, the model can look things up, then answer from what it
+    // found: a few steps in all.
+    tools,
+    stopWhen: tools ? isStepCount(5) : undefined,
   })
+
+  const clock = reasoningClock()
 
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({
-      stream: result.stream,
+      stream: result.stream.pipeThrough(clock.watch),
+      // Pages a search turned up, for the reply to list.
+      sendSources: true,
       // When the reply started, for its timestamp, and how it went, for the
-      // AI debug panel and context meter. Small, so it's kept with the message.
+      // AI debug panel, context meter and reasoning line. Small, so it's kept
+      // with the message.
       messageMetadata: ({ part }): MessageMetadata | undefined =>
         part.type === "start"
           ? { createdAt: Date.now() }
           : part.type === "finish"
             ? {
                 model: modelId,
-                via: route.via,
+                via: resolved.route.via,
                 finishReason: part.finishReason,
                 usage: part.totalUsage,
+                reasoningSeconds: clock.seconds(),
               }
             : undefined,
     }),

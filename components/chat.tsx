@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
+import { GlobalSearchIcon } from "@hugeicons/core-free-icons"
 import { DefaultChatTransport, type UIMessage } from "ai"
 
 import {
@@ -15,6 +16,7 @@ import {
   ComposerHeader,
   ComposerInput,
   ComposerSubmit,
+  ComposerToggle,
 } from "@/components/aiellie/composer"
 import { recordingFetch } from "@/components/aiellie/ai-debug-store"
 import { AttachmentGroup } from "@/components/aiellie/attachment"
@@ -99,6 +101,7 @@ function Chat({
   const [effortPick, setEffort] = React.useState<Effort>()
   const [contextPick, setContext] = React.useState<number>()
   const [fastPick, setFast] = React.useState(false)
+  const [search, setSearch] = React.useState(false)
 
   // What's picked holds only where the model offers it; otherwise it takes
   // the model's default: medium effort, its full context, and not fast.
@@ -121,6 +124,7 @@ function Chat({
     model: fast ? option?.fastId : model,
     effort,
     context,
+    search,
   }
 
   const addFiles = async (files: File[]) => {
@@ -247,6 +251,13 @@ function Chat({
               <ComposerAddFolder />
               <ComposerAddScreenshot />
             </ComposerAddMenu>
+            <ComposerToggle
+              pressed={search}
+              onPressedChange={setSearch}
+              icon={GlobalSearchIcon}
+              label="Search"
+              tooltip="Search the web"
+            />
             {models.length > 0 ? (
               <ModelSelector
                 models={models}

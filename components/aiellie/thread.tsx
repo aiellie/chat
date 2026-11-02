@@ -13,6 +13,7 @@ import {
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { Markdown } from "@/components/aiellie/markdown"
 import { Reasoning } from "@/components/aiellie/reasoning"
+import { searchesIn, WebSearch } from "@/components/aiellie/web-search"
 import {
   MessageAction,
   MessageActions,
@@ -112,6 +113,12 @@ function Thread({
                 live && thoughts.some((part) => part.state === "streaming")
               const metadata = message.metadata as MessageMetadata | undefined
               const sentAt = metadata?.createdAt
+              const web = mine ? undefined : searchesIn(message)
+              const searching =
+                live &&
+                !!web?.searches.some((part) =>
+                  ["input-streaming", "input-available"].includes(part.state)
+                )
               return (
                 <MessageScrollerItem
                   key={message.id}
@@ -126,7 +133,19 @@ function Thread({
                     <MessageContent>
                       {/* Above the reply, as it came first. */}
                       {!mine && (reasoning || thinking) ? (
-                        <Reasoning text={reasoning} streaming={thinking} />
+                        <Reasoning
+                          text={reasoning}
+                          streaming={thinking}
+                          duration={metadata?.reasoningSeconds}
+                        />
+                      ) : null}
+                      {web &&
+                      (web.searches.length > 0 || web.found.length > 0) ? (
+                        <WebSearch
+                          queries={web.queries}
+                          found={web.found}
+                          searching={searching}
+                        />
                       ) : null}
                       {files.length > 0 ? (
                         <AttachmentGroup className="max-w-full">

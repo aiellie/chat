@@ -24,16 +24,19 @@ import {
 function Reasoning({
   text,
   streaming = false,
+  duration,
   className,
 }: {
   /** The reasoning so far. */
   text: string
   /** Whether more reasoning is still on its way. */
   streaming?: boolean
+  /** How long the model thought, in seconds, as saved with the reply. */
+  duration?: number
   className?: string
 }) {
   const [open, setOpen] = React.useState(streaming)
-  const [seconds, setSeconds] = React.useState<number>()
+  const [counted, setCounted] = React.useState<number>()
   const [wasStreaming, setWasStreaming] = React.useState(streaming)
 
   if (streaming !== wasStreaming) {
@@ -41,13 +44,15 @@ function Reasoning({
     if (!streaming) setOpen(false)
   }
 
-  // Counted while it's watched arriving, with a last count as it ends. One
-  // loaded from history has no time to show.
+  // Counted live while it's watched arriving. Once done, the time saved with
+  // the reply wins, so it reads the same after a reload as it did live.
+  const seconds = streaming ? counted : (duration ?? counted)
+
   React.useEffect(() => {
     if (!streaming) return
     const started = Date.now()
     const count = () =>
-      setSeconds(Math.max(1, Math.round((Date.now() - started) / 1000)))
+      setCounted(Math.max(1, Math.round((Date.now() - started) / 1000)))
     const timer = setInterval(count, 1000)
     return () => {
       clearInterval(timer)

@@ -355,6 +355,54 @@ function ComposerSubmit({
   )
 }
 
+/**
+ * An option for the next message that stays on until turned off, such as
+ * searching the web. Off it's a round icon; on, a filled pill that says what
+ * it is, so it's plain the option is in force.
+ */
+function ComposerToggle({
+  pressed,
+  onPressedChange,
+  icon,
+  label,
+  tooltip,
+  side = "top",
+  className,
+}: {
+  pressed: boolean
+  onPressedChange: (pressed: boolean) => void
+  icon: React.ComponentProps<typeof HugeiconsIcon>["icon"]
+  /** Shown beside the icon while it's on. */
+  label: string
+  tooltip: string
+  side?: TooltipIconButtonProps["side"]
+  className?: string
+}) {
+  const { disabled } = useComposer()
+
+  return (
+    <TooltipIconButton
+      data-slot="composer-toggle"
+      type="button"
+      tooltip={pressed ? `${tooltip}: on` : tooltip}
+      side={side}
+      aria-pressed={pressed}
+      disabled={disabled}
+      onClick={() => onPressedChange(!pressed)}
+      className={cn(
+        "h-7 shrink-0 rounded-full p-1.5",
+        pressed
+          ? "w-auto gap-1 bg-accent px-2.5 text-xs font-medium text-foreground hover:bg-accent [&_svg]:text-foreground"
+          : "size-7",
+        className
+      )}
+    >
+      <HugeiconsIcon aria-hidden icon={icon} strokeWidth={2} />
+      {pressed ? <span aria-hidden>{label}</span> : null}
+    </TooltipIconButton>
+  )
+}
+
 // The plus button whose menu holds ways to add to the message. The rows are
 // the caller's, e.g. <ComposerAddFiles />.
 function ComposerAddMenu({
@@ -928,6 +976,7 @@ export {
   ComposerHeader,
   ComposerInput,
   ComposerSubmit,
+  ComposerToggle,
   useComposer,
 }
 export type { ComposerStatus }
