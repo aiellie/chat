@@ -7,7 +7,8 @@ import { SEARCH_INSTRUCTIONS, searchTools } from "@/lib/tools/search"
 // Server only: every tool the model can be given, one file each in this
 // folder, put together for the chat route. They all go to the one request,
 // since the model picks among them as it replies. A new tool gets its file
-// here, a place in `chatTools`, and a suggestion in lib/suggestions.ts.
+// here, a place in `chatTools`, and an entry in catalog.ts, which the Tools
+// page and a new chat's suggestions read.
 
 /** The tools a reply gets, and what the model is told about using them. */
 function chatTools(

@@ -35,7 +35,7 @@ The model's tools live in `lib/tools/`, one file each, and `index.ts` puts them 
 A new tool:
 
 - gets a file in `lib/tools/` with its definition and what the model is told about it, and a place in `chatTools` in `index.ts`;
-- gets a suggestion in `lib/suggestions.ts`, so a new chat offers it;
+- gets an entry in `lib/tools/catalog.ts`, which gives it a card on the Tools page (`/tools`) and its suggestion above the composer in a new chat, and which changes whenever the tool does;
 - if it shows in the thread, gets its part in `components/aiellie/`, which `thread.tsx` draws, as `web-search.tsx` and `plan-review.tsx` are.
 
-`lib/tools/` is server code. Browser code imports a tool's file only when it has no provider SDK in it, as `lib/model-messages.ts` imports `plan.ts`, and never `index.ts`.
+`lib/tools/` is server code. Browser code imports a file there only when it has no provider SDK in it, as `lib/model-messages.ts` imports `plan.ts` and the Tools page imports `catalog.ts`, and never `index.ts`.

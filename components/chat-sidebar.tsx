@@ -11,10 +11,7 @@ import {
   type ChatNavProps,
 } from "@/components/nav-chats"
 import { ChatNavMain } from "@/components/nav-main"
-import {
-  ChatSwitcher,
-  type ChatMode,
-} from "@/components/chat-switcher"
+import { ChatSwitcher, type ChatMode } from "@/components/chat-switcher"
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button"
 import { NavUser, type User } from "@/components/nav-user"
 import {
@@ -126,6 +123,8 @@ function ChatSidebar({
   onSearch,
   activityOpen,
   onActivity,
+  toolsOpen = false,
+  onTools,
   userMenu,
   header = true,
   ...chats
@@ -144,6 +143,10 @@ function ChatSidebar({
   onSearch?: () => void
   activityOpen: boolean
   onActivity: () => void
+  /** Whether the Tools page is open, in place of a chat. */
+  toolsOpen?: boolean
+  /** Opens the Tools page. */
+  onTools?: () => void
   /** Off when the panel around it shows `ChatSidebarHeader` in its own header. */
   header?: boolean
 }) {
@@ -161,10 +164,12 @@ function ChatSidebar({
         />
       ) : null}
       <ChatNavMain
-        newChatOpen={chats.activeId === null}
+        newChatOpen={chats.activeId === null && !toolsOpen}
         onNewChat={onNewChat}
         onQuickChat={onQuickChat}
         onProjects={onProjects}
+        toolsOpen={toolsOpen}
+        onTools={onTools}
       />
       <SidebarContent
         ref={listRef}

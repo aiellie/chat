@@ -7,7 +7,7 @@ import {
   Search01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import { Chat } from "@/components/chat"
 import { AiDebugButton, AiDebugPanel } from "@/components/ai-debug"
@@ -107,7 +107,16 @@ function MainHeader({
   )
 }
 
-function ChatShell() {
+/** Pages of their own, which their routes draw in the chat's place. */
+const PAGES = ["/tools"]
+
+/**
+ * The app around every page, from the root layout: the sidebar, the header
+ * and the panels. A chat at "/" or "/<thread id>" it draws itself, so moving
+ * between chats is instant and keeps a reply streaming; any other page is
+ * `children`, from its route. A shared chat stands alone, without it.
+ */
+function ChatShell({ children }: { children?: React.ReactNode }) {
   const chats = React.useSyncExternalStore(
     subscribeThreads,
     getThreads,
@@ -132,11 +141,17 @@ function ChatShell() {
     () => true,
     () => false
   )
-  // The open thread lives in the URL, as /<thread id>. "/" is a new chat.
+  // The open thread lives in the URL, as /<thread id>. "/" is a new chat. A
+  // chat is opened by changing the URL alone, since the shell draws it; a page
+  // is navigated to, so its route can draw it.
   const pathname = usePathname()
-  const activeId = decodeURIComponent(pathname.slice(1)) || null
+  const router = useRouter()
+  const onChat = /^\/[^/]*$/.test(pathname) && !PAGES.includes(pathname)
+  const toolsOpen = pathname === "/tools"
+  const activeId = onChat ? decodeURIComponent(pathname.slice(1)) || null : null
   const open = (id: string | null) =>
     window.history.pushState(null, "", id ? `/${encodeURIComponent(id)}` : "/")
+  const openTools = () => router.push("/tools")
   // The id a new chat gets once its first message is sent.
   const [draftId, setDraftId] = React.useState(() => crypto.randomUUID())
   const [mode, setMode] = React.useState<ChatMode>("chat")
@@ -177,6 +192,8 @@ function ChatShell() {
   const toggleQuickChat = () => setQuickChatOpen((open) => !open)
 
   const active = chats.find((chat) => chat.id === activeId)
+
+  if (pathname.startsWith("/share")) return children
 
   return (
     // `contents`, so the wrapper only carries the sidebar's context and sizes
@@ -220,6 +237,8 @@ function ChatShell() {
             onQuickChat={toggleQuickChat}
             activityOpen={activityOpen}
             onActivity={toggleActivity}
+            toolsOpen={toolsOpen}
+            onTools={openTools}
             user={user}
             userMenu={{
               onSignIn: ({ email }) => setUser({ name: email.split("@")[0] }),
@@ -262,7 +281,9 @@ function ChatShell() {
       >
         {/* Keyed by id, so a new chat keeps its component, and its stream,
             when its first message turns it into a thread. */}
-        {hydrated ? (
+        {!onChat ? (
+          children
+        ) : hydrated ? (
           <Chat
             key={activeId ?? draftId}
             id={activeId ?? draftId}

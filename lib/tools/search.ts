@@ -18,7 +18,8 @@ const toolSet = (tools: Record<string, unknown>) => tools as ToolSet
 
 /**
  * Each provider's own search, keyed as the provider expects: "web_search"
- * where it lets the name be chosen. Mistral and DeepSeek have none.
+ * where it lets the name be chosen. Mistral and DeepSeek have none. The Tools
+ * page says which models have one, from catalog.ts, so change both together.
  */
 const PROVIDER_SEARCH: Partial<
   Record<ProviderId, (apiKey: string) => ToolSet>

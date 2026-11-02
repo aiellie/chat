@@ -13,10 +13,10 @@
     --font-weight-light: 300;
     --font-weight-normal: 400;
     --font-weight-medium: 430;
-    --font-weight-semibold: 450;
-    --font-weight-bold: 450;
-    --font-weight-extrabold: 450;
-    --font-weight-black: 450;
+    --font-weight-semibold: 430;
+    --font-weight-bold: 430;
+    --font-weight-extrabold: 430;
+    --font-weight-black: 430;
 
     --animate-caret-blink: caret-blink 1.25s ease-out infinite;
 

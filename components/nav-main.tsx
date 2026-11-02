@@ -36,6 +36,7 @@ function ChatNavMain({
   onSpaces,
   onPlugins,
   onTools,
+  toolsOpen = false,
   onScheduled,
   onAgents,
 }: {
@@ -51,6 +52,8 @@ function ChatNavMain({
   onPlugins?: () => void
   /** Where the tools live. Left out, the row is there but goes nowhere. */
   onTools?: () => void
+  /** Whether the Tools page is open, to mark its row. */
+  toolsOpen?: boolean
   /** Where the scheduled tasks live. Left out, the row is there but goes nowhere. */
   onScheduled?: () => void
   /** Where the agents live. Left out, the row is there but goes nowhere. */
@@ -114,8 +117,15 @@ function ChatNavMain({
             <span>Plugins</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
-        <SidebarMenuItem> 
-          <SidebarMenuButton onClick={onTools}> 
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            isActive={toolsOpen}
+            aria-current={toolsOpen ? "page" : undefined}
+            onClick={() => {
+              onTools?.()
+              closeSheet()
+            }}
+          >
             <HugeiconsIcon icon={ShapeCollectionIcon} aria-hidden />
             <span>Tools</span>
           </SidebarMenuButton>

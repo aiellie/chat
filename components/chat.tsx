@@ -46,7 +46,7 @@ import {
 } from "@/lib/attachments"
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
-import { TOOL_SUGGESTIONS } from "@/lib/suggestions"
+import { TOOLS } from "@/lib/tools/catalog"
 import {
   defaultEffort,
   defaultModel,
@@ -378,12 +378,9 @@ function Chat({
             rise they arrive with. */}
         {messages.length === 0 ? (
           <Suggestions scroll className="-mx-0.5 px-0.5 pt-0.5 pb-3">
-            {TOOL_SUGGESTIONS.map((suggestion) => (
-              <Suggestion
-                key={suggestion.prompt}
-                onClick={() => send(suggestion.prompt)}
-              >
-                {suggestion.prompt}
+            {TOOLS.map((tool) => (
+              <Suggestion key={tool.id} onClick={() => send(tool.suggestion)}>
+                {tool.suggestion}
               </Suggestion>
             ))}
           </Suggestions>

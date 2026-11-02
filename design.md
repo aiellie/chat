@@ -230,8 +230,9 @@ The same meaning gets the same mark. A row is added once an icon is used for one
 | close or end: a dialog, a sheet, quick chat, a voice chat, removing an attachment | `Cancel01Icon`       |
 | copy to the clipboard                                                             | `Copy01Icon`         |
 | done: copied, a plan approved, or the choice in a menu                            | `Tick02Icon`         |
-| more actions for a message or a plan's step                                       | `MoreHorizontalIcon` |
+| more actions for a message or a plan's step, or a tool's details                  | `MoreHorizontalIcon` |
 | search                                                                            | `Search01Icon`       |
+| a web search: its trace line, and its card on the Tools page                      | `GlobalSearchIcon`   |
 | opens a menu of choices                                                           | `ArrowDown01Icon`    |
 | a section or step that folds open                                                 | `ArrowRight01Icon`   |
 
