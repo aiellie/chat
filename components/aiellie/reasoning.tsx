@@ -18,13 +18,15 @@ import {
 
 /**
  * What a model thought before it replied, as a trace line that opens onto
- * the reasoning. Open while the thinking comes in, so it can be watched, and
- * folded away once it's done; after that it's the reader's to open.
+ * the reasoning. Open while the thinking comes in, written out word by word
+ * so it can be watched, and folded away once its last word is on screen;
+ * after that it's the reader's to open.
  */
 function Reasoning({
   text,
   streaming = false,
   duration,
+  onThinkingChange,
   className,
 }: {
   /** The reasoning so far. */
@@ -33,20 +35,45 @@ function Reasoning({
   streaming?: boolean
   /** How long the model thought, in seconds, as saved with the reply. */
   duration?: number
+  /**
+   * Called as it starts and stops thinking, which lasts until its words are
+   * written out, so a reply can wait for them.
+   */
+  onThinkingChange?: (thinking: boolean) => void
   className?: string
 }) {
   const [open, setOpen] = React.useState(streaming)
+  // Whether every word so far is on screen. Thinking that lands in one burst
+  // is still being written out after the model has moved on.
+  const [revealed, setRevealed] = React.useState(!streaming)
   const [counted, setCounted] = React.useState<number>()
-  const [wasStreaming, setWasStreaming] = React.useState(streaming)
+  // Nothing to open onto until the first words arrive.
+  const shown = open && text !== ""
+  // Thinking while it comes in, and while it's written out where it's watched.
+  const thinking = streaming || (shown && !revealed)
+  const [wasThinking, setWasThinking] = React.useState(thinking)
 
-  if (streaming !== wasStreaming) {
-    setWasStreaming(streaming)
-    if (!streaming) setOpen(false)
+  if (thinking !== wasThinking) {
+    setWasThinking(thinking)
+    if (!thinking) setOpen(false)
   }
+
+  const onThinkingChangeRef = React.useRef(onThinkingChange)
+
+  React.useEffect(() => {
+    onThinkingChangeRef.current = onThinkingChange
+  })
+
+  // Stopping includes going away mid-thought.
+  React.useEffect(() => {
+    if (!thinking) return
+    onThinkingChangeRef.current?.(true)
+    return () => onThinkingChangeRef.current?.(false)
+  }, [thinking])
 
   // Counted live while it's watched arriving. Once done, the time saved with
   // the reply wins, so it reads the same after a reload as it did live.
-  const seconds = streaming ? counted : (duration ?? counted)
+  const seconds = thinking ? counted : (duration ?? counted)
 
   React.useEffect(() => {
     if (!streaming) return
@@ -62,16 +89,24 @@ function Reasoning({
 
   return (
     <Trace data-slot="reasoning" className={className}>
-      <TraceCollapsible open={open} onOpenChange={setOpen}>
+      <TraceCollapsible
+        open={shown}
+        onOpenChange={(next) => {
+          setOpen(next)
+          // Opened while it still comes in, it's written out again from the
+          // start; otherwise it's shown whole.
+          setRevealed(!(next && streaming))
+        }}
+      >
         <TraceCollapsibleTrigger>
-          <TraceLine status={streaming ? "running" : undefined}>
+          <TraceLine status={thinking ? "running" : undefined}>
             <TraceIcon>
               <HugeiconsIcon icon={AiBrain01Icon} />
             </TraceIcon>
-            <TraceTitle>{streaming ? "Thinking" : "Thought"}</TraceTitle>
+            <TraceTitle>{thinking ? "Thinking" : "Thought"}</TraceTitle>
             {seconds !== undefined ? (
               <TraceDescription>
-                {streaming
+                {thinking
                   ? `${seconds}s`
                   : `for ${seconds} ${seconds === 1 ? "second" : "seconds"}`}
               </TraceDescription>
@@ -79,7 +114,13 @@ function Reasoning({
           </TraceLine>
         </TraceCollapsibleTrigger>
         <TraceCollapsibleContent className="text-sm">
-          <Markdown>{text}</Markdown>
+          <Markdown
+            streaming={streaming}
+            revealInitial={thinking}
+            onRevealed={() => setRevealed(true)}
+          >
+            {text}
+          </Markdown>
         </TraceCollapsibleContent>
       </TraceCollapsible>
     </Trace>

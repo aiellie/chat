@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { RefreshIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { UIMessage } from "ai"
@@ -14,7 +15,12 @@ import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { Markdown } from "@/components/aiellie/markdown"
 import { Reasoning } from "@/components/aiellie/reasoning"
 import { Sources } from "@/components/aiellie/sources"
-import { searchesIn, WebSearch } from "@/components/aiellie/web-search"
+import { ThinkingIndicator } from "@/components/aiellie/thinking-indicator"
+import {
+  citedFirst,
+  searchesIn,
+  WebSearch,
+} from "@/components/aiellie/web-search"
 import {
   MessageAction,
   MessageActions,
@@ -60,6 +66,7 @@ function firstsOfDay(messages: UIMessage[]) {
 function Thread({
   messages,
   streaming = false,
+  thinkingSince,
   error,
   onRetry,
   onRegenerate,
@@ -68,8 +75,13 @@ function Thread({
   onReport,
 }: {
   messages: UIMessage[]
-  /** Whether the last message is a reply still coming in. */
+  /** Whether a reply is on its way. Once it has begun, it's the last message. */
   streaming?: boolean
+  /**
+   * While a reply is on its way, when it was asked for. Until the reply has
+   * something to show, the thread shows it's thinking.
+   */
+  thinkingSince?: number
   /** Shows a bubble that retries the last message when pressed. */
   error?: Error
   onRetry?: () => void
@@ -84,6 +96,15 @@ function Thread({
   onReport?: (messageId: string, report: Report) => void
 }) {
   const firsts = firstsOfDay(messages)
+  // The reply whose thinking is still being written out. Its words wait for
+  // that, so the two aren't written at once.
+  const [thinkingId, setThinkingId] = React.useState<string>()
+  // The reply that came in while the thread was open. It writes itself out
+  // even when all of it has arrived by the time it's shown.
+  const last = messages.at(-1)
+  const liveId = streaming && last?.role === "assistant" ? last.id : undefined
+  const [freshId, setFreshId] = React.useState(liveId)
+  if (liveId !== undefined && liveId !== freshId) setFreshId(liveId)
 
   return (
     // The chat's header is glass over the top 40px, so the thread scrolls
@@ -103,6 +124,7 @@ function Thread({
               const files = message.parts.filter((part) => part.type === "file")
               const mine = message.role === "user"
               const live = streaming && !mine && index === messages.length - 1
+              const held = message.id === thinkingId
               const thoughts = message.parts.filter(
                 (part) => part.type === "reasoning"
               )
@@ -115,17 +137,29 @@ function Thread({
               const metadata = message.metadata as MessageMetadata | undefined
               const sentAt = metadata?.createdAt
               const web = mine ? undefined : searchesIn(message)
+              // The pages cited first, in the order the reply cites them, so
+              // its citations count up from 1 and match its sources.
+              const sources = web ? citedFirst(web.found, text) : []
               const searching =
                 live &&
                 !!web?.searches.some((part) =>
                   ["input-streaming", "input-available"].includes(part.state)
                 )
+              const writing =
+                live &&
+                message.parts.some(
+                  (part) => part.type === "text" && part.state === "streaming"
+                )
+              // At work with nothing coming in to show for it: before its
+              // first words, or while it reads what a search found.
+              const waiting = live && !thinking && !searching && !writing
               return (
                 <MessageScrollerItem
                   key={message.id}
                   messageId={message.id}
                   scrollAnchor={mine}
-                  className="pb-6"
+                  // A reply's footer holds its actions, so it needs the room.
+                  className={mine ? "pb-6" : "pb-8"}
                 >
                   {sentAt !== undefined && firsts.has(message.id) ? (
                     <DateDivider at={sentAt} className="mb-6" />
@@ -138,6 +172,15 @@ function Thread({
                           text={reasoning}
                           streaming={thinking}
                           duration={metadata?.reasoningSeconds}
+                          onThinkingChange={(on) =>
+                            setThinkingId((current) =>
+                              on
+                                ? message.id
+                                : current === message.id
+                                  ? undefined
+                                  : current
+                            )
+                          }
                         />
                       ) : null}
                       {web &&
@@ -146,6 +189,10 @@ function Thread({
                           queries={web.queries}
                           found={web.found}
                           searching={searching}
+                          typing={
+                            live &&
+                            web.searches.at(-1)?.state === "input-streaming"
+                          }
                         />
                       ) : null}
                       {files.length > 0 ? (
@@ -160,7 +207,9 @@ function Thread({
                           ))}
                         </AttachmentGroup>
                       ) : null}
-                      {text || files.length === 0 ? (
+                      {/* A reply with no words yet, or none it may show yet,
+                          shows it's thinking instead. */}
+                      {!held && (text || (files.length === 0 && !live)) ? (
                         <Bubble variant={mine ? "secondary" : "ghost"}>
                           {/* Markdown lays out its own lines, so only what
                               the person typed keeps theirs as written. */}
@@ -171,28 +220,48 @@ function Thread({
                               text
                             ) : (
                               // Replies loaded from history show at once; one
-                              // arriving now is written out from its first word.
-                              <Markdown streaming={live} revealInitial={live}>
+                              // that came in now is written out from its first
+                              // word, even after waiting on its thinking.
+                              <Markdown
+                                streaming={live}
+                                revealInitial={message.id === freshId}
+                                citations={sources.map((page) => ({
+                                  url: page.url,
+                                  title: page.title,
+                                  description: page.snippet,
+                                }))}
+                              >
                                 {text}
                               </Markdown>
                             )}
                           </BubbleContent>
                         </Bubble>
                       ) : null}
+                      {waiting ? (
+                        // Gives way to a trace line above it that's still at
+                        // work, like thinking still being written out.
+                        <ThinkingIndicator
+                          startedAt={thinkingSince}
+                          className="in-[[data-slot=message-content]:has([data-status=running])]:hidden"
+                        />
+                      ) : null}
                       {/* The pages the reply drew on, once it's written. */}
-                      {web && web.found.length > 0 && !live ? (
-                        <Sources sources={web.found} />
+                      {sources.length > 0 && !live && !held ? (
+                        <Sources sources={sources} />
                       ) : null}
                     </MessageContent>
-                    {sentAt !== undefined || (!mine && !live) ? (
+                    {/* A reply's footer, time and all, waits until it's
+                        written: before then there's nothing to act on. */}
+                    {(mine ? sentAt !== undefined : !live && !held) ? (
                       // Laid in the gap under the message, so showing it on
-                      // hover moves nothing. Hovering it counts as hovering
+                      // hover moves nothing, and padded rather than spaced
+                      // clear of it, so the pointer crossing to it never
+                      // leaves the message. Hovering it counts as hovering
                       // the message, so it shows as the pointer reaches it,
                       // from above or below. It shows too while a button in
                       // it has focus or its menu is open.
-                      <MessageFooter className="absolute start-0 top-full gap-2 opacity-0 transition-opacity duration-150 group-focus-within/message:opacity-100 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0 has-data-popup-open:opacity-100">
-                        {/* A reply still being written has nothing to act on yet. */}
-                        {!mine && !live ? (
+                      <MessageFooter className="absolute start-0 top-full gap-2 pt-2 opacity-0 transition-opacity duration-150 group-focus-within/message:opacity-100 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0 has-data-popup-open:opacity-100">
+                        {!mine ? (
                           <MessageActions>
                             <MessageCopyAction value={text} />
                             {onRate ? (
@@ -249,6 +318,16 @@ function Thread({
                 </MessageScrollerItem>
               )
             })}
+            {/* Asked, and nothing back yet. */}
+            {thinkingSince !== undefined && messages.at(-1)?.role === "user" ? (
+              <MessageScrollerItem className="pb-6">
+                <Message>
+                  <MessageContent>
+                    <ThinkingIndicator startedAt={thinkingSince} />
+                  </MessageContent>
+                </Message>
+              </MessageScrollerItem>
+            ) : null}
             {error ? (
               <MessageScrollerItem className="pb-6">
                 <Message>

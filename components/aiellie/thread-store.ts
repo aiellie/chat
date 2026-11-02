@@ -54,6 +54,30 @@ function subscribeThreads(listener: () => void) {
   }
 }
 
+// The threads with a reply on its way, and when each was asked for. Kept in
+// memory only: a reply doesn't outlive the page that asked for it.
+const NO_REPLIES: ReadonlyMap<string, number> = new Map()
+let replies = NO_REPLIES
+const replyListeners = new Set<() => void>()
+
+const getReplies = () => replies
+
+function subscribeReplies(listener: () => void) {
+  replyListeners.add(listener)
+  return () => {
+    replyListeners.delete(listener)
+  }
+}
+
+/** Marks a thread as waiting on a reply since `since`, or as done with nothing. */
+function setReplying(id: string, since?: number) {
+  const next = new Map(replies)
+  if (since === undefined) next.delete(id)
+  else next.set(id, since)
+  replies = next
+  replyListeners.forEach((listener) => listener())
+}
+
 const loadMessages = (id: string) => read<UIMessage[]>(messagesKey(id))
 // Files are kept by name only: their contents would fill the few megabytes
 // localStorage allows within a handful of pictures.
@@ -76,11 +100,15 @@ const removeMessages = (id: string) => {
 }
 
 export {
+  NO_REPLIES,
   NO_THREADS,
+  getReplies,
   getThreads,
   loadMessages,
   removeMessages,
   saveMessages,
+  setReplying,
   setThreads,
+  subscribeReplies,
   subscribeThreads,
 }

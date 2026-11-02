@@ -167,3 +167,36 @@
       scrollbar-color: var(--border) transparent;
     }
 }
+/* A reply is written out the way StreamText writes: each new word lands in
+   the live ink, blurred, and settles into the text's own color. Streamdown
+   plays this on each word it adds, as its `liveIn` animation. */
+@keyframes sd-liveIn {
+    from {
+        opacity: 0;
+        filter: blur(4px);
+        color: var(--live);
+    }
+    45% {
+        opacity: 1;
+        filter: blur(0);
+        color: var(--live);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-slot="markdown"] [data-sd-animate] {
+        animation: none;
+    }
+}
+
+/* StreamText's caret, after the last word of a reply still being written. A
+   list's goes after its last item. Streamdown marks a last block the caret
+   shouldn't follow, like a code block. */
+[data-slot="markdown"][data-streaming]
+    > :last-child:not([data-sd-caret-hidden], ul, ol)::after,
+[data-slot="markdown"][data-streaming]
+    > :is(ul, ol):last-child:not([data-sd-caret-hidden])
+    > li:last-child::after {
+    content: "";
+    @apply ms-0.5 inline-block h-3.5 w-0.5 animate-caret-blink bg-live align-middle motion-reduce:animate-none;
+}

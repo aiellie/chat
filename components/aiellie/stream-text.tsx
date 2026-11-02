@@ -253,7 +253,10 @@ function useWordReveal(
 
       let rate: number
       if (typing) {
-        rate = pace
+        // Text it mounted with goes at the pace, but no slower than catching
+        // up would, so a long one that arrived all at once, like thinking
+        // sent in a burst, doesn't keep the reader waiting.
+        rate = Math.max(pace, backlog / CATCH_UP_SECONDS)
       } else if (streaming) {
         const reserve = state.rate * RESERVE_SECONDS
         rate = Math.max(

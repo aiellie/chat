@@ -13,6 +13,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { EmojiSelector } from "@/components/aiellie/emoji-selector"
 import { Button } from "@/components/ui/button"
 import {
   Menu,
@@ -43,6 +44,10 @@ type ComposerContextValue = {
   canSubmit: boolean
   submit: () => void
   stop?: () => void
+  /** The box <ComposerInput> renders, once it has. */
+  inputRef: React.RefObject<HTMLTextAreaElement | null>
+  /** Puts text where the caret is, or over what's selected, and the caret after it. */
+  insert: (text: string) => void
   /** The composer's `onFilesAdd`. The pickers below are missing without it. */
   addFiles?: (files: File[]) => void
   pickFiles?: () => void
@@ -102,6 +107,10 @@ function Composer({
   const dragDepth = React.useRef(0)
   const fileInput = React.useRef<HTMLInputElement>(null)
   const folderInput = React.useRef<HTMLInputElement>(null)
+  const input = React.useRef<HTMLTextAreaElement>(null)
+  // Where the caret goes once inserted text is in the box. Setting the value
+  // puts it at the end, so it's moved back after that render.
+  const caret = React.useRef<number | null>(null)
 
   const setValue = (next: string) => {
     if (!controlled) setUncontrolledValue(next)
@@ -113,6 +122,21 @@ function Composer({
     onSubmit(value.trim())
     setValue("")
   }
+
+  // A box that's lost focus still knows where its caret was, so this works
+  // from a popover too.
+  const insert = (text: string) => {
+    const start = input.current?.selectionStart ?? value.length
+    const end = input.current?.selectionEnd ?? value.length
+    caret.current = start + text.length
+    setValue(value.slice(0, start) + text + value.slice(end))
+  }
+
+  React.useLayoutEffect(() => {
+    if (caret.current === null) return
+    input.current?.setSelectionRange(caret.current, caret.current)
+    caret.current = null
+  }, [value])
 
   const carriesFiles = (event: React.DragEvent) =>
     onFilesAdd !== undefined && event.dataTransfer.types.includes("Files")
@@ -127,6 +151,8 @@ function Composer({
         canSubmit,
         submit,
         stop: onStop,
+        inputRef: input,
+        insert,
         addFiles: onFilesAdd,
         pickFiles: onFilesAdd ? () => fileInput.current?.click() : undefined,
         pickFolder: onFilesAdd ? () => folderInput.current?.click() : undefined,
@@ -236,6 +262,7 @@ function FilePicker({
 // An Enter pressed while an input method is composing belongs to the
 // character, not the message.
 function ComposerInput({
+  ref,
   className,
   onKeyDown,
   placeholder = "Ask anything",
@@ -244,11 +271,17 @@ function ComposerInput({
   React.ComponentProps<typeof Textarea>,
   "value" | "defaultValue" | "onChange"
 >) {
-  const { value, setValue, submit, disabled } = useComposer()
+  const { value, setValue, submit, disabled, inputRef } = useComposer()
 
   return (
     <Textarea
       data-slot="composer-input"
+      // The composer keeps the box too, to insert at its caret.
+      ref={(node) => {
+        inputRef.current = node
+        if (typeof ref === "function") return ref(node)
+        if (ref) ref.current = node
+      }}
       rows={1}
       value={value}
       disabled={disabled}
@@ -552,6 +585,26 @@ function ComposerAddScreenshot({
       <HugeiconsIcon aria-hidden icon={ComputerScreenShareIcon} />
       {children}
     </MenuItem>
+  )
+}
+
+// The emoji go where the caret was, and focus goes back to the box after a
+// pick, so typing carries on from there.
+function ComposerEmoji(
+  props: Omit<
+    React.ComponentProps<typeof EmojiSelector>,
+    "onEmojiSelect" | "returnFocus" | "disabled"
+  >
+) {
+  const { insert, inputRef, disabled } = useComposer()
+
+  return (
+    <EmojiSelector
+      onEmojiSelect={insert}
+      returnFocus={inputRef}
+      disabled={disabled}
+      {...props}
+    />
   )
 }
 
@@ -972,6 +1025,7 @@ export {
   ComposerAddMenu,
   ComposerAddScreenshot,
   ComposerDictate,
+  ComposerEmoji,
   ComposerFooter,
   ComposerHeader,
   ComposerInput,

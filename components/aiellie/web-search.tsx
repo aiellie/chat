@@ -4,6 +4,7 @@ import { GlobalSearchIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { UIMessage } from "ai"
 
+import { StreamText } from "@/components/aiellie/stream-text"
 import {
   Trace,
   TraceCollapsible,
@@ -80,6 +81,38 @@ function hostOf(url: string) {
   }
 }
 
+/**
+ * A page however a link to it is written: without its fragment, the
+ * tracking OpenAI and others add, a trailing slash or "www.".
+ */
+function pageKey(href: string) {
+  try {
+    const url = new URL(href)
+    for (const name of [...url.searchParams.keys()])
+      if (name.startsWith("utm_")) url.searchParams.delete(name)
+    return `${hostOf(href)}${url.pathname.replace(/\/+$/, "")}${url.search}`
+  } catch {
+    return href
+  }
+}
+
+// Where a markdown link goes: [text](https://…), or <https://…> in brackets.
+const LINKED = /\]\(\s*<?(https?:\/\/[^\s)>]+)/g
+
+/**
+ * The pages a reply found, those its text links to first, in the order it
+ * first links to them, so its citations count up from 1 as it reads.
+ */
+function citedFirst(found: Found[], text: string) {
+  const order = new Map<string, number>()
+  for (const [, href] of text.matchAll(LINKED)) {
+    const key = pageKey(href)
+    if (!order.has(key)) order.set(key, order.size)
+  }
+  const rank = (page: Found) => order.get(pageKey(page.url)) ?? order.size
+  return [...found].sort((a, b) => rank(a) - rank(b))
+}
+
 /** A reply's web searches, and what they found, if it searched at all. */
 function searchesIn(message: UIMessage) {
   const searches = message.parts.filter((part) =>
@@ -102,19 +135,23 @@ function searchesIn(message: UIMessage) {
 }
 
 /**
- * A reply's web search, as a trace line: searching while it runs, then what
- * was searched for and how many pages came back, opening onto them as links.
+ * A reply's web search, as a trace line: shimmering while it runs, with what
+ * it's searching for written out as it comes, then how many pages came back,
+ * opening onto them as links.
  */
 function WebSearch({
   queries,
   found,
   searching = false,
+  typing = false,
   className,
 }: {
   queries: string[]
   found: Found[]
   /** Whether a search is still running. */
   searching?: boolean
+  /** Whether what it's searching for is still coming in. */
+  typing?: boolean
   className?: string
 }) {
   const query = queries.at(-1)
@@ -129,7 +166,22 @@ function WebSearch({
             </TraceIcon>
             <TraceTitle>
               {searching ? "Searching the web" : "Searched the web"}
-              {query ? ` for “${query}”` : ""}
+              {query ? (
+                <>
+                  {" for “"}
+                  {/* Written out as the model types it. A new search writes
+                      its own. */}
+                  <StreamText
+                    key={queries.length}
+                    text={query}
+                    streaming={typing}
+                    revealInitial={searching}
+                    inlineCode={false}
+                    className="whitespace-nowrap"
+                  />
+                  ”
+                </>
+              ) : null}
             </TraceTitle>
             {found.length > 0 ? (
               <TraceDescription>
@@ -164,5 +216,5 @@ function WebSearch({
   )
 }
 
-export { hostOf, searchesIn, WebSearch }
+export { citedFirst, hostOf, pageKey, searchesIn, WebSearch }
 export type { Found }

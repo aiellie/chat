@@ -12,6 +12,7 @@ import {
   ComposerAddMenu,
   ComposerAddScreenshot,
   ComposerDictate,
+  ComposerEmoji,
   ComposerFooter,
   ComposerHeader,
   ComposerInput,
@@ -24,7 +25,13 @@ import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { ContextMeter, contextOf } from "@/components/aiellie/context-meter"
 import { ModelSelector } from "@/components/aiellie/model-selector"
 import { Thread } from "@/components/aiellie/thread"
-import { loadMessages, saveMessages } from "@/components/aiellie/thread-store"
+import {
+  getReplies,
+  loadMessages,
+  saveMessages,
+  setReplying,
+  subscribeReplies,
+} from "@/components/aiellie/thread-store"
 import {
   mediaTypeOf,
   pathOf,
@@ -173,6 +180,21 @@ function Chat({
     }
   }, [])
 
+  // While a reply is on its way, the thread and the sidebar show it's
+  // thinking, counting from when it was asked for. Leaving the chat lets the
+  // reply go, so the mark goes with it.
+  const busy = status === "submitted" || status === "streaming"
+  React.useEffect(() => {
+    if (!busy) return
+    setReplying(id, Date.now())
+    return () => setReplying(id)
+  }, [id, busy])
+  const thinkingSince = React.useSyncExternalStore(
+    subscribeReplies,
+    () => getReplies().get(id),
+    () => undefined
+  )
+
   // Saved once a reply settles, not on every streamed token. A thread that
   // hasn't been sent to yet isn't saved at all.
   React.useEffect(() => {
@@ -184,7 +206,10 @@ function Chat({
     <div className="flex min-h-0 flex-1 flex-col">
       <Thread
         messages={messages}
-        streaming={status === "streaming"}
+        // A reply has begun before its first words, while the status still
+        // reads "submitted".
+        streaming={busy}
+        thinkingSince={thinkingSince}
         error={error}
         onRetry={() => regenerate({ body })}
         onRegenerate={(messageId) => regenerate({ messageId, body })}
@@ -256,6 +281,7 @@ function Chat({
               <ComposerAddFolder />
               <ComposerAddScreenshot />
             </ComposerAddMenu>
+            <ComposerEmoji />
             <ComposerToggle
               pressed={search}
               onPressedChange={setSearch}
@@ -286,6 +312,9 @@ function Chat({
             <ComposerSubmit />
           </ComposerFooter>
         </Composer>
+        <p className="pt-2 text-center text-xs text-muted-foreground">
+          Ellie is an AI and can make mistakes.
+        </p>
       </div>
     </div>
   )

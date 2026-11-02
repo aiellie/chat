@@ -7,20 +7,13 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
-import {
-  arrange,
-  ChatNavFilter,
-  DEFAULT_VIEW,
-} from "@/components/nav-filter"
+import { arrange, ChatNavFilter, DEFAULT_VIEW } from "@/components/nav-filter"
 import { ChatOptions } from "@/components/chat-options"
+import { ThinkingIndicator } from "@/components/aiellie/thinking-indicator"
 import { useRenameInput } from "@/components/editable-title"
 import { Menu, MenuContent, MenuTrigger } from "@/components/ui/menu"
 import { usePanels } from "@/components/panels"
-import {
-  Status,
-  StatusIndicator,
-  StatusLabel,
-} from "@/components/ui/status"
+import { Status, StatusIndicator, StatusLabel } from "@/components/ui/status"
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -40,6 +33,8 @@ type ChatNavChat = {
   title: string
   pinned?: boolean
   status?: ChatNavStatus
+  /** While it's running, when the reply it's waiting on was asked for. */
+  startedAt?: number
   /** Finished while it wasn't open, and not opened since. */
   unread?: boolean
 }
@@ -68,18 +63,21 @@ function markOf(chat: ChatNavChat): ChatNavMark | null {
   return null
 }
 
+// A running chat shows it's thinking in place of its title, so only these
+// marks sit at the end of the row.
+type ChatNavBadge = Exclude<ChatNavMark, "running">
+
 const MARKS: Record<
-  ChatNavMark,
+  ChatNavBadge,
   { label: string; variant: "live" | "destructive"; pulse: boolean }
 > = {
-  running: { label: "Running", variant: "live", pulse: true },
   unread: { label: "Unread", variant: "live", pulse: false },
   failed: { label: "Failed", variant: "destructive", pulse: false },
 }
 
 // Sits where the options button appears, so it gives way whenever that does.
 // On a touch screen the button never hides, so the mark moves in beside it.
-function ChatNavStatusMark({ mark }: { mark: ChatNavMark }) {
+function ChatNavStatusMark({ mark }: { mark: ChatNavBadge }) {
   const { label, variant, pulse } = MARKS[mark]
 
   return (
@@ -169,6 +167,7 @@ function ChatNavItem({
   const { closeSheet } = usePanels()
   const active = chat.id === activeId
   const mark = markOf(chat)
+  const badge = mark === "running" ? null : mark
 
   return (
     <SidebarMenuItem>
@@ -189,11 +188,20 @@ function ChatNavItem({
               onSelect(chat.id)
               closeSheet()
             }}
-            className={cn(mark && "pointer-coarse:pe-14")}
+            className={cn(badge && "pointer-coarse:pe-14")}
           >
-            <ChatNavTitle title={chat.title} />
+            {mark === "running" ? (
+              <ThinkingIndicator
+                startedAt={chat.startedAt}
+                className="text-current"
+              >
+                {chat.title}
+              </ThinkingIndicator>
+            ) : (
+              <ChatNavTitle title={chat.title} />
+            )}
           </SidebarMenuButton>
-          {mark ? <ChatNavStatusMark mark={mark} /> : null}
+          {badge ? <ChatNavStatusMark mark={badge} /> : null}
           <Menu>
             <MenuTrigger
               render={

@@ -17,6 +17,11 @@ import {
 } from "@/lib/model-messages"
 import { resolveModel } from "@/lib/providers"
 
+// With search on, the model cites what it found where it uses it, in the form
+// a reply draws as a numbered citation that previews the page.
+const CITE_SOURCES =
+  "When you use something a web search found, cite the page right after the sentence that uses it, as a markdown link with a number for its text and the page's address, like [1](https://example.com/page). Cite only pages your searches returned, and don't list them again at the end: the chat shows them under your reply."
+
 /**
  * Times the reasoning as it streams past, block by block, so a reply keeps
  * how long the model thought for. `seconds()` is the total so far.
@@ -73,6 +78,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: resolved.model,
+    instructions: tools ? CITE_SOURCES : undefined,
     // A smaller context size picked keeps the request under it, so it stays
     // at the model's standard rate: the oldest messages are left out.
     messages:

@@ -10,12 +10,15 @@ import { AiDebugButton, AiDebugPanel } from "@/components/aiellie/ai-debug"
 import { ChatHeader, ChatHeaderTitle } from "@/components/aiellie/chat-header"
 import { HistoryButtons } from "@/components/aiellie/history-buttons"
 import {
+  NO_REPLIES,
   NO_THREADS,
+  getReplies,
   getThreads,
   loadMessages,
   removeMessages,
   saveMessages,
   setThreads,
+  subscribeReplies,
   subscribeThreads,
 } from "@/components/aiellie/thread-store"
 import { ChatSidebar } from "@/components/chat-sidebar"
@@ -72,6 +75,18 @@ function ChatShell() {
     getThreads,
     () => NO_THREADS
   )
+  const replies = React.useSyncExternalStore(
+    subscribeReplies,
+    getReplies,
+    () => NO_REPLIES
+  )
+  // A chat waiting on a reply runs, showing it's thinking in the sidebar.
+  const listed = chats.map((chat) => {
+    const startedAt = replies.get(chat.id)
+    return startedAt === undefined
+      ? chat
+      : { ...chat, status: "running" as const, startedAt }
+  })
   // Saved threads are only in the browser, so the chat waits for it rather
   // than rendering an empty thread on the server first.
   const hydrated = React.useSyncExternalStore(
@@ -120,7 +135,7 @@ function ChatShell() {
         glassHeader
         left={
           <ChatSidebar
-            chats={chats}
+            chats={listed}
             activeId={activeId}
             onSelect={(id) => {
               open(id)
