@@ -14,7 +14,7 @@ import {
   TraceIcon,
   TraceLine,
   TraceTitle,
-} from "@/components/aiellie/trace"
+} from "@/components/ui/trace"
 
 /**
  * What a model thought before it replied, as a trace line that opens onto

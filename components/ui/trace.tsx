@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 
 import {
   Collapsible,
@@ -134,13 +134,13 @@ function TraceCollapsibleContent({
   return (
     <CollapsibleContent
       data-slot="trace-collapsible-content"
-      className="h-(--collapsible-panel-height) min-w-0 overflow-hidden transition-[height] duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none data-ending-style:h-0 data-starting-style:h-0"
+      className="h-(--collapsible-panel-height) min-w-0 overflow-hidden transition-[height] duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] data-ending-style:h-0 data-starting-style:h-0 motion-reduce:transition-none"
       {...props}
     >
       <div
         data-slot="trace-collapsible-content-inner"
         className={cn(
-          "mt-2 mb-1 ms-[calc(--spacing(2)-1px)] min-w-0 border-s pe-1 ps-4 leading-relaxed wrap-break-word text-muted-foreground",
+          "ms-[calc(--spacing(2)-1px)] mt-2 mb-1 min-w-0 border-s ps-4 pe-1 leading-relaxed wrap-break-word text-muted-foreground",
           className
         )}
       >

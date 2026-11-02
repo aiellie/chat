@@ -59,7 +59,7 @@ function ThinkingIndicator({
       >
         <StatusIndicator />
       </Status>
-      <span className="min-w-0 shimmer truncate motion-reduce:animate-none">
+      <span className="shimmer min-w-0 truncate motion-reduce:animate-none">
         {children}
       </span>
       {elapsed > 0 ? (

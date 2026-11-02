@@ -45,7 +45,7 @@ import {
   toFileParts,
 } from "@/lib/attachments"
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
-import type { MessageMetadata } from "@/lib/model-messages"
+import type { MessageMetadata } from "@/lib/messages"
 import { asksToSearch } from "@/lib/search-intent"
 import {
   defaultEffort,

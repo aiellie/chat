@@ -30,7 +30,7 @@ import {
   CodeBlockContent,
   CodeBlockLine,
 } from "@/components/aiellie/code-block"
-import { codeIcons, type CodeIconName } from "@/components/ui/icons"
+import { codeIcons, type CodeIconName } from "@/components/aiellie/icons"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Dialog,

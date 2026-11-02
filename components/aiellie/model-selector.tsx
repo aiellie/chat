@@ -8,7 +8,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
-import { modelIcons, type ModelIconName } from "@/components/ui/icons"
+import { modelIcons, type ModelIconName } from "@/components/aiellie/icons"
 import { Button } from "@/components/ui/button"
 import {
   Menu,

@@ -14,7 +14,7 @@ import {
   TraceIcon,
   TraceLine,
   TraceTitle,
-} from "@/components/aiellie/trace"
+} from "@/components/ui/trace"
 
 // The names the chat route gives its search tool, whichever way the request
 // went: Google's own is fixed; the rest are called web_search.

@@ -16,7 +16,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import type { ReplyMetadata } from "@/lib/model-messages"
+import type { ReplyMetadata } from "@/lib/messages"
 import type { ModelOption } from "@/lib/models"
 import { cn } from "@/lib/utils"
 

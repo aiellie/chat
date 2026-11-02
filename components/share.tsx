@@ -50,7 +50,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import type { MessageMetadata } from "@/lib/model-messages"
+import type { MessageMetadata } from "@/lib/messages"
 
 // A link opens whatever it holds, so what comes out of one is checked before
 // it's shown: only these parts, and only web pages for sources.

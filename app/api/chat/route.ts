@@ -15,7 +15,7 @@ import {
   fitToContext,
   toModelMessages,
   type MessageMetadata,
-} from "@/lib/model-messages"
+} from "@/lib/messages"
 import { resolveModel } from "@/lib/providers"
 
 // With search on, the model cites what it found where it uses it, in the form

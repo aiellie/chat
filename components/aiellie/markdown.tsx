@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 import {
   defaultComponents,
   Streamdown,
@@ -220,7 +220,7 @@ function Markdown({
         animated={paced ? FADE : undefined}
         components={components}
         controls={controls}
-        className={cn("cn-markdown w-full min-w-0 overflow-hidden", className)}
+        className={cn("w-full min-w-0 overflow-hidden", className)}
         {...props}
       >
         {paced ? words.slice(0, visible).join("") : children}

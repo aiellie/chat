@@ -1,6 +1,6 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
@@ -14,9 +14,13 @@ Read `design.md` before changing anything people see. It holds the rules for col
 
 # Where components go
 
-- `components/ui/`: generic building blocks, shadcn's and our own (`tooltip-icon-button`, `editable-title`, `icons`). They know nothing about chat.
-- `components/aiellie/`: chat parts, published as the `@aiellie` shadcn registry (see `components.json`).
+- `components/ui/`: generic building blocks, shadcn's and our own (`tooltip-icon-button`, `trace`). They know nothing about chat.
+- `components/aiellie/`: chat parts, including `editable-title` and the marks in `icons`.
 - `components/`: the app itself. The shell, sidebar, nav, search, sharing, the stores, and `chat.tsx`, which wires the AI SDK, the API routes and stored state into the aiellie parts.
+
+## Parts come from elements
+
+Most of `components/ui/` and `components/aiellie/`, and the helpers they use in `lib/` (`messages`, `models`, `emojis`, `highlight-code`, `utils`) and `hooks/`, are installed from the `@aiellie` registry (see `components.json`), whose source is the `aiellie/elements` repo. Change a part there, then reinstall it here with `npx shadcn@latest add @aiellie/<name> --overwrite`; an edit made only here is lost at the next install. These stay local, since the registry doesn't ship them: `ui/alert-dialog`, `ui/surfaces`, `aiellie/voice-orb`, `aiellie/chat-empty` and `aiellie/chat-header`.
 
 ## The test for `components/aiellie/`
 
