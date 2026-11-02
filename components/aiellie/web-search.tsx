@@ -19,7 +19,8 @@ import {
 // went: Google's own is fixed; the rest are called web_search.
 const SEARCH_PARTS = new Set(["tool-web_search", "tool-google_search"])
 
-type Found = { url: string; title?: string }
+/** A page a search turned up, with what's known of it for a preview. */
+type Found = { url: string; title?: string; snippet?: string; date?: string }
 
 type SearchPart = {
   type: string
@@ -42,13 +43,19 @@ function foundIn(output: unknown): Found[] {
     ? output
     : (record(output)?.results ?? record(output)?.sources)
   if (!Array.isArray(list)) return []
+  const text = (value: unknown) =>
+    typeof value === "string" && value ? value : undefined
   return list.flatMap((item) => {
     const entry = record(item)
     return typeof entry?.url === "string"
       ? [
           {
             url: entry.url,
-            title: typeof entry.title === "string" ? entry.title : undefined,
+            title: text(entry.title),
+            // The Gateway's search gives an excerpt and a date; Anthropic's
+            // gives how old the page is.
+            snippet: text(entry.snippet),
+            date: text(entry.date) ?? text(entry.pageAge),
           },
         ]
       : []
@@ -157,4 +164,5 @@ function WebSearch({
   )
 }
 
-export { searchesIn, WebSearch }
+export { hostOf, searchesIn, WebSearch }
+export type { Found }

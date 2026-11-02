@@ -13,6 +13,7 @@ import {
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import { Markdown } from "@/components/aiellie/markdown"
 import { Reasoning } from "@/components/aiellie/reasoning"
+import { Sources } from "@/components/aiellie/sources"
 import { searchesIn, WebSearch } from "@/components/aiellie/web-search"
 import {
   MessageAction,
@@ -177,6 +178,10 @@ function Thread({
                             )}
                           </BubbleContent>
                         </Bubble>
+                      ) : null}
+                      {/* The pages the reply drew on, once it's written. */}
+                      {web && web.found.length > 0 && !live ? (
+                        <Sources sources={web.found} />
                       ) : null}
                     </MessageContent>
                     {sentAt !== undefined || (!mine && !live) ? (
