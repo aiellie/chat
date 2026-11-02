@@ -33,6 +33,7 @@ import {
 } from "@/lib/attachments"
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
+import { asksToSearch } from "@/lib/search-intent"
 import {
   defaultEffort,
   defaultModel,
@@ -232,6 +233,10 @@ function Chat({
             revoke(sent)
             // When it was sent, for its timestamp in the thread.
             const metadata: MessageMetadata = { createdAt: Date.now() }
+            // Asking to search turns search on, for this message and those
+            // after it, as the toggle would.
+            const searching = search || asksToSearch(text)
+            if (searching !== search) setSearch(true)
             // An empty text part is refused by some providers, so files can go alone.
             sendMessage(
               files.length === 0
@@ -239,7 +244,7 @@ function Chat({
                 : text
                   ? { text, files, metadata }
                   : { files, metadata },
-              { body }
+              { body: { ...body, search: searching } }
             )
           }}
           onStop={() => stop()}
