@@ -187,6 +187,7 @@ function MemoryTryIt() {
       <MemoryTrace
         kind="save"
         status="done"
+        text={saved.text}
         memory={saved}
         removed={removed}
         onUndo={() => setRemoved(true)}
@@ -487,16 +488,47 @@ const ELEMENTS: ElementEntry[] = [
       {
         label: "Recalled",
         render: () => (
-          <MemoryTrace kind="recall" status="done" memories={recalled} />
+          <MemoryTrace
+            kind="recall"
+            status="done"
+            query="coffee"
+            searched={12}
+            matched
+            memories={recalled.slice(0, 1)}
+          />
         ),
       },
       {
-        label: "Nothing matched",
-        render: () => <MemoryTrace kind="recall" status="done" memories={[]} />,
+        label: "Most recent",
+        render: () => (
+          <MemoryTrace
+            kind="recall"
+            status="done"
+            query="birthday"
+            searched={12}
+            matched={false}
+            memories={recalled}
+          />
+        ),
+      },
+      {
+        label: "Nothing kept",
+        render: () => (
+          <MemoryTrace
+            kind="recall"
+            status="done"
+            query="coffee"
+            searched={0}
+            matched={false}
+            memories={[]}
+          />
+        ),
       },
       {
         label: "Saving",
-        render: () => <MemoryTrace kind="save" status="running" />,
+        render: () => (
+          <MemoryTrace kind="save" status="running" text={saved.text} />
+        ),
       },
       {
         label: "Saved",
@@ -504,6 +536,7 @@ const ELEMENTS: ElementEntry[] = [
           <MemoryTrace
             kind="save"
             status="done"
+            text={saved.text}
             memory={saved}
             onUndo={() => {}}
           />
@@ -512,7 +545,13 @@ const ELEMENTS: ElementEntry[] = [
       {
         label: "Removed",
         render: () => (
-          <MemoryTrace kind="save" status="done" memory={saved} removed />
+          <MemoryTrace
+            kind="save"
+            status="done"
+            text={saved.text}
+            memory={saved}
+            removed
+          />
         ),
       },
       {

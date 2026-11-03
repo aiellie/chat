@@ -114,14 +114,18 @@ const MEMORY_TOOLS = [RECALL_MEMORY_TOOL, SAVE_MEMORY_TOOL]
 
 /**
  * Answers a memory tool from the store in this browser: what matched the
- * query, or the memory as saved. The memory line in the thread draws these.
+ * query, how many it looked through and whether they matched or are only
+ * the most recent, or the memory as saved. The memory line in the thread
+ * draws these.
  */
 async function answerMemory(tool: string, input: unknown, chatId: string) {
   if (tool === RECALL_MEMORY_TOOL) {
     const { query } = input as { query: string }
-    const found = await searchMemories(query)
+    const { memories, searched, matched } = await searchMemories(query)
     return {
-      memories: found.map(({ id, text, savedBy, createdAt }) => ({
+      searched,
+      matched,
+      memories: memories.map(({ id, text, savedBy, createdAt }) => ({
         id,
         text,
         savedBy,

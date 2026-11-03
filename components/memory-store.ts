@@ -139,6 +139,15 @@ const alike = (a: string, b: string) =>
   a === b ||
   (Math.min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a)))
 
+/** What a search found, and how. */
+type MemorySearch = {
+  memories: Memory[]
+  /** How many memories it looked through. */
+  searched: number
+  /** Whether they share a word with the query, or are only the most recent. */
+  matched: boolean
+}
+
 /**
  * The memories that share a word with the query, those sharing the most
  * first, then the most recent. When none do, or the query is empty, the
@@ -146,7 +155,10 @@ const alike = (a: string, b: string) =>
  * the one memory that answers. A backend would rank by meaning instead;
  * the callers wouldn't change.
  */
-async function searchMemories(query: string, limit = 10): Promise<Memory[]> {
+async function searchMemories(
+  query: string,
+  limit = 10
+): Promise<MemorySearch> {
   const terms = [...new Set(words(query))]
   const memories = read().sort(byRecent)
   const matched = memories
@@ -161,7 +173,11 @@ async function searchMemories(query: string, limit = 10): Promise<Memory[]> {
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score)
     .map(({ memory }) => memory)
-  return (matched.length > 0 ? matched : memories).slice(0, limit)
+  return {
+    memories: (matched.length > 0 ? matched : memories).slice(0, limit),
+    searched: memories.length,
+    matched: matched.length > 0,
+  }
 }
 
 /**
@@ -189,4 +205,4 @@ export {
   subscribeMemories,
   updateMemory,
 }
-export type { Memory, MemoryChanges, MemoryInput }
+export type { Memory, MemoryChanges, MemoryInput, MemorySearch }

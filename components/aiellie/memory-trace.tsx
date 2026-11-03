@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { Bookmark02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
@@ -30,6 +31,12 @@ type MemoryCall = {
   status: "running" | "done" | "error" | "stopped"
   /** What a recall looked for. */
   query?: string
+  /** What a save was asked to keep. */
+  text?: string
+  /** How many memories a recall looked through. */
+  searched?: number
+  /** Whether what it found shares a word with the query, or is only the most recent. */
+  matched?: boolean
   /** What a recall found. */
   memories?: MemoryItem[]
   /** What a save kept. */
@@ -65,8 +72,10 @@ const isMemoryPart = (part: { type: string }) =>
 /** A memory tool's part as the line draws it. */
 function memoryCallOf(part: MemoryPart): MemoryCall {
   const kind = part.type === SAVE_PART ? "save" : "recall"
-  const query = record(part.input)?.query
+  const input = record(part.input)
   const output = record(part.output)
+  const text = (value: unknown) =>
+    typeof value === "string" && value ? value : undefined
   return {
     kind,
     status:
@@ -75,7 +84,11 @@ function memoryCallOf(part: MemoryPart): MemoryCall {
         : part.state === "output-available"
           ? "done"
           : "running",
-    query: typeof query === "string" && query ? query : undefined,
+    query: text(input?.query),
+    text: text(input?.text),
+    searched:
+      typeof output?.searched === "number" ? output.searched : undefined,
+    matched: typeof output?.matched === "boolean" ? output.matched : undefined,
     memories: Array.isArray(output?.memories)
       ? output.memories.flatMap((each) => itemOf(each) ?? [])
       : undefined,
@@ -86,6 +99,40 @@ function memoryCallOf(part: MemoryPart): MemoryCall {
 
 const count = (n: number) => `${n} ${n === 1 ? "memory" : "memories"}`
 
+// One step of how the call went: what it was, then what it did.
+function Step({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <>
+      <dt className="text-xs leading-5 text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-sm">{children}</dd>
+    </>
+  )
+}
+
+// The call as the model made it: the tool's name and what it passed.
+function Call({
+  name,
+  arg,
+  value,
+}: {
+  name: string
+  arg: string
+  value?: string
+}) {
+  return (
+    <code className="font-mono text-xs break-words text-muted-foreground">
+      <span className="text-foreground">{name}</span>({arg}:{" "}
+      {value === undefined ? "…" : JSON.stringify(value)})
+    </code>
+  )
+}
+
 /**
  * A reply's use of memory, as a trace line: shimmering while it recalls or
  * saves, then how many memories it recalled, opening onto them, or what it
@@ -95,6 +142,9 @@ function MemoryTrace({
   kind,
   status,
   query,
+  text,
+  searched,
+  matched,
   memories = [],
   memory,
   error,
@@ -147,8 +197,12 @@ function MemoryTrace({
             ? `Recalling memories about “${query}”`
             : "Recalling memories"
           : memories.length > 0
-            ? `Recalled ${count(memories.length)}`
-            : "No memories matched"
+            ? matched === false
+              ? `Recalled ${memories.length} recent ${memories.length === 1 ? "memory" : "memories"}`
+              : `Recalled ${count(memories.length)}`
+            : searched === 0
+              ? "No memories to recall"
+              : "No memories matched"
   const shown = kind === "save" ? (memory ? [memory] : []) : memories
 
   return (
@@ -159,7 +213,7 @@ function MemoryTrace({
     >
       <TraceCollapsible>
         <div className="flex min-w-0 items-center gap-2">
-          <TraceCollapsibleTrigger disabled={running || shown.length === 0}>
+          <TraceCollapsibleTrigger disabled={running || status === "stopped"}>
             <TraceLine status={running ? "running" : undefined}>
               <TraceIcon>
                 <HugeiconsIcon icon={Bookmark02Icon} />
@@ -178,16 +232,45 @@ function MemoryTrace({
           ) : null}
         </div>
         <TraceCollapsibleContent>
-          <ul className="flex flex-col gap-1.5">
-            {shown.map((item) => (
-              <li
-                key={item.id}
-                className={removed ? "text-sm line-through" : "text-sm"}
-              >
-                {item.text}
-              </li>
-            ))}
-          </ul>
+          {/* How the call went, step by step, then what it gave back. */}
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1.5">
+            <Step label="Call">
+              {kind === "save" ? (
+                <Call name="save_memory" arg="text" value={text} />
+              ) : (
+                <Call name="recall_memory" arg="query" value={query} />
+              )}
+            </Step>
+            {kind === "recall" ? (
+              <Step label="Search">
+                {searched === undefined
+                  ? `Found ${count(memories.length)}`
+                  : searched === 0
+                    ? "Nothing kept yet to look through"
+                    : matched === false
+                      ? `Looked through ${count(searched)}. None share a word with “${query ?? ""}”, so the most recent went back instead`
+                      : `Looked through ${count(searched)}. ${memories.length} ${memories.length === 1 ? "shares" : "share"} a word with “${query ?? ""}”`}
+              </Step>
+            ) : (
+              <Step label="Kept">
+                {removed ? "Kept, then removed" : "Added as a new memory"}
+              </Step>
+            )}
+            {shown.length > 0 ? (
+              <Step label={kind === "save" ? "Memory" : "Sent back"}>
+                <ul className="flex flex-col gap-1.5">
+                  {shown.map((item) => (
+                    <li
+                      key={item.id}
+                      className={removed ? "line-through" : undefined}
+                    >
+                      {item.text}
+                    </li>
+                  ))}
+                </ul>
+              </Step>
+            ) : null}
+          </dl>
         </TraceCollapsibleContent>
       </TraceCollapsible>
     </Trace>
