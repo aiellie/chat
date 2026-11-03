@@ -19,6 +19,8 @@ type Skill = {
   color?: string
   createdAt: number
   updatedAt: number
+  /** Ships with the app, from a skill file. It isn't saved in this browser. */
+  bundled?: boolean
 }
 
 /** What a person fills in to add or edit a skill. */

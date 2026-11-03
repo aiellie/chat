@@ -8,6 +8,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { Markdown } from "@/components/aiellie/markdown"
 import { ProjectIconPicker } from "@/components/project-icon"
 import {
   createSkill,
@@ -137,7 +138,27 @@ function SkillForm({ skill, onDone }: { skill?: Skill; onDone: () => void }) {
   )
 }
 
-/** Adds a skill, or edits one when given it. */
+/** A shipped skill, read as the Markdown it was written in. */
+function SkillRead({ skill, onDone }: { skill: Skill; onDone: () => void }) {
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{skill.name}</DialogTitle>
+        <DialogDescription>This skill ships with the app.</DialogDescription>
+      </DialogHeader>
+      <div className="max-h-[60vh] overflow-y-auto">
+        <Markdown>{skill.instructions}</Markdown>
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onDone}>
+          Close
+        </Button>
+      </DialogFooter>
+    </>
+  )
+}
+
+/** Adds a skill, or edits one when given it. A shipped skill is read, not edited. */
 function SkillDialog({
   open,
   onOpenChange,
@@ -147,11 +168,16 @@ function SkillDialog({
   onOpenChange: (open: boolean) => void
   skill?: Skill
 }) {
+  const close = () => onOpenChange(false)
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={skill?.bundled ? "sm:max-w-lg" : "sm:max-w-md"}>
         {open ? (
-          <SkillForm skill={skill} onDone={() => onOpenChange(false)} />
+          skill?.bundled ? (
+            <SkillRead skill={skill} onDone={close} />
+          ) : (
+            <SkillForm skill={skill} onDone={close} />
+          )
         ) : null}
       </DialogContent>
     </Dialog>
@@ -173,6 +199,12 @@ function SkillActions({
   onEditingChange: (editing: boolean) => void
 }) {
   const [deleting, setDeleting] = React.useState(false)
+
+  if (skill.bundled) {
+    return (
+      <SkillDialog open={editing} onOpenChange={setEditing} skill={skill} />
+    )
+  }
 
   return (
     <>
