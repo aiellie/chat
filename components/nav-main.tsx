@@ -120,28 +120,15 @@ function ChatNavMain({
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton
-            isActive={modelsOpen}
-            aria-current={modelsOpen ? "page" : undefined}
+            isActive={stashdOpen}
+            aria-current={stashdOpen ? "page" : undefined}
             onClick={() => {
-              onModels?.()
+              onStashd?.()
               closeSheet()
             }}
           >
-            <HugeiconsIcon icon={ChatBotIcon} aria-hidden />
-            <span>Models</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            isActive={toolsOpen}
-            aria-current={toolsOpen ? "page" : undefined}
-            onClick={() => {
-              onTools?.()
-              closeSheet()
-            }}
-          >
-            <HugeiconsIcon icon={ShapeCollectionIcon} aria-hidden />
-            <span>Tools</span>
+            <HugeiconsIcon icon={AiCloud02Icon} aria-hidden />
+            <span>Stashd</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
@@ -159,19 +146,6 @@ function ChatNavMain({
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton
-            isActive={stashdOpen}
-            aria-current={stashdOpen ? "page" : undefined}
-            onClick={() => {
-              onStashd?.()
-              closeSheet()
-            }}
-          >
-            <HugeiconsIcon icon={AiCloud02Icon} aria-hidden />
-            <span>Stashd</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        <SidebarMenuItem>
-          <SidebarMenuButton
             isActive={extensionsOpen}
             aria-current={extensionsOpen ? "page" : undefined}
             onClick={() => {
@@ -181,6 +155,32 @@ function ChatNavMain({
           >
             <HugeiconsIcon icon={Plug02Icon} aria-hidden />
             <span>Extensions</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            isActive={toolsOpen}
+            aria-current={toolsOpen ? "page" : undefined}
+            onClick={() => {
+              onTools?.()
+              closeSheet()
+            }}
+          >
+            <HugeiconsIcon icon={ShapeCollectionIcon} aria-hidden />
+            <span>Tools</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            isActive={modelsOpen}
+            aria-current={modelsOpen ? "page" : undefined}
+            onClick={() => {
+              onModels?.()
+              closeSheet()
+            }}
+          >
+            <HugeiconsIcon icon={ChatBotIcon} aria-hidden />
+            <span>Models</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
