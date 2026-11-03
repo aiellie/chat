@@ -43,6 +43,7 @@ import {
   listMemories,
   searchMemories,
   subscribeMemories,
+  updateMemory,
 } from "@/components/memory-store"
 import {
   getReplies,
@@ -60,7 +61,12 @@ import {
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
 import { TOOLS } from "@/lib/tools/catalog"
-import { RECALL_MEMORY_TOOL, SAVE_MEMORY_TOOL } from "@/lib/tools/memory"
+import {
+  DELETE_MEMORY_TOOL,
+  RECALL_MEMORY_TOOL,
+  SAVE_MEMORY_TOOL,
+  UPDATE_MEMORY_TOOL,
+} from "@/lib/tools/memory"
 import { ToolMark } from "@/components/tool-mark"
 import {
   defaultEffort,
@@ -110,7 +116,15 @@ function withSpoken(
   return result
 }
 
-const MEMORY_TOOLS = [RECALL_MEMORY_TOOL, SAVE_MEMORY_TOOL]
+const MEMORY_TOOLS = [
+  RECALL_MEMORY_TOOL,
+  SAVE_MEMORY_TOOL,
+  UPDATE_MEMORY_TOOL,
+  DELETE_MEMORY_TOOL,
+]
+
+/** A memory tool asked for something that can't be done, with why, for the model. */
+class MemoryToolError extends Error {}
 
 // A fact as compared for sameness: case, spacing and end punctuation aside.
 const normalized = (text: string) =>
@@ -123,8 +137,8 @@ const normalized = (text: string) =>
 /**
  * Answers a memory tool from the store in this browser: what matched the
  * query, how many it looked through and whether they matched or are only
- * the most recent, or the memory as saved, or as already kept. The memory line in the thread
- * draws these.
+ * the most recent; the memory as saved, or as already kept; or the
+ * memory as changed or deleted. The memory line in the thread draws these.
  */
 async function answerMemory(tool: string, input: unknown, chatId: string) {
   if (tool === RECALL_MEMORY_TOOL) {
@@ -140,6 +154,20 @@ async function answerMemory(tool: string, input: unknown, chatId: string) {
         savedAt: new Date(createdAt).toISOString().slice(0, 10),
       })),
     }
+  }
+  if (tool === UPDATE_MEMORY_TOOL || tool === DELETE_MEMORY_TOOL) {
+    const { id, text } = input as { id: string; text?: string }
+    const before = (await listMemories()).find((memory) => memory.id === id)
+    if (!before)
+      throw new MemoryToolError(
+        `No memory has the id "${id}". Recall memories for their ids.`
+      )
+    if (tool === DELETE_MEMORY_TOOL) {
+      await deleteMemory(id)
+      return { memory: { id, text: before.text } }
+    }
+    const after = await updateMemory(id, text ?? "")
+    return { memory: { id, text: after?.text ?? "" }, previous: before.text }
   }
   const { text } = input as { text: string }
   // The model is told to check first; this catches the same fact twice.
@@ -226,12 +254,15 @@ function Chat({
       try {
         const output = await answerMemory(tool, toolCall.input, id)
         addToolOutput({ tool, toolCallId, output, options })
-      } catch {
+      } catch (error) {
         addToolOutput({
           tool,
           toolCallId,
           state: "output-error",
-          errorText: "This browser's storage couldn't be read.",
+          errorText:
+            error instanceof MemoryToolError
+              ? error.message
+              : "This browser's storage couldn't be read.",
           options,
         })
       }

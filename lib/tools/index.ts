@@ -3,11 +3,15 @@ import type { ToolSet } from "ai"
 import type { ApiKeys } from "@/lib/api-keys"
 import { EMAIL_INSTRUCTIONS, EMAIL_TOOL, emailTool } from "@/lib/tools/email"
 import {
+  DELETE_MEMORY_TOOL,
+  deleteMemoryTool,
   MEMORY_INSTRUCTIONS,
   RECALL_MEMORY_TOOL,
   recallMemoryTool,
   SAVE_MEMORY_TOOL,
   saveMemoryTool,
+  UPDATE_MEMORY_TOOL,
+  updateMemoryTool,
 } from "@/lib/tools/memory"
 import { PLAN_INSTRUCTIONS, PLAN_TOOL, planTool } from "@/lib/tools/plan"
 import { SEARCH_INSTRUCTIONS, searchTools } from "@/lib/tools/search"
@@ -35,6 +39,8 @@ function chatTools(
       [EMAIL_TOOL]: emailTool,
       [RECALL_MEMORY_TOOL]: recallMemoryTool,
       [SAVE_MEMORY_TOOL]: saveMemoryTool,
+      [UPDATE_MEMORY_TOOL]: updateMemoryTool,
+      [DELETE_MEMORY_TOOL]: deleteMemoryTool,
     },
     instructions: [
       PLAN_INSTRUCTIONS,

@@ -14,6 +14,8 @@ import { z } from "zod"
  */
 const RECALL_MEMORY_TOOL = "recall_memory"
 const SAVE_MEMORY_TOOL = "save_memory"
+const UPDATE_MEMORY_TOOL = "update_memory"
+const DELETE_MEMORY_TOOL = "delete_memory"
 
 const recallMemoryTool = tool({
   description:
@@ -39,12 +41,35 @@ const saveMemoryTool = tool({
   }),
 })
 
-const MEMORY_INSTRUCTIONS = `You can remember things about the person across chats. Before answering anything personal, where what they've told you before would change the answer, call ${RECALL_MEMORY_TOOL} first, and use what comes back without saying you looked it up. Call ${SAVE_MEMORY_TOOL} only when they ask you to remember something, never on your own. Before saving, call ${RECALL_MEMORY_TOOL} with the fact's key words to check it isn't already kept: if a memory already says the same thing, don't save it again and tell them you already remember it. Never save passwords, keys, account or card numbers, health details or anything else sensitive, even when asked: say you won't keep it. After a save, confirm it in a few words.`
+const memoryId = z
+  .string()
+  .describe(`The memory's id, as ${RECALL_MEMORY_TOOL} gave it.`)
+
+const updateMemoryTool = tool({
+  description: `Rewrite a memory the person wants changed or corrected. Use ${RECALL_MEMORY_TOOL} first for its id.`,
+  inputSchema: z.object({
+    id: memoryId,
+    text: z
+      .string()
+      .describe("The memory as it should read now, as one short sentence."),
+  }),
+})
+
+const deleteMemoryTool = tool({
+  description: `Forget a memory: when the person asks you to, or to remove a copy of one that's kept twice. Use ${RECALL_MEMORY_TOOL} first for its id. Call it once for each memory.`,
+  inputSchema: z.object({ id: memoryId }),
+})
+
+const MEMORY_INSTRUCTIONS = `You can remember things about the person across chats. Before answering anything personal, where what they've told you before would change the answer, call ${RECALL_MEMORY_TOOL} first, and use what comes back without saying you looked it up. Call ${SAVE_MEMORY_TOOL} only when they ask you to remember something, never on your own. Before saving, call ${RECALL_MEMORY_TOOL} with the fact's key words to check it isn't already kept: if a memory already says the same thing, don't save it again and tell them you already remember it. Never save passwords, keys, account or card numbers, health details or anything else sensitive, even when asked: say you won't keep it. When they ask you to change, correct or forget something you remember, or to clear out copies, call ${RECALL_MEMORY_TOOL} for the ids, then ${UPDATE_MEMORY_TOOL} or ${DELETE_MEMORY_TOOL}; keep one of any copies. Never change or forget a memory on your own. After a save, change or deletion, confirm it in a few words.`
 
 export {
+  DELETE_MEMORY_TOOL,
+  deleteMemoryTool,
   MEMORY_INSTRUCTIONS,
   RECALL_MEMORY_TOOL,
   recallMemoryTool,
   SAVE_MEMORY_TOOL,
   saveMemoryTool,
+  UPDATE_MEMORY_TOOL,
+  updateMemoryTool,
 }

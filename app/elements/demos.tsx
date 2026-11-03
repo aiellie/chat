@@ -567,6 +567,30 @@ const ELEMENTS: ElementEntry[] = [
         ),
       },
       {
+        label: "Changed",
+        render: () => (
+          <MemoryTrace
+            kind="update"
+            status="done"
+            id={recalled[1].id}
+            text="Lives in Brooklyn"
+            previous={recalled[1].text}
+            memory={{ id: recalled[1].id, text: "Lives in Brooklyn" }}
+          />
+        ),
+      },
+      {
+        label: "Forgot",
+        render: () => (
+          <MemoryTrace
+            kind="delete"
+            status="done"
+            id={recalled[2].id}
+            memory={recalled[2]}
+          />
+        ),
+      },
+      {
         label: "Stopped",
         render: () => <MemoryTrace kind="recall" status="stopped" />,
       },

@@ -20,26 +20,39 @@ import { Button } from "@/components/ui/button"
 // here as well as with the tools, so this part needs nothing of the app's.
 const RECALL_PART = "tool-recall_memory"
 const SAVE_PART = "tool-save_memory"
+const UPDATE_PART = "tool-update_memory"
+const DELETE_PART = "tool-delete_memory"
+
+const KINDS: Record<string, MemoryCall["kind"]> = {
+  [RECALL_PART]: "recall",
+  [SAVE_PART]: "save",
+  [UPDATE_PART]: "update",
+  [DELETE_PART]: "delete",
+}
 
 /** A memory as the line shows it. */
 type MemoryItem = { id: string; text: string }
 
 type MemoryCall = {
-  /** Recalling what's kept, or saving something new. */
-  kind: "recall" | "save"
+  /** Recalling what's kept, saving something new, rewriting or forgetting one. */
+  kind: "recall" | "save" | "update" | "delete"
   /** Still at work, done, failed, or stopped before it had an answer. */
   status: "running" | "done" | "error" | "stopped"
   /** What a recall looked for. */
   query?: string
-  /** What a save was asked to keep. */
+  /** What a save was asked to keep, or an update to make a memory read. */
   text?: string
+  /** Which memory an update or deletion was asked to change. */
+  id?: string
+  /** What an updated memory said before. */
+  previous?: string
   /** How many memories a recall looked through. */
   searched?: number
   /** Whether what it found shares a word with the query, or is only the most recent. */
   matched?: boolean
   /** What a recall found. */
   memories?: MemoryItem[]
-  /** What a save kept. */
+  /** What a save kept, an update changed or a deletion forgot. */
   memory?: MemoryItem
   /** Whether a save found its memory already kept, and added nothing. */
   existing?: boolean
@@ -68,12 +81,11 @@ const itemOf = (value: unknown): MemoryItem | undefined => {
 }
 
 /** Whether a message part is a memory tool's. */
-const isMemoryPart = (part: { type: string }) =>
-  part.type === RECALL_PART || part.type === SAVE_PART
+const isMemoryPart = (part: { type: string }) => part.type in KINDS
 
 /** A memory tool's part as the line draws it. */
 function memoryCallOf(part: MemoryPart): MemoryCall {
-  const kind = part.type === SAVE_PART ? "save" : "recall"
+  const kind = KINDS[part.type] ?? "recall"
   const input = record(part.input)
   const output = record(part.output)
   const text = (value: unknown) =>
@@ -88,6 +100,8 @@ function memoryCallOf(part: MemoryPart): MemoryCall {
           : "running",
     query: text(input?.query),
     text: text(input?.text),
+    id: text(input?.id),
+    previous: text(output?.previous),
     searched:
       typeof output?.searched === "number" ? output.searched : undefined,
     matched: typeof output?.matched === "boolean" ? output.matched : undefined,
@@ -121,17 +135,22 @@ function Step({
 // The call as the model made it: the tool's name and what it passed.
 function Call({
   name,
-  arg,
-  value,
+  args,
 }: {
   name: string
-  arg: string
-  value?: string
+  /** Each argument's name and value, which is "…" until it's known. */
+  args: [string, string | undefined][]
 }) {
   return (
     <code className="font-mono text-xs break-words text-muted-foreground">
-      <span className="text-foreground">{name}</span>({arg}:{" "}
-      {value === undefined ? "…" : JSON.stringify(value)})
+      <span className="text-foreground">{name}</span>(
+      {args
+        .map(
+          ([arg, value]) =>
+            `${arg}: ${value === undefined ? "…" : JSON.stringify(value)}`
+        )
+        .join(", ")}
+      )
     </code>
   )
 }
@@ -146,6 +165,8 @@ function MemoryTrace({
   status,
   query,
   text,
+  id,
+  previous,
   searched,
   matched,
   memories = [],
@@ -174,7 +195,11 @@ function MemoryTrace({
           <TraceTitle>
             {kind === "save"
               ? "Couldn't save to memory"
-              : "Couldn't recall memories"}
+              : kind === "update"
+                ? "Couldn't change the memory"
+                : kind === "delete"
+                  ? "Couldn't forget the memory"
+                  : "Couldn't recall memories"}
           </TraceTitle>
           {error ? (
             <TraceDescription className="text-destructive/70">
@@ -187,29 +212,37 @@ function MemoryTrace({
 
   const title =
     status === "stopped"
-      ? kind === "save"
-        ? "Stopped before saving"
-        : "Stopped before recalling"
-      : kind === "save"
+      ? `Stopped before ${{ recall: "recalling", save: "saving", update: "changing", delete: "forgetting" }[kind]}`
+      : kind === "update"
         ? running
-          ? "Saving to memory"
-          : existing
-            ? "Already in memory"
-            : removed
-              ? "Removed from memory"
-              : "Saved to memory"
-        : running
-          ? query
-            ? `Recalling memories about “${query}”`
-            : "Recalling memories"
-          : memories.length > 0
-            ? matched === false
-              ? `Recalled ${memories.length} recent ${memories.length === 1 ? "memory" : "memories"}`
-              : `Recalled ${count(memories.length)}`
-            : searched === 0
-              ? "No memories to recall"
-              : "No memories matched"
-  const shown = kind === "save" ? (memory ? [memory] : []) : memories
+          ? "Changing a memory"
+          : "Changed a memory"
+        : kind === "delete"
+          ? running
+            ? "Forgetting a memory"
+            : "Forgot a memory"
+          : kind === "save"
+            ? running
+              ? "Saving to memory"
+              : existing
+                ? "Already in memory"
+                : removed
+                  ? "Removed from memory"
+                  : "Saved to memory"
+            : running
+              ? query
+                ? `Recalling memories about “${query}”`
+                : "Recalling memories"
+              : memories.length > 0
+                ? matched === false
+                  ? `Recalled ${memories.length} recent ${memories.length === 1 ? "memory" : "memories"}`
+                  : `Recalled ${count(memories.length)}`
+                : searched === 0
+                  ? "No memories to recall"
+                  : "No memories matched"
+  const shown = kind === "recall" ? memories : memory ? [memory] : []
+  // A forgotten memory, or a saved one since removed, is struck through.
+  const struck = kind === "delete" || (kind === "save" && removed)
 
   return (
     <Trace
@@ -243,9 +276,19 @@ function MemoryTrace({
           <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1.5">
             <Step label="Call">
               {kind === "save" ? (
-                <Call name="save_memory" arg="text" value={text} />
+                <Call name="save_memory" args={[["text", text]]} />
+              ) : kind === "update" ? (
+                <Call
+                  name="update_memory"
+                  args={[
+                    ["id", id],
+                    ["text", text],
+                  ]}
+                />
+              ) : kind === "delete" ? (
+                <Call name="delete_memory" args={[["id", id]]} />
               ) : (
-                <Call name="recall_memory" arg="query" value={query} />
+                <Call name="recall_memory" args={[["query", query]]} />
               )}
             </Step>
             {kind === "recall" ? (
@@ -258,6 +301,12 @@ function MemoryTrace({
                       ? `Looked through ${count(searched)}. None share a word with “${query ?? ""}”, so the most recent went back instead`
                       : `Looked through ${count(searched)}. ${memories.length} ${memories.length === 1 ? "shares" : "share"} a word with “${query ?? ""}”`}
               </Step>
+            ) : kind === "update" ? (
+              <Step label="Before">{previous ?? "–"}</Step>
+            ) : kind === "delete" ? (
+              <Step label="Forgot">
+                Removed from memory. Ask again to save it back.
+              </Step>
             ) : (
               <Step label="Kept">
                 {existing
@@ -268,12 +317,20 @@ function MemoryTrace({
               </Step>
             )}
             {shown.length > 0 ? (
-              <Step label={kind === "save" ? "Memory" : "Sent back"}>
+              <Step
+                label={
+                  kind === "recall"
+                    ? "Sent back"
+                    : kind === "update"
+                      ? "Now"
+                      : "Memory"
+                }
+              >
                 <ul className="flex flex-col gap-1.5">
                   {shown.map((item) => (
                     <li
                       key={item.id}
-                      className={removed ? "line-through" : undefined}
+                      className={struck ? "line-through" : undefined}
                     >
                       {item.text}
                     </li>

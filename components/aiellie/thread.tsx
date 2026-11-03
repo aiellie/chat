@@ -84,13 +84,15 @@ function MemoryCallLine({
 }) {
   const call = memoryCallOf(part)
   const id = call.memory?.id
-  const removed = !!id && !!keptMemories && !keptMemories.has(id)
+  // Only a save offers Undo, and says so once its memory's gone.
+  const saved = call.kind === "save" && !call.existing ? id : undefined
+  const removed = !!saved && !!keptMemories && !keptMemories.has(saved)
   return (
     <MemoryTrace
       {...call}
       status={call.status === "running" && !live ? "stopped" : call.status}
       removed={removed}
-      onUndo={id && onForgetMemory ? () => onForgetMemory(id) : undefined}
+      onUndo={saved && onForgetMemory ? () => onForgetMemory(saved) : undefined}
     />
   )
 }

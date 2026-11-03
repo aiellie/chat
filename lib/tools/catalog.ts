@@ -81,8 +81,9 @@ const TOOLS: ToolEntry[] = [
   {
     id: "memory",
     name: "Memory",
-    calls: ["recall_memory", "save_memory"],
-    summary: "Remembers what you ask it to, across chats",
+    calls: ["recall_memory", "save_memory", "update_memory", "delete_memory"],
+    summary:
+      "Remembers what you ask it to across chats, and changes or forgets it when asked",
     runs: "The chat, from memories kept in this browser",
     models: "Every model",
     definition: "lib/tools/memory.ts",
