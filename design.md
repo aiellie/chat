@@ -17,7 +17,7 @@ What `globals.css` holds. There is no type scale and no extra size tokens.
 - **Type.** Geist for everything; Geist Mono only for code, keys, ids and paths. Both load through `next/font/google` in `app/layout.tsx`.
 - **Weights** keep Tailwind's names, with capped values: thin 100, extralight 200, light 300, normal 400, medium 430, and semibold, bold, extrabold and black all 450. An inherited component marked `font-bold` comes out quiet without editing its class string.
 - **Radius.** The base `--radius` is 14px (0.875rem). The steps derive from it the way shadcn's do: `sm` 0.6×, `md` 0.8×, `lg` 1×, `xl` 1.4×, `2xl` 1.8×, `3xl` 2.2×, `4xl` 2.6×.
-- **Colour.** Zinc neutrals on shadcn's semantic names carry the interface. Hue appears only for a status: `destructive`, `live` and `success`. `live` is the one accent.
+- **Colour.** Zinc neutrals on shadcn's semantic names carry the interface. Hue appears only for a status: `destructive`, `live` and `success`. `live` is the one accent, and it is the brand colour, #5170FF.
 - **Focus.** `--ring` is the focus colour, zinc at L 0.64 in light and 0.552 in dark, chosen to clear 3:1 on every surface.
 - **Global base**, set once in `globals.css` and never per component: a pointer cursor on enabled buttons, `overscroll-y-none` and smooth scrolling on `html`, and scrollbars drawn as the `border` hairline on no track.
 - **Themes.** Light and dark are both complete. Check both.

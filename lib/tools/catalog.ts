@@ -54,6 +54,18 @@ const TOOLS: ToolEntry[] = [
     suggestion: "Make a plan to launch a portfolio site",
     status: "In progress",
   },
+  {
+    id: "weather",
+    name: "Weather",
+    calls: ["get_weather"],
+    summary: "Checks the weather for a place",
+    runs: "Your server, with Open-Meteo",
+    models: "Every model",
+    definition: "lib/tools/weather.ts",
+    view: "components/aiellie/weather-card.tsx",
+    suggestion: "What's the weather in Lisbon?",
+    status: "In progress",
+  },
 ]
 
 export { TOOLS }

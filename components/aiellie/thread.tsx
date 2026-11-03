@@ -5,6 +5,7 @@ import { RefreshIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { UIMessage } from "ai"
 
+import { WeatherCard } from "@/components/aiellie/weather-card"
 import { AttachmentGroup } from "@/components/aiellie/attachment"
 import {
   DateDivider,
@@ -307,6 +308,11 @@ function Thread({
                             }
                           />
                         ) : null}
+                        {message.parts.map((part) =>
+  part.type === "tool-get_weather" ? (
+    <WeatherCard key={part.toolCallId} part={part} />
+  ) : null
+)}
                         {files.length > 0 ? (
                           <AttachmentGroup className="max-w-full">
                             {files.map((file, index) => (

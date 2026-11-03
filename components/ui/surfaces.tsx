@@ -45,7 +45,7 @@ export const collapsePanel =
   "h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:h-0 data-[starting-style]:h-0 motion-reduce:transition-none"
 
 export const live =
-  "text-accent dark:text-accent bg-accent/5 dark:bg-accent/10 rounded-full px-1.5 py-0.5"
+  "text-brand-500 dark:text-brand-500 bg-brand-500/5 dark:bg-brand-500/10 rounded-full px-1.5 py-0.5"
 export const error =
   "text-destructive dark:text-destructive bg-destructive/4 hover:bg-destructive/7 rounded-full px-1.5 py-0.5"
 

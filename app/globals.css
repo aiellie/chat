@@ -68,6 +68,7 @@
     --color-foreground: var(--foreground);
     --color-background: var(--background);
     --color-live: var(--live);
+    --color-brand: var(--brand);
     --color-success: var(--success);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
@@ -112,8 +113,11 @@
     --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
     --sidebar-border: oklch(0.92 0.004 286.32);
     --sidebar-ring: oklch(0.64 0.016 286);
-    /* The ink words land in while a reply streams, before they settle. */
-    --live:  oklch(0.488 0.243 264.376);
+    /* The brand, #5170FF, and the only accent: it means something is
+       happening now (streaming, running, connected, switched on). The ink
+       words land in while a reply streams, before they settle. */
+    --live: oklch(0.603 0.215 269.582);  
+    --brand: oklch(0.603 0.215 269.582);
     /* Completed, passing, saved. */
     --success: oklch(0.596 0.145 163.225);
 }
@@ -144,13 +148,14 @@
     --chart-5: oklch(0.274 0.006 286.033);
     --sidebar: oklch(0.21 0.006 285.885);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary: oklch(0.603 0.215 269.582);
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.274 0.006 286.033);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.552 0.016 285.938);
-    --live:  oklch(0.488 0.243 264.376);
+    --live: oklch(0.603 0.215 269.582);
+    --brand: oklch(0.603 0.215 269.582);
     --success: oklch(0.765 0.177 163.223);
 }
 
