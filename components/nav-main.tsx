@@ -161,6 +161,18 @@ function ChatNavMain({
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton
+            aria-expanded={moreOpen}
+            className="text-sidebar-foreground/70"
+            onClick={() => setMoreOpen((open) => !open)}
+          >
+            <HugeiconsIcon icon={EllipsisIcon} aria-hidden />
+            <span>More</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        {moreOpen ? (
+          <>
+        <SidebarMenuItem>
+          <SidebarMenuButton
             isActive={extensionsOpen}
             aria-current={extensionsOpen ? "page" : undefined}
             onClick={() => {
@@ -185,18 +197,7 @@ function ChatNavMain({
             <span>Tools</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            aria-expanded={moreOpen}
-            className="text-sidebar-foreground/70"
-            onClick={() => setMoreOpen((open) => !open)}
-          >
-            <HugeiconsIcon icon={EllipsisIcon} aria-hidden />
-            <span>More</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        {moreOpen ? (
-          <>
+       
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={elementsOpen}

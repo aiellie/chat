@@ -203,7 +203,7 @@ function MenuContent({
 }
 
 const menuItem = cn(
-  "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm font-normal text-muted-foreground transition-colors outline-none select-none",
+  "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-[13px] font-normal text-muted-foreground transition-colors outline-none select-none",
   "data-highlighted:bg-foreground/[0.06] data-highlighted:text-foreground dark:data-highlighted:bg-foreground/[0.09]",
   "data-disabled:pointer-events-none data-disabled:opacity-50",
   "[&_svg:not([class*='size-'])]:size-4",
