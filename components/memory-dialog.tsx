@@ -79,6 +79,13 @@ function MemoryForm({
         aria-label="Memory"
         value={text}
         onChange={(event) => setText(event.target.value)}
+        // The caret starts at the end, to add to what's there.
+        onFocus={(event) =>
+          event.currentTarget.setSelectionRange(
+            event.currentTarget.value.length,
+            event.currentTarget.value.length
+          )
+        }
         // A memory is a line or two, so Enter saves it; Shift+Enter breaks
         // the line.
         onKeyDown={(event) => {
@@ -100,19 +107,24 @@ function MemoryForm({
   )
 }
 
-/** Adds a memory, or edits one when given it. */
+/**
+ * Adds a memory, or edits one when given it. Focus goes back to `returnFocus`
+ * once it closes, as it would to a trigger, since it's opened from a row.
+ */
 function MemoryDialog({
   open,
   onOpenChange,
   memory,
+  returnFocus,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   memory?: Memory
+  returnFocus?: React.RefObject<HTMLElement | null>
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" finalFocus={returnFocus}>
         {open ? (
           <MemoryForm memory={memory} onDone={() => onOpenChange(false)} />
         ) : null}
@@ -130,10 +142,13 @@ function MemoryActions({
   memory,
   editing,
   onEditingChange: setEditing,
+  returnFocus,
 }: {
   memory: Memory
   editing: boolean
   onEditingChange: (editing: boolean) => void
+  /** Where focus goes once editing closes: the row's own button. */
+  returnFocus?: React.RefObject<HTMLElement | null>
 }) {
   const [deleting, setDeleting] = React.useState(false)
 
@@ -165,7 +180,12 @@ function MemoryActions({
           </MenuItem>
         </MenuContent>
       </Menu>
-      <MemoryDialog open={editing} onOpenChange={setEditing} memory={memory} />
+      <MemoryDialog
+        open={editing}
+        onOpenChange={setEditing}
+        memory={memory}
+        returnFocus={returnFocus}
+      />
       <AlertDialog open={deleting} onOpenChange={setDeleting}>
         <AlertDialogContent>
           <AlertDialogHeader>

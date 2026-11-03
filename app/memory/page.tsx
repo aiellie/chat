@@ -51,11 +51,13 @@ const row = "relative hover:bg-muted/50"
 
 function MemoryRow({ memory }: { memory: Memory }) {
   const [editing, setEditing] = React.useState(false)
+  const opener = React.useRef<HTMLButtonElement>(null)
   return (
     <Item role="listitem" variant="outline" className={row}>
       <ItemContent className="min-w-0">
         <ItemTitle className="font-normal">
           <button
+            ref={opener}
             type="button"
             className={rowTrigger}
             onClick={() => setEditing(true)}
@@ -84,6 +86,7 @@ function MemoryRow({ memory }: { memory: Memory }) {
           memory={memory}
           editing={editing}
           onEditingChange={setEditing}
+          returnFocus={opener}
         />
       </ItemActions>
     </Item>
