@@ -12,6 +12,8 @@ const statusVariants = cva(
         success: "border-success/5 bg-success/4 text-success",
         destructive: "border-destructive/5 bg-destructive/4 text-destructive",
         live: "border-live/5 bg-live/4 text-live",
+        // Pending, queued, draft, idle: no hue of its own.
+        muted: "border-transparent bg-muted text-muted-foreground",
       },
     },
     defaultVariants: {

@@ -12,6 +12,7 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { cn } from "cn"
 
 import { ToolDetails } from "@/components/tool-details"
+import { Status, StatusIndicator, StatusLabel } from "@/components/ui/status"
 import {
   InputGroup,
   InputGroupAddon,
@@ -75,19 +76,25 @@ function ToolRow({ tool }: { tool: ToolEntry }) {
           className="size-5"
         />
       </ItemMedia>
-      <ItemContent>
-        <ItemTitle>
-          <button
-            type="button"
-            className={rowTrigger}
-            onClick={() => setOpen(true)}
-          >
-            {tool.name}
-          </button>
-        </ItemTitle>
-        <ItemDescription>{tool.summary}</ItemDescription>
+      <ItemContent className="min-w-0 gap-2">
+        <div className="flex min-w-0 flex-col">
+          <ItemTitle>
+            <button
+              type="button"
+              className={rowTrigger}
+              onClick={() => setOpen(true)}
+            >
+              {tool.name}
+            </button>
+          </ItemTitle>
+          <ItemDescription>{tool.summary}</ItemDescription>
+        </div>
+        <Status variant="muted">
+          <StatusIndicator />
+          <StatusLabel>{tool.status}</StatusLabel>
+        </Status>
       </ItemContent>
-      <ItemActions className="relative z-10">
+      <ItemActions className="relative z-10 self-start">
         <ToolDetails tool={tool} open={open} onOpenChange={setOpen} />
       </ItemActions>
     </Item>

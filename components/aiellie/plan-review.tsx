@@ -190,7 +190,7 @@ const altKey = () =>
 // a plan turns editable or settles. Its border shows on hover and focus.
 // Inputs under 16px make iOS zoom in, so a phone gets the larger size.
 const box =
-  "rounded-sm border border-transparent px-1.5 py-0.5 text-base md:text-sm"
+  "rounded-sm border border-transparent px-1.5 py-0.5 text-base text-sm"
 
 function PlanField({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
@@ -488,7 +488,7 @@ function PlanReview({
             >
               <span
                 aria-hidden
-                className="w-5 shrink-0 border border-transparent py-0.5 text-end text-base text-muted-foreground tabular-nums md:text-sm"
+                className="w-5 shrink-0 border border-transparent py-0.5 text-end text-base text-muted-foreground tabular-nums text-sm"
               >
                 {index + 1}
               </span>

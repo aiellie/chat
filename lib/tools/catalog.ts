@@ -22,6 +22,8 @@ type ToolEntry = {
   view?: string
   /** Offered above the composer in a new chat, and sent as written. */
   suggestion: string
+  /** Where the work on it stands, as the badge on its row. */
+  status: "In progress"
 }
 
 const TOOLS: ToolEntry[] = [
@@ -38,6 +40,7 @@ const TOOLS: ToolEntry[] = [
     definition: "lib/tools/search.ts",
     view: "components/aiellie/web-search.tsx",
     suggestion: "Search the web for this week's AI news",
+    status: "In progress",
   },
   {
     id: "plan",
@@ -49,6 +52,7 @@ const TOOLS: ToolEntry[] = [
     definition: "lib/tools/plan.ts",
     view: "components/aiellie/plan-review.tsx",
     suggestion: "Make a plan to launch a portfolio site",
+    status: "In progress",
   },
 ]
 
