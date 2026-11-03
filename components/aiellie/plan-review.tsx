@@ -5,9 +5,8 @@ import {
   Add01Icon,
   ArrowDown02Icon,
   ArrowUp02Icon,
-  Delete02Icon,
+  Delete01Icon,
   MoreHorizontalIcon,
-  Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { UIMessage } from "ai"
@@ -190,7 +189,7 @@ const altKey = () =>
 // a plan turns editable or settles. Its border shows on hover and focus.
 // Inputs under 16px make iOS zoom in, so a phone gets the larger size.
 const box =
-  "rounded-sm border border-transparent px-1.5 py-0.5 text-base text-sm"
+  "rounded-sm border border-transparent px-1.5 py-0.5 text-base sm:text-sm"
 
 function PlanField({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
@@ -376,24 +375,40 @@ function PlanReview({
       }
     }
 
+  // Its state, as a badge at the end of the caption row. In brand only while
+  // it's being written; amber while it waits on the person.
   const label =
     error !== undefined ? (
       <Status variant="destructive">
         <StatusIndicator />
         <StatusLabel>Failed</StatusLabel>
       </Status>
+    ) : writing ? (
+      <Status variant="live" pulse>
+        <StatusIndicator />
+        <StatusLabel>Writing</StatusLabel>
+      </Status>
     ) : decision?.decision === "approved" ? (
-      <span className="flex items-center gap-1">
-        <HugeiconsIcon aria-hidden icon={Tick02Icon} className="size-3.5" />
-        {decision.edited ? "Approved with edits" : "Approved"}
-      </span>
+      <Status variant="success">
+        <StatusIndicator />
+        <StatusLabel>
+          {decision.edited ? "Approved with edits" : "Approved"}
+        </StatusLabel>
+      </Status>
     ) : decision?.decision === "dismissed" ? (
-      "Dismissed"
-    ) : writing ? null : !onReview ? (
-      "Not reviewed"
-    ) : edited ? (
-      "Edited"
-    ) : null
+      <Status variant="muted">
+        <StatusLabel>Dismissed</StatusLabel>
+      </Status>
+    ) : editable ? (
+      <Status variant="pending">
+        <StatusIndicator />
+        <StatusLabel>{edited ? "Edited" : "Needs approval"}</StatusLabel>
+      </Status>
+    ) : (
+      <Status variant="muted">
+        <StatusLabel>Not reviewed</StatusLabel>
+      </Status>
+    )
 
   const settled =
     decision?.decision === "dismissed" || (!editable && !writing && !decision)
@@ -412,6 +427,8 @@ function PlanReview({
       }
       aria-label={current.title ? `Plan: ${current.title}` : "Plan"}
       aria-busy={writing || undefined}
+      // The thread's thinking indicator gives way while it's being written.
+      data-status={writing ? "running" : undefined}
       className={cn(
         "flex w-full min-w-0 flex-col gap-4 rounded-xl border border-border/60 p-4 text-sm",
         className
@@ -420,11 +437,7 @@ function PlanReview({
       <header className="flex min-w-0 flex-col gap-1">
         <div className="flex min-h-5 items-center gap-2 text-xs text-muted-foreground">
           <span className="min-w-0 truncate">
-            <span
-              className={cn(writing && "shimmer motion-reduce:animate-none")}
-            >
-              {writing ? "Writing a plan" : "Plan"}
-            </span>
+            Plan
             {count > 0 ? (
               <span className="tabular-nums">
                 {" · "}
@@ -432,9 +445,9 @@ function PlanReview({
               </span>
             ) : null}
           </span>
-          {label !== null ? (
-            <span className="ms-auto shrink-0">{label}</span>
-          ) : null}
+          <span role="status" className="ms-auto shrink-0">
+            {label}
+          </span>
         </div>
         {editable ? (
           <PlanField
@@ -488,7 +501,7 @@ function PlanReview({
             >
               <span
                 aria-hidden
-                className="w-5 shrink-0 border border-transparent py-0.5 text-end text-base text-muted-foreground tabular-nums text-sm"
+                className="w-5 shrink-0 border border-transparent py-0.5 text-end text-base text-muted-foreground tabular-nums sm:text-sm"
               >
                 {index + 1}
               </span>
@@ -574,7 +587,7 @@ function PlanReview({
                       variant="destructive"
                       onClick={() => removeStep(step.id)}
                     >
-                      <HugeiconsIcon aria-hidden icon={Delete02Icon} />
+                      <HugeiconsIcon aria-hidden icon={Delete01Icon} />
                       Remove step
                     </MenuItem>
                   </MenuContent>
@@ -616,17 +629,14 @@ function PlanReview({
 
       {editable ? (
         <footer className="flex items-center gap-2">
-          {edited ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="-ms-2.5"
-              onClick={() => setDraft(null)}
-            >
-              Reset
-            </Button>
-          ) : null}
-          <div className="flex-1" />
+          {/* The main action first, as on every card that asks. */}
+          <Button
+            size="sm"
+            disabled={disabled || result.steps.length === 0}
+            onClick={approve}
+          >
+            Approve
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -635,13 +645,16 @@ function PlanReview({
           >
             Dismiss
           </Button>
-          <Button
-            size="sm"
-            disabled={disabled || result.steps.length === 0}
-            onClick={approve}
-          >
-            Approve
-          </Button>
+          {edited ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ms-auto -me-2.5"
+              onClick={() => setDraft(null)}
+            >
+              Reset
+            </Button>
+          ) : null}
         </footer>
       ) : null}
     </div>
