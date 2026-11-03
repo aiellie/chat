@@ -9,12 +9,14 @@ import {
   LeftToRightListNumberIcon,
   Link01Icon,
   Mail01Icon,
+  NoteEditIcon,
   Sun03Icon,
   Loading03Icon,
 } from "@hugeicons/core-free-icons"
 import type { IconSvgElement } from "@hugeicons/react"
 import type { ToolUIPart } from "ai"
 
+import { Editor } from "@/components/aiellie/editor"
 import { EmailApproval } from "@/components/aiellie/email-approval"
 import { MemoryTrace } from "@/components/aiellie/memory-trace"
 import {
@@ -194,6 +196,35 @@ function MemoryTryIt() {
   )
 }
 
+// Editor ---------------------------------------------------------------------
+
+const note = `# Launch notes
+
+The editor reads and writes **Markdown**, so what's written here can go into a chat, a memory or a project as it is.
+
+## Before launch
+
+- Pick a domain
+- Build the pages
+- Deploy to Vercel
+
+> Select any of this to format it, or type / on a new line for a block.`
+
+/** The editor taking input, with the Markdown it would save beneath it. */
+function EditorTryIt() {
+  const [markdown, setMarkdown] = React.useState("")
+  return (
+    <div className="flex flex-col gap-2">
+      <Editor value={markdown} onChange={setMarkdown} autoFocus />
+      {markdown ? (
+        <pre className="max-h-40 overflow-auto rounded-lg bg-foreground/[0.04] px-3 py-2 font-mono text-xs whitespace-pre-wrap text-muted-foreground dark:bg-foreground/[0.06]">
+          {markdown}
+        </pre>
+      ) : null}
+    </div>
+  )
+}
+
 /**
  * The highlight toolbar answering for real: Reply shows what it would quote,
  * and Save to Memory keeps nothing, only showing it's saved.
@@ -209,8 +240,8 @@ function SelectionTryIt() {
         ]}
       >
         <p className="text-sm leading-relaxed">
-        NYC is clear today, 16° now with a high of 23°. Highlight any of
-          this to reply to it or save it.
+          NYC is clear today, 16° now with a high of 23°. Highlight any of this
+          to reply to it or save it.
         </p>
       </SelectionToolbar>
       {replied ? (
@@ -518,6 +549,22 @@ const ELEMENTS: ElementEntry[] = [
             />
           </MessageActions>
         ),
+      },
+    ],
+  },
+  {
+    id: "editor",
+    name: "Editor",
+    summary: "Rich text that reads and writes Markdown",
+    icon: NoteEditIcon,
+    file: "components/aiellie/editor.tsx",
+    states: [
+      { label: "Try it", render: () => <EditorTryIt /> },
+      { label: "Filled", render: () => <Editor value={note} /> },
+      { label: "Empty", render: () => <Editor /> },
+      {
+        label: "Read-only",
+        render: () => <Editor value={note} editable={false} />,
       },
     ],
   },

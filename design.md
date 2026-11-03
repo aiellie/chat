@@ -206,6 +206,16 @@ Memory is what the person wants kept across chats, and every use of it shows in 
 - Highlighting text in the thread floats a glass bar over it, above the highlight or below it when there's no room: Reply quotes the text into the composer, under whatever's already there, and puts the caret after it; Save opens a solid menu of places to keep it, Memory first. The menu is solid because the bar is already glass. Saving turns Save into "Saved" with a tick for a moment, then the bar goes with the highlight. Pressing the bar never clears the highlight it acts on. `components/aiellie/selection-toolbar.tsx` is the reference.
 - The Memory page lists every memory like Projects lists projects: its text, who saved it and when, and a link to its chat. A row opens to edit, its "…" holds Delete, confirmed. Enter saves in its dialog.
 
+### Editor
+
+Rich text the person writes, stored as Markdown so it can go into a chat, a memory or a project as it is. `components/aiellie/editor.tsx` is the reference.
+
+- It's docked: `paper` with the hairline, `rounded-xl`, and the border turns `ring` while focused. Nothing in it is live, so there's no brand, not even on the caret. A word count sits under the text, `tabular-nums`, with a hairline above it.
+- The text is drawn like a reply: headings by size, never weight; lists, quotes and markers in `muted-foreground`; code in Geist Mono on a faint fill; links underlined in the muted ink.
+- Selecting text floats a glass bar over it, like the highlight toolbar: Bold, Italic, Strikethrough, Code and Link, a hairline, then Heading, Subheading, Bulleted list and Quote. A button whose mark or block is on stays pressed in. Link turns the bar into a field for the address in place; an address with no scheme gets `https://`, and an empty one removes the link.
+- Typing `/` at the start of a line or after a space opens a glass list of blocks under the caret, each with the characters that make it at the start of a line (`#`, `-`, `>`). What's typed after the slash filters it; arrows move, Enter or Tab picks, Escape closes it until the caret leaves that slash. Pressing it never takes focus from the text.
+- Read-only is the same document with the chrome gone: no surface, no count, no bar, no menu.
+
 ### Secret fields
 
 A key the person pastes in is a password field in an `InputGroup`, with show and clear buttons at its end. Show flips it to plain text and back (`ViewIcon`, `ViewOffSlashIcon`). Clear stays disabled while the field is empty, so the field's end doesn't shift, and puts focus back in the field. The field is `font-mono`, since a key is an id, and carries `data-1p-ignore` and `data-lpignore` so password managers don't offer to save it as a login. Where to get a key is a quiet "Get a key" link with an up-right arrow at the end of the label row, never a button. `components/api-keys-dialog.tsx` is the reference.
