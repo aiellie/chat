@@ -136,7 +136,7 @@ function PlanTryIt() {
 // Weather --------------------------------------------------------------------
 
 const weather = {
-  location: "Lisbon",
+  location: "NYC",
   temperature: 18,
   condition: "Partly cloudy",
   high: 21,
@@ -172,7 +172,7 @@ const found: Found[] = [
 
 const recalled = [
   { id: "demo-1", text: "Takes their coffee black" },
-  { id: "demo-2", text: "Lives in Lisbon" },
+  { id: "demo-2", text: "Lives in NYC" },
   { id: "demo-3", text: "Works as a designer" },
 ]
 const saved = { id: "demo-4", text: "Takes their coffee black" }
@@ -209,7 +209,7 @@ function SelectionTryIt() {
         ]}
       >
         <p className="text-sm leading-relaxed">
-          Lisbon is clear today, 16° now with a high of 23°. Highlight any of
+        NYC is clear today, 16° now with a high of 23°. Highlight any of
           this to reply to it or save it.
         </p>
       </SelectionToolbar>
@@ -387,7 +387,7 @@ const ELEMENTS: ElementEntry[] = [
           <WeatherCard
             part={toolPart("tool-get_weather", {
               state: "input-available",
-              input: { location: "Lisbon" },
+              input: { location: "NYC" },
             })}
           />
         ),
@@ -398,7 +398,7 @@ const ELEMENTS: ElementEntry[] = [
           <WeatherCard
             part={toolPart("tool-get_weather", {
               state: "output-available",
-              input: { location: "Lisbon" },
+              input: { location: "NYC" },
               output: weather,
             })}
           />

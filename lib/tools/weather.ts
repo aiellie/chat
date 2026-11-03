@@ -13,7 +13,7 @@ function conditionOf(code: number) {
 export const getWeather = tool({
     description: "Get the current weather and a short forecast for a place.",
     inputSchema: z.object({
-        location: z.string().describe("City name, like Lisbon"),
+        location: z.string().describe("City name, like NYC"),
       }),
       execute: async ({ location }) => {
         const geo = await fetch(

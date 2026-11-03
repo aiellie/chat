@@ -63,7 +63,7 @@ const TOOLS: ToolEntry[] = [
     models: "Every model",
     definition: "lib/tools/weather.ts",
     view: "components/aiellie/weather-card.tsx",
-    suggestion: "What's the weather in Lisbon?",
+    suggestion: "What's the weather in NYC?",
     status: "In progress",
   },
   {

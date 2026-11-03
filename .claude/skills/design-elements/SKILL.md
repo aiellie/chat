@@ -156,7 +156,7 @@ A tool's part moves through the AI SDK's states. This table is the default; chan
 | State                | What it shows                                                                                                                             | Brand?           |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | `input-streaming`    | The frame with a `Skeleton` in the result's shape, and a caption naming the work ("Checking the weather").                                | Caption shimmers |
-| `input-available`    | The same, now with the input shown ("Checking the weather in Lisbon"). Root gets `data-status="running"` and `aria-busy`.                 | Yes              |
+| `input-available`    | The same, now with the input shown ("Checking the weather in NYC"). Root gets `data-status="running"` and `aria-busy`.                 | Yes              |
 | `approval-requested` | The settled request, fully readable, with its actions. Waiting on the person: `Status variant="pending"`, amber, no pulse.                          | No               |
 | `approval-responded` | Actions replaced by the running caption until the result arrives.                                                                         | Yes              |
 | `output-available`   | The result. No loops, no brand, nothing moving.                                                                                           | No               |
@@ -201,7 +201,7 @@ A tool card is docked, so it's flat: a hairline, no fill, no shadow.
 
 ## 13. Tool copy
 
-- The running caption names the work and its input: "Checking the weather in Lisbon", "Searching npm for date pickers".
+- The running caption names the work and its input: "Checking the weather in NYC", "Searching npm for date pickers".
 - The settled caption names the thing: "Weather", "Email to Sam".
 - An error names what failed: "Couldn't find a place called Zxqvbland."
 - Approval actions say what happens: "Send email" and "Don't send", not "Yes" and "No".
