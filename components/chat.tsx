@@ -35,6 +35,7 @@ import { PLAN_TOOL, planApproved } from "@/components/aiellie/plan-review"
 import { Suggestion, Suggestions } from "@/components/aiellie/suggestions"
 import { Thread } from "@/components/aiellie/thread"
 import { VoiceChat } from "@/components/voice-chat"
+import { createMemory, searchMemories } from "@/components/memory-store"
 import {
   getReplies,
   loadMessages,
@@ -51,6 +52,7 @@ import {
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
 import { TOOLS } from "@/lib/tools/catalog"
+import { RECALL_MEMORY_TOOL, SAVE_MEMORY_TOOL } from "@/lib/tools/memory"
 import { ToolMark } from "@/components/tool-mark"
 import {
   defaultEffort,
@@ -100,6 +102,55 @@ function withSpoken(
   return result
 }
 
+const MEMORY_TOOLS = [RECALL_MEMORY_TOOL, SAVE_MEMORY_TOOL]
+
+/**
+ * Answers a memory tool from the store in this browser: what matched the
+ * query, or the memory as saved. The memory line in the thread draws these.
+ */
+async function answerMemory(tool: string, input: unknown, chatId: string) {
+  if (tool === RECALL_MEMORY_TOOL) {
+    const { query } = input as { query: string }
+    const found = await searchMemories(query)
+    return {
+      memories: found.map(({ id, text, savedBy, createdAt }) => ({
+        id,
+        text,
+        savedBy,
+        savedAt: new Date(createdAt).toISOString().slice(0, 10),
+      })),
+    }
+  }
+  const { text } = input as { text: string }
+  const { id, text: saved } = await createMemory({
+    text,
+    savedBy: "agent",
+    chatId,
+  })
+  return { memory: { id, text: saved } }
+}
+
+/**
+ * Whether the reply's latest step used memory and every tool in it has its
+ * answer, so the model can carry on with what it recalled or saved.
+ */
+function memoryAnswered({ messages }: { messages: UIMessage[] }) {
+  const message = messages.at(-1)
+  if (message?.role !== "assistant") return false
+  const step = message.parts.slice(
+    message.parts.findLastIndex((part) => part.type === "step-start") + 1
+  )
+  const tools = step.filter((part) => part.type.startsWith("tool-"))
+  return (
+    tools.some((part) => MEMORY_TOOLS.includes(part.type.slice(5))) &&
+    tools.every(
+      (part) =>
+        "state" in part &&
+        (part.state === "output-available" || part.state === "output-error")
+    )
+  )
+}
+
 // When a message was sent, for its timestamp in the thread.
 const sentNow = (): MessageMetadata => ({ createdAt: Date.now() })
 
@@ -124,6 +175,9 @@ function Chat({
   /** Laid out for a small window, as quick chat's: tighter, without the footnote. */
   compact?: boolean
 }) {
+  // The model as picked, for a reply that carries on after a memory tool is
+  // answered. Kept current below, once it's worked out.
+  const bodyRef = React.useRef<object>(undefined)
   const {
     messages,
     setMessages,
@@ -138,10 +192,31 @@ function Chat({
     id,
     messages: loadMessages(id),
     transport,
-    // Approving a plan sends the chat on, for the model to carry it out, and
-    // answering an approval (an email, say) sends it on to run or not.
+    // Memories live in this browser, so the chat answers the memory tools
+    // itself. Not awaited, as the SDK asks, so the reply can carry on.
+    onToolCall: async ({ toolCall }) => {
+      if (!MEMORY_TOOLS.includes(toolCall.toolName)) return
+      const { toolName: tool, toolCallId } = toolCall
+      const options = { body: bodyRef.current }
+      try {
+        const output = await answerMemory(tool, toolCall.input, id)
+        addToolOutput({ tool, toolCallId, output, options })
+      } catch {
+        addToolOutput({
+          tool,
+          toolCallId,
+          state: "output-error",
+          errorText: "This browser's storage couldn't be read.",
+          options,
+        })
+      }
+    },
+    // Approving a plan sends the chat on, for the model to carry it out,
+    // answering an approval (an email, say) sends it on to run or not, and
+    // an answered memory tool sends it on with what was recalled or saved.
     sendAutomaticallyWhen: (options) =>
       planApproved(options) ||
+      memoryAnswered(options) ||
       lastAssistantMessageIsCompleteWithApprovalResponses(options),
   })
 
@@ -209,6 +284,9 @@ function Chat({
     effort,
     context,
   }
+  React.useEffect(() => {
+    bodyRef.current = body
+  })
 
   const addFiles = async (files: File[]) => {
     const readable = await readableFiles(files)
