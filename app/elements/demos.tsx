@@ -5,6 +5,7 @@ import {
   AiBrain01Icon,
   Bookmark02Icon,
   GlobalSearchIcon,
+  QuoteDownIcon,
   LeftToRightListNumberIcon,
   Link01Icon,
   Mail01Icon,
@@ -20,6 +21,7 @@ import {
   MessageActions,
   MessageSaveAction,
 } from "@/components/aiellie/message-actions"
+import { SelectionToolbar } from "@/components/aiellie/selection-toolbar"
 import {
   PlanReview,
   type Plan,
@@ -188,6 +190,34 @@ function MemoryTryIt() {
         onUndo={() => setRemoved(true)}
       />
       {removed ? <ResetButton onClick={() => setRemoved(false)} /> : null}
+    </div>
+  )
+}
+
+/**
+ * The highlight toolbar answering for real: Reply shows what it would quote,
+ * and Save to Memory keeps nothing, only showing it's saved.
+ */
+function SelectionTryIt() {
+  const [replied, setReplied] = React.useState<string>()
+  return (
+    <div className="flex flex-col gap-2">
+      <SelectionToolbar
+        onReply={setReplied}
+        saveOptions={[
+          { label: "Memory", icon: Bookmark02Icon, onSave: () => {} },
+        ]}
+      >
+        <p className="text-sm leading-relaxed">
+          Lisbon is clear today, 16° now with a high of 23°. Highlight any of
+          this to reply to it or save it.
+        </p>
+      </SelectionToolbar>
+      {replied ? (
+        <p className="text-xs text-muted-foreground">
+          Would quote “{replied}” in the composer.
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -490,6 +520,14 @@ const ELEMENTS: ElementEntry[] = [
         ),
       },
     ],
+  },
+  {
+    id: "selection-toolbar",
+    name: "Highlight toolbar",
+    summary: "Reply to or save text highlighted in the thread",
+    icon: QuoteDownIcon,
+    file: "components/aiellie/selection-toolbar.tsx",
+    states: [{ label: "Try it", render: () => <SelectionTryIt /> }],
   },
   {
     id: "reasoning",

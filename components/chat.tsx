@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
+import { Bookmark02Icon } from "@hugeicons/core-free-icons"
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithApprovalResponses,
@@ -33,6 +34,7 @@ import { ContextMeter, contextOf } from "@/components/aiellie/context-meter"
 import { ModelSelector } from "@/components/aiellie/model-selector"
 import { PLAN_TOOL, planApproved } from "@/components/aiellie/plan-review"
 import { Suggestion, Suggestions } from "@/components/aiellie/suggestions"
+import { SelectionToolbar } from "@/components/aiellie/selection-toolbar"
 import { Thread } from "@/components/aiellie/thread"
 import { VoiceChat } from "@/components/voice-chat"
 import {
@@ -255,6 +257,25 @@ function Chat({
     return subscribeMemories(load)
   }, [])
   const [pending, setPending] = React.useState<PendingFile[]>([])
+  // What's in the composer, held here so a highlight's Reply can quote into
+  // it.
+  const [draft, setDraft] = React.useState("")
+  const composerInput = React.useRef<HTMLTextAreaElement>(null)
+  // Quotes the text above whatever's being written, and puts the caret at
+  // the end, to write the reply.
+  const replyTo = (text: string) => {
+    const quote = text
+      .split("\n")
+      .map((line) => `> ${line}`.trimEnd())
+      .join("\n")
+    setDraft((current) => `${quote}\n\n${current}`)
+    requestAnimationFrame(() => {
+      const input = composerInput.current
+      if (!input) return
+      input.focus()
+      input.setSelectionRange(input.value.length, input.value.length)
+    })
+  }
   const [effortPick, setEffort] = React.useState<Effort>()
   const [contextPick, setContext] = React.useState<number>()
   const [fastPick, setFast] = React.useState(false)
@@ -431,54 +452,69 @@ function Chat({
           </ChatEmptyDescription>
         </ChatEmpty>
       ) : (
-        <Thread
-          messages={messages}
-          voiceChat={talking?.id}
-          // A reply has begun before its first words, while the status still
-          // reads "submitted".
-          streaming={busy}
-          thinkingSince={thinkingSince}
-          error={error}
-          onRetry={() => regenerate({ body })}
-          // The answer goes back as the plan's tool output, with the model
-          // as picked, in case it sends the chat on.
-          onPlanReview={(toolCallId, decision) =>
-            addToolOutput({
-              tool: PLAN_TOOL,
-              toolCallId,
-              output: decision,
-              options: { body },
-            })
-          }
-          // Yes or no goes back on the tool call, and the chat carries on
-          // with the model as picked.
-          onToolApproval={(id, approved) =>
-            addToolApprovalResponse({ id, approved, options: { body } })
-          }
-          onRegenerate={(messageId) => regenerate({ messageId, body })}
-          onRate={(messageId, rating) => annotate(messageId, { rating })}
-          keptMemories={kept}
-          onForgetMemory={deleteMemory}
-          onSaveMemory={async (_, text) => {
-            await createMemory({ text, savedBy: "you", chatId: id })
-          }}
-          onReport={(messageId, report) =>
-            annotate(messageId, { report: { ...report, at: Date.now() } })
-          }
-          onBranch={
-            onBranch
-              ? (messageId) =>
-                  onBranch(
-                    messages.slice(
-                      0,
-                      messages.findIndex(
-                        (message) => message.id === messageId
-                      ) + 1
+        // Highlighting a message's text offers to reply to it, or to save
+        // it to memory.
+        <SelectionToolbar
+          onReply={replyTo}
+          saveOptions={[
+            {
+              label: "Memory",
+              icon: Bookmark02Icon,
+              onSave: async (text) => {
+                await createMemory({ text, savedBy: "you", chatId: id })
+              },
+            },
+          ]}
+        >
+          <Thread
+            messages={messages}
+            voiceChat={talking?.id}
+            // A reply has begun before its first words, while the status still
+            // reads "submitted".
+            streaming={busy}
+            thinkingSince={thinkingSince}
+            error={error}
+            onRetry={() => regenerate({ body })}
+            // The answer goes back as the plan's tool output, with the model
+            // as picked, in case it sends the chat on.
+            onPlanReview={(toolCallId, decision) =>
+              addToolOutput({
+                tool: PLAN_TOOL,
+                toolCallId,
+                output: decision,
+                options: { body },
+              })
+            }
+            // Yes or no goes back on the tool call, and the chat carries on
+            // with the model as picked.
+            onToolApproval={(id, approved) =>
+              addToolApprovalResponse({ id, approved, options: { body } })
+            }
+            onRegenerate={(messageId) => regenerate({ messageId, body })}
+            onRate={(messageId, rating) => annotate(messageId, { rating })}
+            keptMemories={kept}
+            onForgetMemory={deleteMemory}
+            onSaveMemory={async (_, text) => {
+              await createMemory({ text, savedBy: "you", chatId: id })
+            }}
+            onReport={(messageId, report) =>
+              annotate(messageId, { report: { ...report, at: Date.now() } })
+            }
+            onBranch={
+              onBranch
+                ? (messageId) =>
+                    onBranch(
+                      messages.slice(
+                        0,
+                        messages.findIndex(
+                          (message) => message.id === messageId
+                        ) + 1
+                      )
                     )
-                  )
-              : undefined
-          }
-        />
+                : undefined
+            }
+          />
+        </SelectionToolbar>
       )}
       <div
         className={
@@ -558,10 +594,12 @@ function Chat({
           status={status}
           hasAttachments={pending.length > 0}
           onFilesAdd={addFiles}
+          value={draft}
+          onValueChange={setDraft}
           onSubmit={(text) => send(text)}
           onStop={() => stop()}
         >
-          <ComposerInput />
+          <ComposerInput ref={composerInput} />
           <ComposerFooter>
             <ComposerAddMenu>
               <ComposerAddFiles />
