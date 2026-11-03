@@ -70,6 +70,7 @@
     --color-live: var(--live);
     --color-brand: var(--brand);
     --color-success: var(--success);
+    --color-pending: var(--pending);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -120,6 +121,8 @@
     --brand: oklch(0.603 0.215 269.582);
     /* Completed, passing, saved. */
     --success: oklch(0.596 0.145 163.225);
+    /* Waiting on the person, like an approval. Amber deep enough for 4.5:1. */
+    --pending: oklch(0.555 0.163 48.998);
 }
 
 .dark {
@@ -157,6 +160,7 @@
     --live: oklch(0.603 0.215 269.582);
     --brand: oklch(0.603 0.215 269.582);
     --success: oklch(0.765 0.177 163.223);
+    --pending: oklch(0.828 0.189 84.429);
 }
 
 @layer base {

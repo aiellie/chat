@@ -2,7 +2,11 @@
 
 import * as React from "react"
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport, type UIMessage } from "ai"
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
+  type UIMessage,
+} from "ai"
 
 import {
   Composer,
@@ -128,12 +132,16 @@ function Chat({
     error,
     regenerate,
     addToolOutput,
+    addToolApprovalResponse,
   } = useChat({
     id,
     messages: loadMessages(id),
     transport,
-    // Approving a plan sends the chat on, for the model to carry it out.
-    sendAutomaticallyWhen: planApproved,
+    // Approving a plan sends the chat on, for the model to carry it out, and
+    // answering an approval (an email, say) sends it on to run or not.
+    sendAutomaticallyWhen: (options) =>
+      planApproved(options) ||
+      lastAssistantMessageIsCompleteWithApprovalResponses(options),
   })
 
   // Ratings and reports live on the message, so they're saved with the chat.
@@ -345,6 +353,11 @@ function Chat({
               output: decision,
               options: { body },
             })
+          }
+          // Yes or no goes back on the tool call, and the chat carries on
+          // with the model as picked.
+          onToolApproval={(id, approved) =>
+            addToolApprovalResponse({ id, approved, options: { body } })
           }
           onRegenerate={(messageId) => regenerate({ messageId, body })}
           onRate={(messageId, rating) => annotate(messageId, { rating })}

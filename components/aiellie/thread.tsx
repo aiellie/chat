@@ -3,9 +3,10 @@
 import * as React from "react"
 import { RefreshIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import type { UIMessage } from "ai"
+import type { ToolUIPart, UIMessage } from "ai"
 
 import { WeatherCard } from "@/components/aiellie/weather-card"
+import { EMAIL_TOOL, EmailApproval } from "@/components/aiellie/email-approval"
 import { AttachmentGroup } from "@/components/aiellie/attachment"
 import {
   DateDivider,
@@ -147,6 +148,7 @@ function Thread({
   onBranch,
   onReport,
   onPlanReview,
+  onToolApproval,
 }: {
   messages: UIMessage[]
   /** The voice chat going, by its id, which isn't marked as ended yet. */
@@ -178,6 +180,12 @@ function Thread({
    * plans are read-only.
    */
   onPlanReview?: (toolCallId: string, decision: PlanDecision) => void
+  /**
+   * Answers a tool call waiting on the person's approval, like an email
+   * before it's sent, by its approval id. Without it, approvals are
+   * read-only.
+   */
+  onToolApproval?: (approvalId: string, approved: boolean) => void
 }) {
   const firsts = firstsOfDay(messages)
   const voice = voiceChatsIn(messages)
@@ -237,6 +245,13 @@ function Thread({
               const words = wordsAround(message, plans)
               const reply = words[plans.length]
               const planning = live && plans.some((call) => call.writing)
+              // Tools drawn as cards, which stand in for words when the
+              // reply has none.
+              const cards = message.parts.some(
+                (part) =>
+                  part.type === "tool-get_weather" ||
+                  part.type === `tool-${EMAIL_TOOL}`
+              )
               // What copying or reading the reply gives: its words with its
               // plans in place, as Markdown.
               const whole =
@@ -309,10 +324,22 @@ function Thread({
                           />
                         ) : null}
                         {message.parts.map((part) =>
-  part.type === "tool-get_weather" ? (
-    <WeatherCard key={part.toolCallId} part={part} />
-  ) : null
-)}
+                          part.type === "tool-get_weather" ? (
+                            <WeatherCard key={part.toolCallId} part={part} />
+                          ) : part.type === `tool-${EMAIL_TOOL}` ? (
+                            // Only the last reply's request can be answered.
+                            <EmailApproval
+                              key={part.toolCallId}
+                              part={part as ToolUIPart}
+                              disabled={streaming}
+                              onRespond={
+                                index === messages.length - 1
+                                  ? onToolApproval
+                                  : undefined
+                              }
+                            />
+                          ) : null
+                        )}
                         {files.length > 0 ? (
                           <AttachmentGroup className="max-w-full">
                             {files.map((file, index) => (
@@ -364,7 +391,8 @@ function Thread({
                         (reply ||
                           (files.length === 0 &&
                             !live &&
-                            plans.length === 0)) ? (
+                            plans.length === 0 &&
+                            !cards)) ? (
                           <Bubble variant={mine ? "secondary" : "ghost"}>
                             {/* Markdown lays out its own lines, so only what
                               the person typed keeps theirs as written. */}

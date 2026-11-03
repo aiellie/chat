@@ -66,6 +66,18 @@ const TOOLS: ToolEntry[] = [
     suggestion: "What's the weather in Lisbon?",
     status: "In progress",
   },
+  {
+    id: "email",
+    name: "Email",
+    calls: ["send_email"],
+    summary: "Drafts an email and sends it once you approve",
+    runs: "Your server, with Resend, after your approval",
+    models: "Every model",
+    definition: "lib/tools/email.ts",
+    view: "components/aiellie/email-approval.tsx",
+    suggestion: "Email me a short note saying the email tool works",
+    status: "In progress",
+  },
 ]
 
 export { TOOLS }

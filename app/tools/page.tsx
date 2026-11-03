@@ -5,6 +5,7 @@ import {
   Cancel01Icon,
   GlobalSearchIcon,
   LeftToRightListNumberIcon,
+  Mail01Icon,
   Search01Icon,
   Wrench01Icon, 
   Sun03Icon,
@@ -36,6 +37,7 @@ const ICONS: Record<string, IconSvgElement> = {
   "web-search": GlobalSearchIcon,
   plan: LeftToRightListNumberIcon,
   weather: Sun03Icon,
+  email: Mail01Icon,
 }
 
 // The tile behind that mark: a pale fill, and the icon's ink.
@@ -43,6 +45,7 @@ const COLORS: Record<string, string> = {
   "web-search": "bg-blue-50 text-blue-500",
   plan: "bg-amber-50 text-amber-500",
   weather: "bg-sky-50 text-sky-500",
+  email: "bg-violet-50 text-violet-500",
 }
 
 // Whether a tool has every word searched for, in its name, what it does, or
