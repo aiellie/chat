@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   Add01Icon,
   ArrowDown01Icon,
@@ -105,9 +106,17 @@ function StashRow({ item }: { item: StashItem }) {
 
 // The Memory doc, always first: what the AI remembers, one memory a line.
 // It's the memories themselves, from components/memory-store.ts, rather
-// than an item of the stash, so it can't be renamed or deleted.
+// than an item of the stash, so it can't be renamed or deleted. It's open
+// while the address ends in ?open=memory, so the sidebar's Memory row and
+// /memory can open it.
 function MemoryRow({ count }: { count?: number }) {
-  const [open, setOpen] = React.useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+  const open = useSearchParams().get("open") === "memory"
+  const setOpen = (next: boolean) =>
+    router.replace(next ? `${pathname}?open=memory` : pathname, {
+      scroll: false,
+    })
   return (
     <Item role="listitem" variant="outline" className={row}>
       <ItemMedia variant="icon">
@@ -327,7 +336,12 @@ export default function StashdPage() {
             aria-label="Stashd"
             className="grid gap-x-6 sm:grid-cols-2"
           >
-            {memoryShown ? <MemoryRow count={memoryCount} /> : null}
+            {/* Read from the address, so drawn in the browser only. */}
+            {memoryShown ? (
+              <React.Suspense>
+                <MemoryRow count={memoryCount} />
+              </React.Suspense>
+            ) : null}
             {shown.map((item) => (
               <StashRow key={item.id} item={item} />
             ))}

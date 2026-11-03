@@ -130,7 +130,6 @@ function ChatSidebar({
   projectsOpen = false,
   stashdOpen = false,
   onStashd,
-  memoryOpen = false,
   onMemory,
   extensionsOpen = false,
   onExtensions,
@@ -168,9 +167,7 @@ function ChatSidebar({
   stashdOpen?: boolean
   /** Opens the Stashd page. */
   onStashd?: () => void
-  /** Whether the Memory page is open, in place of a chat. */
-  memoryOpen?: boolean
-  /** Opens the Memory page. */
+  /** Opens the Memory doc. */
   onMemory?: () => void
   /** Whether the Extensions page is open, in place of a chat. */
   extensionsOpen?: boolean
@@ -203,7 +200,6 @@ function ChatSidebar({
           !modelsOpen &&
           !projectsOpen &&
           !stashdOpen &&
-          !memoryOpen &&
           !extensionsOpen &&
           !elementsOpen
         }
@@ -217,7 +213,6 @@ function ChatSidebar({
         projectsOpen={projectsOpen}
         stashdOpen={stashdOpen}
         onStashd={onStashd}
-        memoryOpen={memoryOpen}
         onMemory={onMemory}
         extensionsOpen={extensionsOpen}
         onExtensions={onExtensions}

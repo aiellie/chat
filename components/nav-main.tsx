@@ -50,7 +50,6 @@ function ChatNavMain({
   modelsOpen = false,
   projectsOpen = false,
   stashdOpen = false,
-  memoryOpen = false,
   extensionsOpen = false,
 }: {
   newChatOpen: boolean
@@ -81,8 +80,6 @@ function ChatNavMain({
   projectsOpen?: boolean
   /** Whether the Stashd page is open, to mark its row. */
   stashdOpen?: boolean
-  /** Whether the Memory page is open, to mark its row. */
-  memoryOpen?: boolean
   /** Whether the Extensions page is open, to mark its row. */
   extensionsOpen?: boolean
   /** Where the registry's elements are shown. Left out, the row goes nowhere. */
@@ -91,7 +88,7 @@ function ChatNavMain({
   elementsOpen?: boolean
 }) {
   const { closeSheet } = usePanels()
-  const moreActive = elementsOpen || modelsOpen || memoryOpen
+  const moreActive = elementsOpen || modelsOpen
   const [moreOpen, setMoreOpen] = useState(moreActive)
 
   useEffect(() => {
@@ -178,46 +175,44 @@ function ChatNavMain({
         </SidebarMenuItem>
         {moreOpen ? (
           <>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            isActive={extensionsOpen}
-            aria-current={extensionsOpen ? "page" : undefined}
-            onClick={() => {
-              onExtensions?.()
-              closeSheet()
-            }}
-          >
-            <HugeiconsIcon icon={Plug02Icon} aria-hidden />
-            <span>Extensions</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            isActive={toolsOpen}
-            aria-current={toolsOpen ? "page" : undefined}
-            onClick={() => {
-              onTools?.()
-              closeSheet()
-            }}
-          >
-            <HugeiconsIcon icon={ShapeCollectionIcon} aria-hidden />
-            <span>Tools</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            isActive={memoryOpen}
-            aria-current={memoryOpen ? "page" : undefined}
-            onClick={() => {
-              onMemory?.()
-              closeSheet()
-            }}
-          >
-            <HugeiconsIcon icon={Bookmark02Icon} aria-hidden />
-            <span>Memory</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-       
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={extensionsOpen}
+                aria-current={extensionsOpen ? "page" : undefined}
+                onClick={() => {
+                  onExtensions?.()
+                  closeSheet()
+                }}
+              >
+                <HugeiconsIcon icon={Plug02Icon} aria-hidden />
+                <span>Extensions</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={toolsOpen}
+                aria-current={toolsOpen ? "page" : undefined}
+                onClick={() => {
+                  onTools?.()
+                  closeSheet()
+                }}
+              >
+                <HugeiconsIcon icon={ShapeCollectionIcon} aria-hidden />
+                <span>Tools</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => {
+                  onMemory?.()
+                  closeSheet()
+                }}
+              >
+                <HugeiconsIcon icon={Bookmark02Icon} aria-hidden />
+                <span>Memory</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={elementsOpen}

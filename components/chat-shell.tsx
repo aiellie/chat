@@ -166,8 +166,8 @@ function ChatShell({ children }: { children?: React.ReactNode }) {
   const openProjects = () => router.push("/projects")
   const stashdOpen = pathname === "/stashd"
   const openStashd = () => router.push("/stashd")
-  const memoryOpen = pathname === "/memory"
-  const openMemory = () => router.push("/memory")
+  // The Memory doc opens over Stashd, which keeps its row marked.
+  const openMemory = () => router.push("/stashd?open=memory")
   const extensionsOpen = pathname === "/extensions"
   const openExtensions = () => router.push("/extensions")
   const elementsOpen = pathname === "/elements"
@@ -265,7 +265,6 @@ function ChatShell({ children }: { children?: React.ReactNode }) {
             onProjects={openProjects}
             stashdOpen={stashdOpen}
             onStashd={openStashd}
-            memoryOpen={memoryOpen}
             onMemory={openMemory}
             extensionsOpen={extensionsOpen}
             onExtensions={openExtensions}
