@@ -14,6 +14,8 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { MemoryDoc } from "@/components/memory-doc"
+import { listMemories, subscribeMemories } from "@/components/memory-store"
 import {
   StashActions,
   StashEditor,
@@ -28,6 +30,7 @@ import {
   type StashInput,
   type StashItem,
 } from "@/components/stash-store"
+import { ToolMark } from "@/components/tool-mark"
 import { Button } from "@/components/ui/button"
 import {
   InputGroup,
@@ -100,12 +103,48 @@ function StashRow({ item }: { item: StashItem }) {
   )
 }
 
+// The Memory doc, always first: what the AI remembers, one memory a line.
+// It's the memories themselves, from components/memory-store.ts, rather
+// than an item of the stash, so it can't be renamed or deleted.
+function MemoryRow({ count }: { count?: number }) {
+  const [open, setOpen] = React.useState(false)
+  return (
+    <Item role="listitem" variant="outline" className={row}>
+      <ItemMedia variant="icon">
+        <ToolMark
+          id="memory"
+          className="size-9 rounded-lg"
+          iconClassName="size-5"
+        />
+      </ItemMedia>
+      <ItemContent className="min-w-0">
+        <ItemTitle className="max-w-full">
+          <button
+            type="button"
+            className={`${rowTrigger} truncate`}
+            onClick={() => setOpen(true)}
+          >
+            Memory
+          </button>
+        </ItemTitle>
+        <ItemDescription className="truncate tabular-nums">
+          {count === undefined
+            ? "Doc"
+            : `Doc · ${count} ${count === 1 ? "memory" : "memories"}`}
+        </ItemDescription>
+      </ItemContent>
+      <MemoryDoc open={open} onOpenChange={setOpen} />
+    </Item>
+  )
+}
+
 // Anything the person keeps, from components/stash-store.ts: files, images,
 // pages, links and code. It sits in the shell from the layout, in the chat's
 // place.
 export default function StashdPage() {
   // Undefined until the store answers.
   const [items, setItems] = React.useState<StashItem[]>()
+  const [memoryCount, setMemoryCount] = React.useState<number>()
   const [writing, setWriting] = React.useState<StashInput["kind"]>()
   // Kept while the editor folds away, so its title doesn't change mid-close.
   const [lastKind, setLastKind] = React.useState<StashInput["kind"]>("page")
@@ -134,6 +173,12 @@ export default function StashdPage() {
     }
   }, [])
 
+  React.useEffect(() => {
+    const load = () => listMemories().then((all) => setMemoryCount(all.length))
+    load()
+    return subscribeMemories(load)
+  }, [])
+
   const upload = async (list: FileList | null) => {
     if (!list?.length) return
     setError(undefined)
@@ -152,6 +197,7 @@ export default function StashdPage() {
   }
 
   const shown = items?.filter((item) => matches(item, query)) ?? []
+  const memoryShown = matches({ name: "Memory doc" } as StashItem, query)
 
   const clear = () => {
     setQuery("")
@@ -233,8 +279,8 @@ export default function StashdPage() {
               }}
             />
           </div>
-          {/* Only once there's something to search. */}
-          {items?.length ? (
+          {/* Once the stash has loaded. */}
+          {items !== undefined ? (
             <InputGroup className="h-9 rounded-full">
               <InputGroupAddon>
                 <HugeiconsIcon aria-hidden icon={Search01Icon} />
@@ -276,15 +322,12 @@ export default function StashdPage() {
             </p>
           ) : null}
         </header>
-        {items === undefined ? null : items.length === 0 ? (
-          <p role="status" className="text-sm text-muted-foreground">
-            Nothing stashed yet.
-          </p>
-        ) : shown.length > 0 ? (
+        {items === undefined ? null : memoryShown || shown.length > 0 ? (
           <ItemGroup
             aria-label="Stashd"
             className="grid gap-x-6 sm:grid-cols-2"
           >
+            {memoryShown ? <MemoryRow count={memoryCount} /> : null}
             {shown.map((item) => (
               <StashRow key={item.id} item={item} />
             ))}
