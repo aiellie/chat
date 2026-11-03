@@ -35,7 +35,13 @@ import { PLAN_TOOL, planApproved } from "@/components/aiellie/plan-review"
 import { Suggestion, Suggestions } from "@/components/aiellie/suggestions"
 import { Thread } from "@/components/aiellie/thread"
 import { VoiceChat } from "@/components/voice-chat"
-import { createMemory, searchMemories } from "@/components/memory-store"
+import {
+  createMemory,
+  deleteMemory,
+  listMemories,
+  searchMemories,
+  subscribeMemories,
+} from "@/components/memory-store"
 import {
   getReplies,
   loadMessages,
@@ -237,6 +243,17 @@ function Chat({
     )
   const [model, setModel] = React.useState(defaultModel)
   const [models, setModels] = React.useState<ModelOption[]>([])
+  // The memories still kept, by id, so a save undone here, or removed on the
+  // Memory page, says so in the thread.
+  const [kept, setKept] = React.useState<ReadonlySet<string>>()
+  React.useEffect(() => {
+    const load = () =>
+      listMemories().then((all) =>
+        setKept(new Set(all.map((memory) => memory.id)))
+      )
+    load()
+    return subscribeMemories(load)
+  }, [])
   const [pending, setPending] = React.useState<PendingFile[]>([])
   const [effortPick, setEffort] = React.useState<Effort>()
   const [contextPick, setContext] = React.useState<number>()
@@ -440,6 +457,8 @@ function Chat({
           }
           onRegenerate={(messageId) => regenerate({ messageId, body })}
           onRate={(messageId, rating) => annotate(messageId, { rating })}
+          keptMemories={kept}
+          onForgetMemory={deleteMemory}
           onReport={(messageId, report) =>
             annotate(messageId, { report: { ...report, at: Date.now() } })
           }

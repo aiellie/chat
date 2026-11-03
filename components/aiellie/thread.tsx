@@ -15,6 +15,12 @@ import {
 } from "@/components/aiellie/date-divider"
 import { FileAttachment } from "@/components/aiellie/file-attachment"
 import {
+  isMemoryPart,
+  memoryCallOf,
+  MemoryTrace,
+  type MemoryPart,
+} from "@/components/aiellie/memory-trace"
+import {
   planMarkdown,
   PlanReview,
   plansIn,
@@ -59,6 +65,34 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/aiellie/message-scroller"
+
+/**
+ * A memory tool's part as its line. One cut short, as by stopping the reply,
+ * never gets its answer, so it settles once the reply has.
+ */
+function MemoryCallLine({
+  part,
+  live,
+  keptMemories,
+  onForgetMemory,
+}: {
+  part: MemoryPart
+  live: boolean
+  keptMemories?: ReadonlySet<string>
+  onForgetMemory?: (memoryId: string) => void
+}) {
+  const call = memoryCallOf(part)
+  const id = call.memory?.id
+  const removed = !!id && !!keptMemories && !keptMemories.has(id)
+  return (
+    <MemoryTrace
+      {...call}
+      status={call.status === "running" && !live ? "stopped" : call.status}
+      removed={removed}
+      onUndo={id && onForgetMemory ? () => onForgetMemory(id) : undefined}
+    />
+  )
+}
 
 /**
  * The reason a reply failed, from its error: the first line of the message.
@@ -149,6 +183,8 @@ function Thread({
   onReport,
   onPlanReview,
   onToolApproval,
+  keptMemories,
+  onForgetMemory,
 }: {
   messages: UIMessage[]
   /** The voice chat going, by its id, which isn't marked as ended yet. */
@@ -186,6 +222,13 @@ function Thread({
    * read-only.
    */
   onToolApproval?: (approvalId: string, approved: boolean) => void
+  /**
+   * The memories still kept, by id, so a save whose memory is gone says so.
+   * Without it, every save reads as kept.
+   */
+  keptMemories?: ReadonlySet<string>
+  /** Removes a memory a reply saved, as its Undo. Without it, there's no Undo. */
+  onForgetMemory?: (memoryId: string) => void
 }) {
   const firsts = firstsOfDay(messages)
   const voice = voiceChatsIn(messages)
@@ -324,7 +367,15 @@ function Thread({
                           />
                         ) : null}
                         {message.parts.map((part) =>
-                          part.type === "tool-get_weather" ? (
+                          isMemoryPart(part) ? (
+                            <MemoryCallLine
+                              key={(part as ToolUIPart).toolCallId}
+                              part={part as MemoryPart}
+                              live={live}
+                              keptMemories={keptMemories}
+                              onForgetMemory={onForgetMemory}
+                            />
+                          ) : part.type === "tool-get_weather" ? (
                             <WeatherCard key={part.toolCallId} part={part} />
                           ) : part.type === `tool-${EMAIL_TOOL}` ? (
                             // Only the last reply's request can be answered.
