@@ -1,4 +1,5 @@
 import {
+  Bookmark02Icon,
   GlobalSearchIcon,
   LeftToRightListNumberIcon,
   Mail01Icon,
@@ -19,6 +20,7 @@ const TOOL_ICONS: Record<string, IconSvgElement> = {
   plan: LeftToRightListNumberIcon,
   weather: Sun03Icon,
   email: Mail01Icon,
+  memory: Bookmark02Icon,
 }
 
 // A pale fill and the icon's ink, lighter ink on a deeper fill in the dark.
@@ -29,6 +31,7 @@ const TOOL_COLORS: Record<string, string> = {
   weather: "bg-sky-50 text-sky-500 dark:bg-sky-500/15 dark:text-sky-400",
   email:
     "bg-violet-50 text-violet-500 dark:bg-violet-500/15 dark:text-violet-400",
+  memory: "bg-pink-50 text-pink-500 dark:bg-pink-500/15 dark:text-pink-400",
 }
 
 /**

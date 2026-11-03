@@ -78,6 +78,18 @@ const TOOLS: ToolEntry[] = [
     suggestion: "Email me a short note saying the email tool works",
     status: "In progress",
   },
+  {
+    id: "memory",
+    name: "Memory",
+    calls: ["recall_memory", "save_memory"],
+    summary: "Remembers what you ask it to, across chats",
+    runs: "The chat, from memories kept in this browser",
+    models: "Every model",
+    definition: "lib/tools/memory.ts",
+    view: "components/aiellie/memory-trace.tsx",
+    suggestion: "Remember that I take my coffee black",
+    status: "In progress",
+  },
 ]
 
 export { TOOLS }

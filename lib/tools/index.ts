@@ -2,6 +2,13 @@ import type { ToolSet } from "ai"
 
 import type { ApiKeys } from "@/lib/api-keys"
 import { EMAIL_INSTRUCTIONS, EMAIL_TOOL, emailTool } from "@/lib/tools/email"
+import {
+  MEMORY_INSTRUCTIONS,
+  RECALL_MEMORY_TOOL,
+  recallMemoryTool,
+  SAVE_MEMORY_TOOL,
+  saveMemoryTool,
+} from "@/lib/tools/memory"
 import { PLAN_INSTRUCTIONS, PLAN_TOOL, planTool } from "@/lib/tools/plan"
 import { SEARCH_INSTRUCTIONS, searchTools } from "@/lib/tools/search"
 import { getWeather } from "@/lib/tools/weather"
@@ -26,10 +33,13 @@ function chatTools(
       [PLAN_TOOL]: planTool,
       get_weather: getWeather,
       [EMAIL_TOOL]: emailTool,
+      [RECALL_MEMORY_TOOL]: recallMemoryTool,
+      [SAVE_MEMORY_TOOL]: saveMemoryTool,
     },
     instructions: [
       PLAN_INSTRUCTIONS,
       EMAIL_INSTRUCTIONS,
+      MEMORY_INSTRUCTIONS,
       web ? SEARCH_INSTRUCTIONS : undefined,
     ]
       .filter(Boolean)
