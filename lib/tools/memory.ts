@@ -29,7 +29,7 @@ const recallMemoryTool = tool({
 
 const saveMemoryTool = tool({
   description:
-    "Keep a fact about the person for later chats. Use it only when they ask you to remember something.",
+    "Keep a fact about the person for later chats. Use it only when they ask you to remember something, and only after recall_memory shows it isn't kept already.",
   inputSchema: z.object({
     text: z
       .string()
@@ -39,7 +39,7 @@ const saveMemoryTool = tool({
   }),
 })
 
-const MEMORY_INSTRUCTIONS = `You can remember things about the person across chats. Before answering anything personal, where what they've told you before would change the answer, call ${RECALL_MEMORY_TOOL} first, and use what comes back without saying you looked it up. Call ${SAVE_MEMORY_TOOL} only when they ask you to remember something, never on your own. Never save passwords, keys, account or card numbers, health details or anything else sensitive, even when asked: say you won't keep it. After a save, confirm it in a few words.`
+const MEMORY_INSTRUCTIONS = `You can remember things about the person across chats. Before answering anything personal, where what they've told you before would change the answer, call ${RECALL_MEMORY_TOOL} first, and use what comes back without saying you looked it up. Call ${SAVE_MEMORY_TOOL} only when they ask you to remember something, never on your own. Before saving, call ${RECALL_MEMORY_TOOL} with the fact's key words to check it isn't already kept: if a memory already says the same thing, don't save it again and tell them you already remember it. Never save passwords, keys, account or card numbers, health details or anything else sensitive, even when asked: say you won't keep it. After a save, confirm it in a few words.`
 
 export {
   MEMORY_INSTRUCTIONS,

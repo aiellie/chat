@@ -112,10 +112,18 @@ function withSpoken(
 
 const MEMORY_TOOLS = [RECALL_MEMORY_TOOL, SAVE_MEMORY_TOOL]
 
+// A fact as compared for sameness: case, spacing and end punctuation aside.
+const normalized = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[.!]+$/, "")
+
 /**
  * Answers a memory tool from the store in this browser: what matched the
  * query, how many it looked through and whether they matched or are only
- * the most recent, or the memory as saved. The memory line in the thread
+ * the most recent, or the memory as saved, or as already kept. The memory line in the thread
  * draws these.
  */
 async function answerMemory(tool: string, input: unknown, chatId: string) {
@@ -134,6 +142,11 @@ async function answerMemory(tool: string, input: unknown, chatId: string) {
     }
   }
   const { text } = input as { text: string }
+  // The model is told to check first; this catches the same fact twice.
+  const same = (await listMemories()).find(
+    (memory) => normalized(memory.text) === normalized(text)
+  )
+  if (same) return { memory: { id: same.id, text: same.text }, existing: true }
   const { id, text: saved } = await createMemory({
     text,
     savedBy: "agent",

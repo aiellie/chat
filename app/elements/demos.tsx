@@ -543,6 +543,18 @@ const ELEMENTS: ElementEntry[] = [
         ),
       },
       {
+        label: "Already kept",
+        render: () => (
+          <MemoryTrace
+            kind="save"
+            status="done"
+            text={saved.text}
+            memory={saved}
+            existing
+          />
+        ),
+      },
+      {
         label: "Removed",
         render: () => (
           <MemoryTrace

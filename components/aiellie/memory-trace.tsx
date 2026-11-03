@@ -41,6 +41,8 @@ type MemoryCall = {
   memories?: MemoryItem[]
   /** What a save kept. */
   memory?: MemoryItem
+  /** Whether a save found its memory already kept, and added nothing. */
+  existing?: boolean
   /** Why it failed. */
   error?: string
 }
@@ -93,6 +95,7 @@ function memoryCallOf(part: MemoryPart): MemoryCall {
       ? output.memories.flatMap((each) => itemOf(each) ?? [])
       : undefined,
     memory: itemOf(output?.memory),
+    existing: output?.existing === true,
     error: part.errorText,
   }
 }
@@ -147,6 +150,7 @@ function MemoryTrace({
   matched,
   memories = [],
   memory,
+  existing = false,
   error,
   removed = false,
   onUndo,
@@ -189,9 +193,11 @@ function MemoryTrace({
       : kind === "save"
         ? running
           ? "Saving to memory"
-          : removed
-            ? "Removed from memory"
-            : "Saved to memory"
+          : existing
+            ? "Already in memory"
+            : removed
+              ? "Removed from memory"
+              : "Saved to memory"
         : running
           ? query
             ? `Recalling memories about “${query}”`
@@ -223,6 +229,7 @@ function MemoryTrace({
           </TraceCollapsibleTrigger>
           {kind === "save" &&
           status === "done" &&
+          !existing &&
           !removed &&
           memory &&
           onUndo ? (
@@ -253,7 +260,11 @@ function MemoryTrace({
               </Step>
             ) : (
               <Step label="Kept">
-                {removed ? "Kept, then removed" : "Added as a new memory"}
+                {existing
+                  ? "Already kept, so nothing was added"
+                  : removed
+                    ? "Kept, then removed"
+                    : "Added as a new memory"}
               </Step>
             )}
             {shown.length > 0 ? (
