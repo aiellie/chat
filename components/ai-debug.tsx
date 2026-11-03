@@ -74,6 +74,81 @@ function summarize(exchange: Exchange) {
   }
 }
 
+type OutputPart =
+  | { type: "reasoning" | "text"; text: string }
+  | { type: "tool-call"; toolCallId: string; toolName: string; input: unknown }
+  | {
+      type: "tool-result" | "tool-error"
+      toolCallId: string
+      toolName: string
+      output: unknown
+    }
+
+/**
+ * The reply as one assistant message, in the shape the model's input takes:
+ * its reasoning, text and tool calls in the order they streamed, each
+ * written out whole, then how it finished. The output to set beside what
+ * was sent.
+ */
+function outputOf(exchange: Exchange, finishReason?: string) {
+  const content: OutputPart[] = []
+  const open = new Map<string, { type: "reasoning" | "text"; text: string }>()
+  const toolNames = new Map<string, string>()
+  for (const { chunk } of exchange.events) {
+    switch (chunk.type) {
+      case "text-start":
+      case "reasoning-start": {
+        const part: { type: "reasoning" | "text"; text: string } = {
+          type: chunk.type === "text-start" ? "text" : "reasoning",
+          text: "",
+        }
+        open.set(`${part.type}:${chunk.id}`, part)
+        content.push(part)
+        break
+      }
+      case "text-delta":
+      case "reasoning-delta": {
+        const part = open.get(
+          `${chunk.type === "text-delta" ? "text" : "reasoning"}:${chunk.id}`
+        )
+        if (part) part.text += chunk.delta
+        break
+      }
+      case "tool-input-available":
+        toolNames.set(chunk.toolCallId, chunk.toolName)
+        content.push({
+          type: "tool-call",
+          toolCallId: chunk.toolCallId,
+          toolName: chunk.toolName,
+          input: chunk.input,
+        })
+        break
+      case "tool-output-available":
+        content.push({
+          type: "tool-result",
+          toolCallId: chunk.toolCallId,
+          toolName: toolNames.get(chunk.toolCallId) ?? "",
+          output: chunk.output,
+        })
+        break
+      case "tool-output-error":
+        content.push({
+          type: "tool-error",
+          toolCallId: chunk.toolCallId,
+          toolName: toolNames.get(chunk.toolCallId) ?? "",
+          output: chunk.errorText,
+        })
+        break
+    }
+  }
+  return {
+    role: "assistant",
+    content: content.filter((part) => !("text" in part) || part.text),
+    finishReason: finishReason ?? null,
+    ...(exchange.error ? { error: exchange.error } : {}),
+  }
+}
+
 /** The chat as the model got it, worked out the same way the route does. */
 function useModelMessages(messages: UIMessage[]) {
   const [converted, setConverted] = React.useState<{
@@ -225,6 +300,22 @@ function ExchangeCard({
             <JsonBlock
               title={metadata?.model ?? exchange.request.model ?? "model"}
               value={sent}
+            />
+          )}
+        </Section>
+
+        <Section title="Output">
+          <p className="text-xs text-muted-foreground">
+            The reply as one message, put together from the stream below.
+          </p>
+          {exchange.events.length === 0 && exchange.state === "streaming" ? (
+            <p className="text-sm text-muted-foreground">
+              Waiting for the first event…
+            </p>
+          ) : (
+            <JsonBlock
+              title="output"
+              value={outputOf(exchange, finishReason)}
             />
           )}
         </Section>
