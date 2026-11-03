@@ -1,5 +1,5 @@
 ---
-name: elements-design
+name: design-elements
 description: How to design and build a new element for the chat app (a control, a surface, an indicator, a message part, or a tool's card in the thread) with the app's own tokens, components, live colour and motion. Use before building any UI element.
 ---
 
