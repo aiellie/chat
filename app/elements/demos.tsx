@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   AiBrain01Icon,
+  Bookmark02Icon,
   GlobalSearchIcon,
   LeftToRightListNumberIcon,
   Link01Icon,
@@ -14,6 +15,7 @@ import type { IconSvgElement } from "@hugeicons/react"
 import type { ToolUIPart } from "ai"
 
 import { EmailApproval } from "@/components/aiellie/email-approval"
+import { MemoryTrace } from "@/components/aiellie/memory-trace"
 import {
   PlanReview,
   type Plan,
@@ -159,6 +161,32 @@ const found: Found[] = [
     title: "Vercel documentation",
   },
 ]
+
+// Memory --------------------------------------------------------------------
+
+const recalled = [
+  { id: "demo-1", text: "Takes their coffee black" },
+  { id: "demo-2", text: "Lives in Lisbon" },
+  { id: "demo-3", text: "Works as a designer" },
+]
+const saved = { id: "demo-4", text: "Takes their coffee black" }
+
+/** A save answering for real: Undo removes it, Reset brings it back. */
+function MemoryTryIt() {
+  const [removed, setRemoved] = React.useState(false)
+  return (
+    <div className="flex flex-col gap-2">
+      <MemoryTrace
+        kind="save"
+        status="done"
+        memory={saved}
+        removed={removed}
+        onUndo={() => setRemoved(true)}
+      />
+      {removed ? <ResetButton onClick={() => setRemoved(false)} /> : null}
+    </div>
+  )
+}
 
 const thoughts =
   "They want a short note to Sam. Keep it to two sentences, and offer to start without them."
@@ -373,6 +401,67 @@ const ELEMENTS: ElementEntry[] = [
         label: "Done",
         render: () => (
           <WebSearch queries={["assistant-ui tool UI"]} found={found} />
+        ),
+      },
+    ],
+  },
+  {
+    id: "memory-trace",
+    name: "Memory",
+    summary: "A reply's recalls and saves, as a trace line with Undo",
+    icon: Bookmark02Icon,
+    file: "components/aiellie/memory-trace.tsx",
+    states: [
+      { label: "Try it", render: () => <MemoryTryIt /> },
+      {
+        label: "Recalling",
+        render: () => (
+          <MemoryTrace kind="recall" status="running" query="coffee" />
+        ),
+      },
+      {
+        label: "Recalled",
+        render: () => (
+          <MemoryTrace kind="recall" status="done" memories={recalled} />
+        ),
+      },
+      {
+        label: "Nothing matched",
+        render: () => <MemoryTrace kind="recall" status="done" memories={[]} />,
+      },
+      {
+        label: "Saving",
+        render: () => <MemoryTrace kind="save" status="running" />,
+      },
+      {
+        label: "Saved",
+        render: () => (
+          <MemoryTrace
+            kind="save"
+            status="done"
+            memory={saved}
+            onUndo={() => {}}
+          />
+        ),
+      },
+      {
+        label: "Removed",
+        render: () => (
+          <MemoryTrace kind="save" status="done" memory={saved} removed />
+        ),
+      },
+      {
+        label: "Stopped",
+        render: () => <MemoryTrace kind="recall" status="stopped" />,
+      },
+      {
+        label: "Failed",
+        render: () => (
+          <MemoryTrace
+            kind="save"
+            status="error"
+            error="This browser's storage couldn't be read."
+          />
         ),
       },
     ],

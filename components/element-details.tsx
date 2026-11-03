@@ -12,13 +12,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { DemoCard, type DemoState } from "@/components/ui/demo-card"
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button"
 
-type ElementState = { label: string; render: () => React.ReactNode }
-
 /**
- * An element from the Elements page in every state it can be in, one under
- * the next, each labelled, with its file.
+ * An element from the Elements page in every state it can be in, on a demo
+ * card with a tab for each state, with its file.
  */
 function ElementDetails({
   name,
@@ -31,7 +30,7 @@ function ElementDetails({
   name: string
   summary: string
   file: string
-  states: ElementState[]
+  states: DemoState[]
   /** Open, to open it from elsewhere on the row too, like its title. */
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -60,12 +59,7 @@ function ElementDetails({
             {summary}. <span className="font-mono text-xs">{file}</span>
           </DialogDescription>
         </DialogHeader>
-        {states.map((state) => (
-          <section key={state.label} className="flex min-w-0 flex-col gap-2">
-            <h3 className="text-xs text-muted-foreground">{state.label}</h3>
-            {state.render()}
-          </section>
-        ))}
+        <DemoCard states={states} />
       </DialogContent>
     </Dialog>
   )
