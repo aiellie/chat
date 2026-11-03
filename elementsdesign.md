@@ -19,6 +19,7 @@ The brand colour, **#5170FF**, is the `--live` token (`oklch(0.603 0.215 269.582
 - **One live thing per view.** A tool that's running is the live thing while it runs. The thread already gives way to it: the thinking indicator hides while anything in the message has `data-status="running"`, so put that attribute on your element's root while it works.
 - **The brand stops when the state does.** A result that has landed, a call that ended, a toggle turned off: the brand goes at once, with no fade-out.
 - **Always the token:** `text-live`, `bg-live/4`, `hover:bg-live/7`, `border-live/20`. Never a hex, never `blue-*`, never `primary` used to mean "brand".
+- **`brand` or `live`?** `--brand` holds the colour; `--live` is the same colour with a meaning. An element writes `live`, so the code says why it's blue. `text-brand` is only for the brand itself, like the logo.
 - **Contrast.** #5170FF is 4.1:1 on white, so in the light theme it clears 3:1 for marks (dots, the caret, rings, icons, fills) but not 4.5:1 for small text. Use brand ink on a word only where the word is brief and paired with a mark, like a `Status` label beside its dot, or passing, like a streamed word settling. Never for body copy or links.
 
 ## 2. Map every state before drawing anything
@@ -89,8 +90,6 @@ Use these names before writing markup. Extend one with a prop before adding a si
 | A filled field or row                 | `field` or `fieldInteractive`                                                                                     |
 | An icon-only control                  | a `Button` size `icon-*` inside a `Tooltip`, with an `aria-label`                                                 |
 
-Don't use the `live` and `error` strings in `surfaces.tsx`: `live` is drawn in `accent`, which is grey. Use `Status` instead.
-
 ## 6. Motion recipes
 
 Every motion explains a state change, keeps continuity, or confirms an action. Durations are **80 ms** (the pointer acting directly), **150 ms** (a toggle, a label swap, a small layer arriving), **280 ms** (a fold, a panel, a dialog) and **70 ms** between staggered items. Curves are ease-out `cubic-bezier(0.16,1,0.3,1)` for entering and ease-in `cubic-bezier(0.4,0,1,1)` for leaving. Every transition carries `motion-reduce:transition-none` and every animation `motion-reduce:animate-none`, on the same element.
@@ -152,3 +151,66 @@ Never: a spinner where a skeleton fits, a loop on a settled result, an entrance 
 - A spinner alone where the content's shape is known.
 - Activity marks (a pulsing dot, a shimmer) on anything that isn't machine work happening now.
 - A mock-up in place of the real thing: the element is shown working, with real data.
+
+## 10. Checklist
+
+Tick every line before calling an element done. A "no" is either fixed or written down with its reason. Each group points back to the section that explains it.
+
+### States (section 2)
+
+- [ ] Every state the element can reach is listed, and each one has been seen in the browser.
+- [ ] Loading shows a `Skeleton` in the result's shape, so nothing jumps when the result lands.
+- [ ] A forced error keeps the card's frame and shows "Failed" with the reason.
+- [ ] Reloading shows the result from history settled: no skeleton, no shimmer, no brand.
+
+### Brand (section 1)
+
+- [ ] While it runs, the brand is in exactly one place, and the root has `data-status="running"`.
+- [ ] Once settled, there is no brand anywhere on it.
+- [ ] Brand ink is written as `live` (`text-live`, `bg-live/4`), never a hex, `blue-*` or `brand-*`.
+- [ ] Brand ink is never on body copy or links.
+
+### Shape and layout (sections 3 and 4)
+
+- [ ] The shape fits the job: trace line for evidence, card for an answer or a decision, `Status` for a state alone.
+- [ ] A card is docked: `rounded-xl border border-border/60 p-4`, no fill, no shadow.
+- [ ] The caption row names it at the start and shows its state at the end.
+- [ ] Hierarchy comes from size; numbers are `tabular-nums` with their units.
+- [ ] Spacing is `gap` on the container, with no `mt-*` between children, and padding shrinks as it nests.
+- [ ] No box inside the card's box.
+
+### Components (section 5)
+
+- [ ] Every state, dot, skeleton, button, fold and menu is an existing component, not new markup.
+- [ ] Nothing in `components/aiellie/` imports the app's own files or calls `/api/`.
+
+### Motion (section 6)
+
+- [ ] Every motion has a job: a state change, continuity, or confirming an action.
+- [ ] Every duration is 80, 150, 280 or 70 ms, and every curve is one of the two in `design.md`.
+- [ ] Every transition has `motion-reduce:transition-none` and every animation `motion-reduce:animate-none`, on the same element.
+- [ ] Loops (shimmer, pulse, ping) run only while working and stop when it settles.
+- [ ] No `transition-all`, no entrance on the result, nothing grows on hover.
+
+### Copy (section 7)
+
+- [ ] The running caption names the work and its input; it never says "Loading".
+- [ ] The settled caption names the thing.
+- [ ] The error says why and what to do next.
+- [ ] Every button says what it does, in sentence case.
+
+### Accessibility (section 8)
+
+- [ ] `aria-busy` is set while it works, and a changing caption is announced once.
+- [ ] No state is shown by colour alone.
+- [ ] Every control can be reached and used by keyboard, with the `focus-visible` ring.
+- [ ] Once a decision is made, its buttons are gone or disabled.
+- [ ] Decorative icons are `aria-hidden`; meaningful ones have a label.
+
+### Look at it (section 9)
+
+- [ ] Light and dark.
+- [ ] Phone width, with device emulation.
+- [ ] Reduced motion switched on.
+- [ ] Squint: one thing is clearly dominant.
+- [ ] Nothing from the reject list above.
