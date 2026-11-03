@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
   Folder01Icon,
   PencilEdit02Icon,
@@ -10,6 +11,7 @@ import {
   DashboardSquare01Icon,
   TimeScheduleIcon,
   ChatBotIcon,
+  EllipsisIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
@@ -82,6 +84,12 @@ function ChatNavMain({
   elementsOpen?: boolean
 }) {
   const { closeSheet } = usePanels()
+  const moreActive = elementsOpen || modelsOpen
+  const [moreOpen, setMoreOpen] = useState(moreActive)
+
+  useEffect(() => {
+    if (moreActive) setMoreOpen(true)
+  }, [moreActive])
 
   return (
     <SidebarGroup>
@@ -179,30 +187,44 @@ function ChatNavMain({
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton
-            isActive={elementsOpen}
-            aria-current={elementsOpen ? "page" : undefined}
-            onClick={() => {
-              onElements?.()
-              closeSheet()
-            }}
+            aria-expanded={moreOpen}
+            className="text-sidebar-foreground/70"
+            onClick={() => setMoreOpen((open) => !open)}
           >
-            <HugeiconsIcon icon={DashboardSquare01Icon} aria-hidden />
-            <span>Elements</span>
+            <HugeiconsIcon icon={EllipsisIcon} aria-hidden />
+            <span>More</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            isActive={modelsOpen}
-            aria-current={modelsOpen ? "page" : undefined}
-            onClick={() => {
-              onModels?.()
-              closeSheet()
-            }}
-          >
-            <HugeiconsIcon icon={ChatBotIcon} aria-hidden />
-            <span>Models</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+        {moreOpen ? (
+          <>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={elementsOpen}
+                aria-current={elementsOpen ? "page" : undefined}
+                onClick={() => {
+                  onElements?.()
+                  closeSheet()
+                }}
+              >
+                <HugeiconsIcon icon={DashboardSquare01Icon} aria-hidden />
+                <span>Elements</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={modelsOpen}
+                aria-current={modelsOpen ? "page" : undefined}
+                onClick={() => {
+                  onModels?.()
+                  closeSheet()
+                }}
+              >
+                <HugeiconsIcon icon={ChatBotIcon} aria-hidden />
+                <span>Models</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </>
+        ) : null}
       </SidebarMenu>
     </SidebarGroup>
   )
