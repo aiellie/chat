@@ -12,8 +12,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Read `design.md` before changing anything people see. It holds the rules for colour, focus, motion, surfaces and copy.
 
-Building a new element (a tool's part in the thread, a status, a live indicator): follow `elementsdesign.md`, which turns those rules into steps.
-
 # Where components go
 
 - `components/ui/`: generic building blocks, shadcn's and our own (`tooltip-icon-button`, `editable-title`, `icons`). They know nothing about chat.
@@ -38,6 +36,6 @@ A new tool:
 
 - gets a file in `lib/tools/` with its definition and what the model is told about it, and a place in `chatTools` in `index.ts`;
 - gets an entry in `lib/tools/catalog.ts`, which gives it a card on the Tools page (`/tools`) and its suggestion above the composer in a new chat, and which changes whenever the tool does;
-- if it shows in the thread, gets its part in `components/aiellie/`, which `thread.tsx` draws, as `web-search.tsx` and `plan-review.tsx` are.
+- if it shows in the thread, gets its part in `components/aiellie/`, which `thread.tsx` draws, as `web-search.tsx` and `plan-review.tsx` are, and an entry in `app/elements/demos.tsx` showing it in every state on the Elements page (`/elements`).
 
 `lib/tools/` is server code. Browser code imports a file there only when it has no provider SDK in it, as `lib/model-messages.ts` imports `plan.ts` and the Tools page imports `catalog.ts`, and never `index.ts`.

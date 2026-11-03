@@ -51,6 +51,7 @@ import {
 import { apiKeyHeaders, onApiKeysChange } from "@/lib/api-keys"
 import type { MessageMetadata } from "@/lib/model-messages"
 import { TOOLS } from "@/lib/tools/catalog"
+import { ToolMark } from "@/components/tool-mark"
 import {
   defaultEffort,
   defaultModel,
@@ -392,7 +393,17 @@ function Chat({
         {messages.length === 0 ? (
           <Suggestions scroll className="-mx-0.5 px-0.5 pt-0.5 pb-3">
             {TOOLS.map((tool) => (
-              <Suggestion key={tool.id} onClick={() => send(tool.suggestion)}>
+              <Suggestion
+                key={tool.id}
+                onClick={() => send(tool.suggestion)}
+                className="ps-1.5"
+              >
+                {/* The tool it tries, in the mark the Tools page shows it by. */}
+                <ToolMark
+                  id={tool.id}
+                  className="size-5 rounded-md"
+                  iconClassName="size-3.5"
+                />
                 {tool.suggestion}
               </Suggestion>
             ))}

@@ -1,19 +1,11 @@
 "use client"
 
 import * as React from "react"
-import {
-  Cancel01Icon,
-  GlobalSearchIcon,
-  LeftToRightListNumberIcon,
-  Mail01Icon,
-  Search01Icon,
-  Wrench01Icon, 
-  Sun03Icon,
-} from "@hugeicons/core-free-icons"
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
-import { cn } from "cn"
+import { Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 
 import { ToolDetails } from "@/components/tool-details"
+import { ToolMark } from "@/components/tool-mark"
 import { Status, StatusIndicator, StatusLabel } from "@/components/ui/status"
 import {
   InputGroup,
@@ -31,22 +23,6 @@ import {
   ItemTitle,
 } from "@/components/ui/item"
 import { TOOLS, type ToolEntry } from "@/lib/tools/catalog"
-
-// Each tool's mark, as its part in the thread draws it where it has one.
-const ICONS: Record<string, IconSvgElement> = {
-  "web-search": GlobalSearchIcon,
-  plan: LeftToRightListNumberIcon,
-  weather: Sun03Icon,
-  email: Mail01Icon,
-}
-
-// The tile behind that mark: a pale fill, and the icon's ink.
-const COLORS: Record<string, string> = {
-  "web-search": "bg-blue-50 text-blue-500",
-  plan: "bg-amber-50 text-amber-500",
-  weather: "bg-sky-50 text-sky-500",
-  email: "bg-violet-50 text-violet-500",
-}
 
 // Whether a tool has every word searched for, in its name, what it does, or
 // the names the model calls it by.
@@ -69,17 +45,11 @@ function ToolRow({ tool }: { tool: ToolEntry }) {
   const [open, setOpen] = React.useState(false)
   return (
     <Item role="listitem" variant="outline" className={row}>
-      <ItemMedia
-        variant="icon"
-        className={cn(
-          "size-9 rounded-lg",
-          COLORS[tool.id] ?? "border border-border/60"
-        )}
-      >
-        <HugeiconsIcon
-          aria-hidden
-          icon={ICONS[tool.id] ?? Wrench01Icon}
-          className="size-5"
+      <ItemMedia variant="icon" className="size-9 border-0 bg-transparent p-0">
+        <ToolMark
+          id={tool.id}
+          className="size-9 rounded-lg"
+          iconClassName="size-5"
         />
       </ItemMedia>
       <ItemContent className="min-w-0 gap-2">
@@ -93,12 +63,14 @@ function ToolRow({ tool }: { tool: ToolEntry }) {
               {tool.name}
             </button>
           </ItemTitle>
-          <ItemDescription>{tool.summary}</ItemDescription>
+          <ItemDescription className="line-clamp-1">
+            {tool.summary}
+          </ItemDescription>
         </div>
-        <Status variant="muted">
+        {/* <Status variant="muted">
           <StatusIndicator />
           <StatusLabel>{tool.status}</StatusLabel>
-        </Status>
+        </Status> */}
       </ItemContent>
       <ItemActions className="relative z-10 self-start">
         <ToolDetails tool={tool} open={open} onOpenChange={setOpen} />

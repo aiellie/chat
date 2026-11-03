@@ -194,7 +194,7 @@ An image shows as a square of itself, cropped with `object-cover`, its name kept
 
 ### Plans
 
-A plan the model proposes is a docked card in the reply: a hairline, no fill, `rounded-xl` and `p-4`. A caption row ("Plan · 4 steps") with its state at the end, the title, the numbered steps, then the answer. Until the person answers it, every line is a field that looks like text: its border shows `input` on hover and `ring` on focus, and its words line up with the plain text it becomes, so nothing shifts when it settles. A step's details field shows while the step is being worked on, or once it has words. Each step has a More menu (move up, move down, add below, remove) that shows on hover, on focus, and always on touch. Enter adds a step, Backspace in an empty one removes it, Alt+↑ and Alt+↓ move it, ⌘ or Ctrl+Enter approves. Approve sends the plan as left and the model carries it on; Dismiss doesn't. Its state is a `Status` at the end of the caption row: "Writing" in `live` while its steps fill in, "Needs approval" (or "Edited") in `pending` while it waits, then "Approved" in `success` or "Dismissed" in `muted`, read-only from then on. A dismissed or never-answered plan sits in `muted-foreground`. Approve comes first in the footer, then Dismiss, with Reset at the end once it's been edited. `components/aiellie/plan-review.tsx` is the reference.
+A plan the model proposes is a docked card in the reply: a hairline, no fill, `rounded-xl` and `p-4`. A caption row ("Plan · 4 steps") with its state at the end, the title, the numbered steps, then the answer. Until the person answers it, every line is a field that looks like text: its border shows `input` on hover and `ring` on focus, and its words line up with the plain text it becomes, so nothing shifts when it settles. A step's details field shows while the step is being worked on, or once it has words. A step's number is its handle: it turns into a grip on hover and drags the step, or takes ↑, ↓, Home and End once focused, and rows glide to their new places at 280 ms. Each step has a remove button that shows on hover, on focus, and always on touch; a removed step stays listed, struck through, with Restore, until the plan is answered. A step that was moved, edited, added or removed says so in caption ink at its end, and the footer counts the edits beside Reset. Enter adds a step, Backspace in an empty one removes it, Alt+↑ and Alt+↓ move it, ⌘ or Ctrl+Enter approves. Approve sends the plan as left and the model carries it on; Keep planning sends it back with a note on what to change, and the model proposes another; Dismiss does neither. Once answered, focus moves to the card, and it lists what was changed. Its state is a `Status` at the end of the caption row: "Writing" in `live` while its steps fill in, "Needs approval" (or "Edited") in `pending` while it waits, then "Approved" in `success` or "Dismissed" in `muted`, read-only from then on. A dismissed or never-answered plan sits in `muted-foreground`. Approve comes first in the footer, then Dismiss, with Reset at the end once it's been edited. `components/aiellie/plan-review.tsx` is the reference.
 
 ### Secret fields
 
@@ -220,6 +220,10 @@ A search field at the top of a menu is a row of the panel, not a field inside it
 - An icon carries meaning alongside a word. Where the icon is the control, in a dense toolbar, it has a tooltip and an `aria-label`.
 - Stroke stays as the package ships it, with no filled variants mixed in.
 - A decorative icon is `aria-hidden`; a meaningful one has a label.
+
+### Tool marks
+
+Each tool has a mark: its icon on a tile of its own colour, a pale fill with the hue's ink, deeper fill and lighter ink in the dark. It's how a tool is recognised wherever it's offered: its row on the Tools page and its suggestion above the composer in a new chat. `ToolMark` in `components/tool-mark.tsx` holds every tool's icon and colour, and a new tool gets a row there. A tool's mark is identity, not status: it never stands in for `live`, `success`, `pending` or `destructive`, and nothing else gets a tinted tile.
 
 ### Reused icons
 
@@ -254,9 +258,9 @@ The same meaning gets the same mark. A row is added once an icon is used for one
 
 ## Reject these
 
-- The stock chat idiom: a sparkles welcome, icon suggestion chips, a `rounded-3xl` composer, pill-shaped tool calls.
+- The stock chat idiom: a sparkles welcome, a `rounded-3xl` composer, pill-shaped tool calls.
 - Decorative gradients, glows, blobs and textures. The orb's colour and glow are the live state, not decoration: they show only while a call is going.
-- Rainbow badges, coloured category chips, icons in tinted tiles.
+- Rainbow badges, coloured category chips, icons in tinted tiles. The one exception is a tool's mark (below).
 - An icon as decoration, or standing in for a label without a tooltip.
 - A card around every section, a box drawn to repair weak hierarchy, a box inside a box.
 - Tiny muted text used to make density fit.

@@ -131,13 +131,14 @@ Never: a spinner where a skeleton fits, a loop on something settled, an entrance
 4. **Build the main state,** then every other state.
 5. **Place the brand:** is anything live? If so, the brand is in exactly one place while it is; if not, there's no brand.
 6. **Motion pass** (section 5), then **copy pass** (section 6).
-7. **Run the checklist** at the end of this file and render it to look.
+7. **Add it to the Elements page:** an entry in `app/elements/demos.tsx` with a state for each row of its state table, and a "Try it" state where it takes input.
+8. **Run the checklist** at the end of this file, looking at it on the Elements page.
 
 ## 9. Reject these
 
 - The brand as decoration: brand buttons, brand headings, a brand border at rest.
 - Two live things at once.
-- A coloured tile behind every icon, rainbow badges, gradients, glows, blobs.
+- A coloured tile behind every icon, rainbow badges, gradients, glows, blobs. A tool's mark (`ToolMark`) is the one tinted tile.
 - A box in a box, or a card around every section.
 - Tiny muted text used to make density fit.
 - A spinner alone where the content's shape is known.
@@ -265,6 +266,7 @@ Tick every line before calling an element done. A "no" is either fixed or writte
 
 ### Look at it
 
+- [ ] It's on the Elements page with every state, and each one renders.
 - [ ] Light and dark.
 - [ ] Phone width, with device emulation.
 - [ ] Keyboard only.

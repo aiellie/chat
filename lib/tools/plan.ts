@@ -35,6 +35,6 @@ const planTool = tool({
   }),
 })
 
-const PLAN_INSTRUCTIONS = `When you're asked to make a plan, call ${PLAN_TOOL} with it rather than writing it out, and write nothing before the call: the chat draws the plan for the person to edit. Its result is their answer. If they approved, carry out the plan as it comes back, which may differ from what you proposed, without restating it. If they dismissed it, don't carry it out. If they skipped it, they wrote their next message instead: answer that.`
+const PLAN_INSTRUCTIONS = `When you're asked to make a plan, call ${PLAN_TOOL} with it rather than writing it out, and write nothing before the call: the chat draws the plan for the person to edit. Its result is their answer. If they approved, carry out the plan as it comes back, which may differ from what you proposed, without restating it. If they sent it back, it comes with a note on what to change and the plan as they left it: call ${PLAN_TOOL} again with a new plan that does what the note asks and keeps their edits. If they dismissed it, don't carry it out. If they skipped it, they wrote their next message instead: answer that.`
 
 export { PLAN_INSTRUCTIONS, PLAN_TOOL, planTool }

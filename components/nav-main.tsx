@@ -7,8 +7,9 @@ import {
   AiCloud02Icon,
   Plug02Icon,
   ShapeCollectionIcon,
+  DashboardSquare01Icon,
   TimeScheduleIcon,
-  ChatBotIcon
+  ChatBotIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
@@ -35,6 +36,8 @@ function ChatNavMain({
   onProjects,
   onStashd,
   onExtensions,
+  onElements,
+  elementsOpen = false,
   onTools,
   toolsOpen = false,
   onScheduled,
@@ -73,6 +76,10 @@ function ChatNavMain({
   stashdOpen?: boolean
   /** Whether the Extensions page is open, to mark its row. */
   extensionsOpen?: boolean
+  /** Where the registry's elements are shown. Left out, the row goes nowhere. */
+  onElements?: () => void
+  /** Whether the Elements page is open, to mark its row. */
+  elementsOpen?: boolean
 }) {
   const { closeSheet } = usePanels()
 
@@ -168,6 +175,19 @@ function ChatNavMain({
           >
             <HugeiconsIcon icon={ShapeCollectionIcon} aria-hidden />
             <span>Tools</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            isActive={elementsOpen}
+            aria-current={elementsOpen ? "page" : undefined}
+            onClick={() => {
+              onElements?.()
+              closeSheet()
+            }}
+          >
+            <HugeiconsIcon icon={DashboardSquare01Icon} aria-hidden />
+            <span>Elements</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
