@@ -31,7 +31,7 @@ function DemoCard({
       className={cn(
         // A quiet fill rather than a hairline, so a card shown on it isn't
         // a box in a box.
-        "min-w-0 gap-0 rounded-xl bg-muted/50",
+        "min-w-0 gap-0 rounded-xl bg-background border border-border/60",
         className
       )}
     >
