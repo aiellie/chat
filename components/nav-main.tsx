@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import {
+  Bookmark02Icon,
   Folder01Icon,
   PencilEdit02Icon,
   BubbleChatAddIcon,
@@ -37,6 +38,7 @@ function ChatNavMain({
   onQuickChat,
   onProjects,
   onStashd,
+  onMemory,
   onExtensions,
   onElements,
   elementsOpen = false,
@@ -48,6 +50,7 @@ function ChatNavMain({
   modelsOpen = false,
   projectsOpen = false,
   stashdOpen = false,
+  memoryOpen = false,
   extensionsOpen = false,
 }: {
   newChatOpen: boolean
@@ -58,6 +61,8 @@ function ChatNavMain({
   onProjects?: () => void
   /** Where the stashd live. Left out, the row is there but goes nowhere. */
   onStashd?: () => void
+  /** Where the memories live. Left out, the row is there but goes nowhere. */
+  onMemory?: () => void
   /** Where the extensions live. Left out, the row is there but goes nowhere. */
   onExtensions?: () => void
   /** Where the tools live. Left out, the row is there but goes nowhere. */
@@ -76,6 +81,8 @@ function ChatNavMain({
   projectsOpen?: boolean
   /** Whether the Stashd page is open, to mark its row. */
   stashdOpen?: boolean
+  /** Whether the Memory page is open, to mark its row. */
+  memoryOpen?: boolean
   /** Whether the Extensions page is open, to mark its row. */
   extensionsOpen?: boolean
   /** Where the registry's elements are shown. Left out, the row goes nowhere. */
@@ -84,7 +91,7 @@ function ChatNavMain({
   elementsOpen?: boolean
 }) {
   const { closeSheet } = usePanels()
-  const moreActive = elementsOpen || modelsOpen
+  const moreActive = elementsOpen || modelsOpen || memoryOpen
   const [moreOpen, setMoreOpen] = useState(moreActive)
 
   useEffect(() => {
@@ -195,6 +202,19 @@ function ChatNavMain({
           >
             <HugeiconsIcon icon={ShapeCollectionIcon} aria-hidden />
             <span>Tools</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            isActive={memoryOpen}
+            aria-current={memoryOpen ? "page" : undefined}
+            onClick={() => {
+              onMemory?.()
+              closeSheet()
+            }}
+          >
+            <HugeiconsIcon icon={Bookmark02Icon} aria-hidden />
+            <span>Memory</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
        

@@ -113,6 +113,7 @@ const PAGES = [
   "/models",
   "/projects",
   "/stashd",
+  "/memory",
   "/extensions",
   "/elements",
 ]
@@ -165,6 +166,8 @@ function ChatShell({ children }: { children?: React.ReactNode }) {
   const openProjects = () => router.push("/projects")
   const stashdOpen = pathname === "/stashd"
   const openStashd = () => router.push("/stashd")
+  const memoryOpen = pathname === "/memory"
+  const openMemory = () => router.push("/memory")
   const extensionsOpen = pathname === "/extensions"
   const openExtensions = () => router.push("/extensions")
   const elementsOpen = pathname === "/elements"
@@ -262,6 +265,8 @@ function ChatShell({ children }: { children?: React.ReactNode }) {
             onProjects={openProjects}
             stashdOpen={stashdOpen}
             onStashd={openStashd}
+            memoryOpen={memoryOpen}
+            onMemory={openMemory}
             extensionsOpen={extensionsOpen}
             onExtensions={openExtensions}
             elementsOpen={elementsOpen}
