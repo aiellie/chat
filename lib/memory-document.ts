@@ -1,16 +1,9 @@
-import type { Memory } from "@/components/memory-store"
+import type { Memory, MemoryChanges } from "@/components/memory-store"
 
 // The Memory doc in Stashd: every memory as one bullet of a Markdown list,
 // which the person edits in the rich text editor. The memories stay in
 // components/memory-store.ts; this file only turns them into the list and
 // works out what an edited list changed, so the store can follow it.
-
-/** What an edited list adds, rewrites and removes. */
-type MemoryChanges = {
-  create: string[]
-  update: { id: string; text: string }[]
-  remove: string[]
-}
 
 // Oldest first, so the list grows downward as a doc does, and a memory
 // keeps its place when it's edited.
@@ -117,4 +110,3 @@ function changesFrom(markdown: string, memories: Memory[]): MemoryChanges {
 }
 
 export { changesFrom, linesOf, memoriesToMarkdown }
-export type { MemoryChanges }

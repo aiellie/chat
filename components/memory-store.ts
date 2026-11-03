@@ -19,6 +19,13 @@ type Memory = {
   updatedAt: number
 }
 
+/** What an edited Memory doc adds, rewrites and removes. */
+type MemoryChanges = {
+  create: string[]
+  update: { id: string; text: string }[]
+  remove: string[]
+}
+
 /** What saving a memory takes. */
 type MemoryInput = {
   text: string
@@ -89,6 +96,41 @@ async function deleteMemory(id: string): Promise<void> {
   write(read().filter((memory) => memory.id !== id))
 }
 
+/**
+ * Applies what an edited Memory doc changed, from lib/memory-document.ts,
+ * in one write, so the chat and other tabs hear of it once. New memories
+ * are the person's, added in the order given. An empty rewrite removes.
+ */
+async function applyMemoryChanges(changes: MemoryChanges): Promise<void> {
+  const now = Date.now()
+  const texts = new Map(changes.update.map(({ id, text }) => [id, text.trim()]))
+  const removed = new Set(changes.remove)
+  let changed = false
+  const kept = read().flatMap((memory): Memory[] => {
+    const text = texts.get(memory.id)
+    if (removed.has(memory.id) || text === "") {
+      changed = true
+      return []
+    }
+    if (text === undefined || text === memory.text) return [memory]
+    changed = true
+    return [{ ...memory, text, updatedAt: now }]
+  })
+  const created = changes.create
+    .map((text) => text.trim())
+    .filter(Boolean)
+    .map((text, index): Memory => ({
+      id: crypto.randomUUID(),
+      text,
+      savedBy: "you",
+      // A step apart, so they keep their order in the doc.
+      createdAt: now + index,
+      updatedAt: now + index,
+    }))
+  if (!changed && created.length === 0) return
+  write([...created.reverse(), ...kept])
+}
+
 const words = (text: string) =>
   text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []
 
@@ -139,6 +181,7 @@ function subscribeMemories(listener: () => void) {
 }
 
 export {
+  applyMemoryChanges,
   createMemory,
   deleteMemory,
   listMemories,
@@ -146,4 +189,4 @@ export {
   subscribeMemories,
   updateMemory,
 }
-export type { Memory, MemoryInput }
+export type { Memory, MemoryChanges, MemoryInput }
