@@ -4,9 +4,6 @@ import * as React from "react"
 import {
   Add01Icon,
   Cancel01Icon,
-  ConnectIcon,
-  MagicWand01Icon,
-  Plug02Icon,
   Search01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -34,7 +31,6 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item"
-import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs"
 
 // The first line of the instructions, without its Markdown marks, for a
 // skill with no description.
@@ -95,8 +91,9 @@ function SkillRow({ skill }: { skill: Skill }) {
   )
 }
 
-// The person's skills, from components/skills-store.ts.
-function SkillsPanel() {
+// The extensions the person has made, from components/skills-store.ts: for
+// now, skills. It sits in the shell from the layout, in the chat's place.
+export default function ExtensionsPage() {
   // Undefined until the store answers.
   const [skills, setSkills] = React.useState<Skill[]>()
   const [creating, setCreating] = React.useState(false)
@@ -126,114 +123,84 @@ function SkillsPanel() {
   }
 
   return (
-    <>
-      <div className="flex items-center justify-between gap-2">
-        {/* Only once there's something to search. */}
-        {skills?.length ? (
-          <InputGroup className="h-9 flex-1 rounded-full">
-            <InputGroupAddon>
-              <HugeiconsIcon aria-hidden icon={Search01Icon} />
-            </InputGroupAddon>
-            <InputGroupInput
-              ref={search}
-              type="text"
-              aria-label="Search skills"
-              placeholder="Search skills"
-              autoComplete="off"
-              spellCheck={false}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape" && query) {
-                  event.preventDefault()
-                  setQuery("")
-                }
-              }}
-            />
-            {/* Disabled rather than hidden while empty, so the end of the
-                field doesn't shift. Clearing puts focus back in it. */}
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton
-                size="icon-xs"
-                aria-label="Clear search"
-                disabled={!query}
-                onClick={clear}
-                className="rounded-full disabled:opacity-30"
-              >
-                <HugeiconsIcon aria-hidden icon={Cancel01Icon} />
-              </InputGroupButton>
-            </InputGroupAddon>
-          </InputGroup>
-        ) : (
-          <p role="status" className="text-sm text-muted-foreground">
-            {skills ? "No skills yet." : null}
-          </p>
-        )}
-        <Button className="shrink-0" onClick={() => setCreating(true)}>
-          <HugeiconsIcon aria-hidden icon={Add01Icon} />
-          Add
-        </Button>
-      </div>
-      {!skills?.length ? null : shown.length > 0 ? (
-        <ItemGroup aria-label="Skills" className="grid gap-x-6 sm:grid-cols-2">
-          {shown.map((skill) => (
-            <SkillRow key={skill.id} skill={skill} />
-          ))}
-        </ItemGroup>
-      ) : (
-        <p role="status" className="text-sm text-muted-foreground">
-          No skills match “{query.trim()}”.
-        </p>
-      )}
-      <SkillDialog open={creating} onOpenChange={setCreating} />
-    </>
-  )
-}
-
-// Skills, plugins and connectors, each in its tab. It sits in the shell from
-// the layout, in the chat's place.
-export default function ExtensionsPage() {
-  return (
     // Scrolls under the main panel's glass header, so it starts below it.
     <div className="min-h-0 flex-1 overflow-y-auto">
       <title>Extensions</title>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pt-16 pb-10">
-        <header className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-2xl font-medium tracking-tight">Extensions</h1>
-          <p className="text-sm text-muted-foreground">
-            Skills, plugins and connectors, saved in this browser.
-          </p>
+        <header className="flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-1">
+              <h1 className="text-2xl font-medium tracking-tight">
+                Extensions
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Skills you write once for the model to follow. Saved in this
+                browser.
+              </p>
+            </div>
+            <Button className="shrink-0" onClick={() => setCreating(true)}>
+              <HugeiconsIcon aria-hidden icon={Add01Icon} />
+              Add
+            </Button>
+          </div>
+          {/* Only once there's something to search. */}
+          {skills?.length ? (
+            <InputGroup className="h-9 rounded-full">
+              <InputGroupAddon>
+                <HugeiconsIcon aria-hidden icon={Search01Icon} />
+              </InputGroupAddon>
+              <InputGroupInput
+                ref={search}
+                type="text"
+                aria-label="Search extensions"
+                placeholder="Search extensions"
+                autoComplete="off"
+                spellCheck={false}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && query) {
+                    event.preventDefault()
+                    setQuery("")
+                  }
+                }}
+              />
+              {/* Disabled rather than hidden while empty, so the end of the
+                  field doesn't shift. Clearing puts focus back in it. */}
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  size="icon-xs"
+                  aria-label="Clear search"
+                  disabled={!query}
+                  onClick={clear}
+                  className="rounded-full disabled:opacity-30"
+                >
+                  <HugeiconsIcon aria-hidden icon={Cancel01Icon} />
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+          ) : null}
         </header>
-        <Tabs defaultValue="skills">
-          <TabsList aria-label="Extensions">
-            <TabsTab value="skills">
-              <HugeiconsIcon aria-hidden icon={MagicWand01Icon} />
-              Skills
-            </TabsTab>
-            <TabsTab value="plugins">
-              <HugeiconsIcon aria-hidden icon={Plug02Icon} />
-              Plugins
-            </TabsTab>
-            <TabsTab value="connectors">
-              <HugeiconsIcon aria-hidden icon={ConnectIcon} />
-              Connectors
-            </TabsTab>
-          </TabsList>
-          <TabsPanel value="skills">
-            <SkillsPanel />
-          </TabsPanel>
-          <TabsPanel value="plugins">
-            <p role="status" className="text-sm text-muted-foreground">
-              No plugins yet.
-            </p>
-          </TabsPanel>
-          <TabsPanel value="connectors">
-            <p role="status" className="text-sm text-muted-foreground">
-              No connectors yet.
-            </p>
-          </TabsPanel>
-        </Tabs>
+        {skills === undefined ? null : skills.length === 0 ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            No extensions yet.
+          </p>
+        ) : shown.length > 0 ? (
+          <ItemGroup
+            aria-label="Extensions"
+            className="grid gap-x-6 sm:grid-cols-2"
+          >
+            {shown.map((skill) => (
+              <SkillRow key={skill.id} skill={skill} />
+            ))}
+          </ItemGroup>
+        ) : (
+          <p role="status" className="text-sm text-muted-foreground">
+            No extensions match “{query.trim()}”.
+          </p>
+        )}
       </div>
+      <SkillDialog open={creating} onOpenChange={setCreating} />
     </div>
   )
 }
