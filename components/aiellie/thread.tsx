@@ -44,6 +44,7 @@ import {
   MessageCopyAction,
   MessageMoreActions,
   MessageRateAction,
+  MessageSaveAction,
   type Rating,
   type Report,
 } from "@/components/aiellie/message-actions"
@@ -185,6 +186,7 @@ function Thread({
   onToolApproval,
   keptMemories,
   onForgetMemory,
+  onSaveMemory,
 }: {
   messages: UIMessage[]
   /** The voice chat going, by its id, which isn't marked as ended yet. */
@@ -229,6 +231,11 @@ function Thread({
   keptMemories?: ReadonlySet<string>
   /** Removes a memory a reply saved, as its Undo. Without it, there's no Undo. */
   onForgetMemory?: (memoryId: string) => void
+  /**
+   * Saves a message's text, as edited, to memory. Without it, messages have
+   * no Save to memory.
+   */
+  onSaveMemory?: (messageId: string, text: string) => void | Promise<void>
 }) {
   const firsts = firstsOfDay(messages)
   const voice = voiceChatsIn(messages)
@@ -503,9 +510,27 @@ function Thread({
                         // from above or below. It shows too while a button in
                         // it has focus or its menu is open.
                         <MessageFooter className="absolute start-0 top-full gap-2 pt-2 opacity-0 transition-opacity duration-150 group-focus-within/message:opacity-100 group-hover/message:opacity-100 group-data-[align=end]/message:start-auto group-data-[align=end]/message:end-0 has-data-popup-open:opacity-100">
+                          {mine && onSaveMemory ? (
+                            <MessageActions>
+                              <MessageSaveAction
+                                text={text}
+                                onSave={(saved) =>
+                                  onSaveMemory(message.id, saved)
+                                }
+                              />
+                            </MessageActions>
+                          ) : null}
                           {!mine ? (
                             <MessageActions>
                               <MessageCopyAction value={whole} />
+                              {onSaveMemory ? (
+                                <MessageSaveAction
+                                  text={whole}
+                                  onSave={(saved) =>
+                                    onSaveMemory(message.id, saved)
+                                  }
+                                />
+                              ) : null}
                               {onRate ? (
                                 <>
                                   <MessageRateAction

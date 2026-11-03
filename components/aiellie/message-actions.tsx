@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import {
+  Bookmark02Icon,
   Copy01Icon,
   Flag02Icon,
   GitBranchIcon,
@@ -95,6 +96,77 @@ function MessageCopyAction({
     >
       <HugeiconsIcon aria-hidden icon={copied ? Tick02Icon : Copy01Icon} />
     </MessageAction>
+  )
+}
+
+/**
+ * Saves the message to memory: opens a dialog with its text to cut down to
+ * the fact worth keeping, then shows a tick for a moment once it's saved.
+ */
+function MessageSaveAction({
+  text,
+  onSave,
+  ...props
+}: Omit<TooltipIconButtonProps, "tooltip" | "onClick" | "children"> & {
+  /** The message's text, which the dialog starts from. */
+  text: string
+  /** Keeps the text as edited. */
+  onSave: (text: string) => void | Promise<void>
+}) {
+  const [open, setOpen] = React.useState(false)
+  const [draft, setDraft] = React.useState(text)
+  const [saved, setSaved] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!saved) return
+    const timeout = setTimeout(() => setSaved(false), 2000)
+    return () => clearTimeout(timeout)
+  }, [saved])
+
+  const save = async () => {
+    await onSave(draft.trim())
+    setOpen(false)
+    setSaved(true)
+  }
+
+  return (
+    <>
+      <MessageAction
+        tooltip={saved ? "Saved to memory" : "Save to memory"}
+        onClick={() => {
+          setDraft(text)
+          setOpen(true)
+        }}
+        {...props}
+      >
+        <HugeiconsIcon aria-hidden icon={saved ? Tick02Icon : Bookmark02Icon} />
+      </MessageAction>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save to memory</DialogTitle>
+            <DialogDescription>
+              Cut it down to what’s worth remembering in later chats.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            aria-label="Memory"
+            rows={4}
+            className="max-h-60"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={!draft.trim()} onClick={save}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
@@ -310,5 +382,6 @@ export {
   MessageCopyAction,
   MessageMoreActions,
   MessageRateAction,
+  MessageSaveAction,
 }
 export type { Rating, Report }

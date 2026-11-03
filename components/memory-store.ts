@@ -92,25 +92,34 @@ async function deleteMemory(id: string): Promise<void> {
 const words = (text: string) =>
   text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []
 
+// Whether two words are the same but for an ending: "live" and "lives".
+const alike = (a: string, b: string) =>
+  a === b ||
+  (Math.min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a)))
+
 /**
  * The memories that share a word with the query, those sharing the most
- * first, then the most recent. An empty query gives the most recent. A
- * backend would rank by meaning instead; the callers wouldn't change.
+ * first, then the most recent. When none do, or the query is empty, the
+ * most recent, so the model can judge for itself: a few words often miss
+ * the one memory that answers. A backend would rank by meaning instead;
+ * the callers wouldn't change.
  */
 async function searchMemories(query: string, limit = 10): Promise<Memory[]> {
-  const terms = new Set(words(query))
+  const terms = [...new Set(words(query))]
   const memories = read().sort(byRecent)
-  if (!terms.size) return memories.slice(0, limit)
-  return memories
-    .map((memory) => ({
-      memory,
-      score: new Set(words(memory.text).filter((word) => terms.has(word)))
-        .size,
-    }))
+  const matched = memories
+    .map((memory) => {
+      const own = words(memory.text)
+      return {
+        memory,
+        score: terms.filter((term) => own.some((word) => alike(word, term)))
+          .length,
+      }
+    })
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
     .map(({ memory }) => memory)
+  return (matched.length > 0 ? matched : memories).slice(0, limit)
 }
 
 /**

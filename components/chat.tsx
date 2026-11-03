@@ -459,6 +459,9 @@ function Chat({
           onRate={(messageId, rating) => annotate(messageId, { rating })}
           keptMemories={kept}
           onForgetMemory={deleteMemory}
+          onSaveMemory={async (_, text) => {
+            await createMemory({ text, savedBy: "you", chatId: id })
+          }}
           onReport={(messageId, report) =>
             annotate(messageId, { report: { ...report, at: Date.now() } })
           }

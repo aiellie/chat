@@ -17,6 +17,10 @@ import type { ToolUIPart } from "ai"
 import { EmailApproval } from "@/components/aiellie/email-approval"
 import { MemoryTrace } from "@/components/aiellie/memory-trace"
 import {
+  MessageActions,
+  MessageSaveAction,
+} from "@/components/aiellie/message-actions"
+import {
   PlanReview,
   type Plan,
   type PlanDecision,
@@ -462,6 +466,27 @@ const ELEMENTS: ElementEntry[] = [
             status="error"
             error="This browser's storage couldn't be read."
           />
+        ),
+      },
+    ],
+  },
+  {
+    id: "message-save-action",
+    name: "Save to memory",
+    summary: "A message action that saves its text, edited, to memory",
+    icon: Bookmark02Icon,
+    file: "components/aiellie/message-actions.tsx",
+    states: [
+      {
+        // Saving keeps nothing here: the tick shows, and that's all.
+        label: "Try it",
+        render: () => (
+          <MessageActions>
+            <MessageSaveAction
+              text="I take my coffee black, and I'm usually up by 7."
+              onSave={() => {}}
+            />
+          </MessageActions>
         ),
       },
     ],
